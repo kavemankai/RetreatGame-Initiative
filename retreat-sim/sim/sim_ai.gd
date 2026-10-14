@@ -78,6 +78,7 @@ static func _plan_unit(ctx: Dictionary, u: SimUnit, prof: SimAIProfile) -> Array
 	var info: Dictionary = (ctx["live"] as Dictionary).get(u.id, {})
 	var origin: Vector2i = info.get("pos", u.pos)
 	ctx["range"] = u.max_range()
+	ctx["beam"] = u.ignores_half_cover()
 	var budget := u.available_ticks() - int(info.get("free_at", 0))
 	var reach := SimPathing.reach(view, origin, u.id, budget)
 	var dist: Dictionary = reach["dist"]
@@ -182,7 +183,7 @@ static func _lanes_at(ctx: Dictionary, tile: Vector2i) -> int:
 	var reach_range: int = ctx["range"]
 	var lanes := 0
 	for e: SimUnit in ctx["enemies"]:
-		if SimLos.chebyshev(tile, e.pos) <= reach_range and SimLos.can_shoot(view.grid, tile, e.pos) and not SimLos.is_covered(view.grid, tile, e.pos):
+		if SimLos.chebyshev(tile, e.pos) <= reach_range and SimLos.can_shoot(view.grid, tile, e.pos) and (bool(ctx.get("beam", false)) or not SimLos.is_covered(view.grid, tile, e.pos)):
 			lanes += 1
 	return mini(lanes, 2)
 
@@ -199,7 +200,7 @@ static func _threat_at(ctx: Dictionary, tile: Vector2i) -> Dictionary:
 	for e: SimUnit in ctx["enemies"]:
 		if SimLos.chebyshev(e.pos, tile) > e.max_range() or not SimLos.can_shoot(view.grid, e.pos, tile):
 			continue
-		if SimLos.is_covered(view.grid, e.pos, tile):
+		if not e.ignores_half_cover() and SimLos.is_covered(view.grid, e.pos, tile):
 			covered += 1
 		else:
 			open += 1
@@ -216,19 +217,45 @@ static func _best_shot(ctx: Dictionary, u: SimUnit, tile: Vector2i, prof: SimAIP
 	var best := {}
 	for e: SimUnit in ctx["enemies"]:
 		var d := SimLos.chebyshev(tile, e.pos)
-		if d > u.max_range() or not SimLos.can_shoot(view.grid, tile, e.pos) or SimLos.is_covered(view.grid, tile, e.pos):
+		if d > u.max_range() or not SimLos.can_shoot(view.grid, tile, e.pos):
+			continue
+		if not u.ignores_half_cover() and SimLos.is_covered(view.grid, tile, e.pos):
+			continue
+		if u.is_area() and d < SimConst.AREA_MIN_RANGE:
 			continue
 		var hp_left: int = e.hp - int(planned.get(e.id, 0))
 		if hp_left <= 0:
 			continue
 		var dmg := u.damage_at(d)
-		var eff := mini(dmg, hp_left)
-		var kills := dmg >= hp_left
+		var shots := u.burst_count()
+		var chance := u.hit_chance_at(d)
+		if shots > 1:
+			chance = maxi(SimConst.HIT_MIN, chance - SimConst.BURST_ACCURACY_PENALTY)
+		var eff := mini(dmg * shots, hp_left)
+		var kills := dmg * shots >= hp_left
 		# Expected value: a likelier shot is worth more (integer percent).
-		var value := (prof.w_damage * eff + (prof.w_kill if kills else 0)) * u.hit_chance_at(d) / 100
+		var value := (prof.w_damage * eff + (prof.w_kill if kills else 0)) * chance / 100
+		if u.is_area():
+			value += _splash_value(view, u, e, dmg, chance, prof)
 		if best.is_empty() or value > best["value"]:
 			best = {"target": e.id, "eff": eff, "value": value}
 	return best
+
+
+## What a blast on `target` adds beyond the target itself: other enemies caught in it count for, and
+## friends (the shooter's own side) count against twice as much. A merc who would shell their own
+## squad scores worse than one who waits for a cleaner shot.
+static func _splash_value(view: SimState, u: SimUnit, target: SimUnit, dmg: int, chance: int, prof: SimAIProfile) -> int:
+	var total := 0
+	for t in SimResolver.blast_tiles(view.grid, target.pos):
+		if t == target.pos:
+			continue
+		var v := view.unit_at(t)
+		if v == null:
+			continue
+		var worth := (prof.w_damage * mini(dmg, v.hp) + (prof.w_kill if dmg >= v.hp else 0)) * chance / 100
+		total += worth if v.team != u.team else -2 * worth
+	return total
 
 
 ## 8-way facing toward the nearest visible enemy, else the objective, else east.

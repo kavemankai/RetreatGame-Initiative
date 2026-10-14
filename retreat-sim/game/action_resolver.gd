@@ -201,7 +201,7 @@ static func _react(cs: CombatState, mover: SimUnit, res: ActionResult) -> void:
 		if not mover.alive:
 			return
 		cs.overwatch.erase(d.id)
-		var events := ShotResolver.fire(cs.sim, d, mover.id, cs.round_no, cs.next_tick(), not cs.fired.has(d.id))
+		var events := ShotResolver.fire(cs.sim, d, mover.id, cs.round_no, cs.next_tick(), not cs.fired.has(d.id), true)
 		(events[0] as Dictionary)["reaction"] = true
 		cs.fired[d.id] = true
 		for e: Dictionary in events:

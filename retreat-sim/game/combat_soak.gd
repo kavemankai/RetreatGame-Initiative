@@ -40,7 +40,11 @@ static func config_for(story: Dictionary, seed_: int, enemies := 0) -> Dictionar
 
 ## Plays one sandbox battle to a result or a limit. Returns the metrics for it.
 static func run_battle(story: Dictionary, seed_: int, keep_log := false, opts := {}) -> Dictionary:
-	var built := Sandbox.build(story, config_for(story, seed_, int(opts.get("enemies", 0))))
+	var cfg := config_for(story, seed_, int(opts.get("enemies", 0)))
+	var weapons: Array = opts.get("weapons", [])
+	for i in weapons.size():
+		cfg = Sandbox.with_gear(cfg, i, "weapon", String(weapons[i]))
+	var built := Sandbox.build(story, cfg)
 	built.state.seed = seed_
 	return play_state(CombatState.from_match(built), seed_, keep_log, opts)
 

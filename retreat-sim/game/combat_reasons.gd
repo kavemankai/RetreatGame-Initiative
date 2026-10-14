@@ -12,6 +12,7 @@ const TEXT := {
 	"no_target": "No valid target.",
 	"not_visible": "Target not visible.",
 	"out_of_range": "Out of range.",
+	"too_close": "Too close for that weapon.",
 	"no_los": "Line of sight blocked.",
 	"not_enough_ap": "Not enough AP.",
 	"unreachable": "Tile is unreachable.",

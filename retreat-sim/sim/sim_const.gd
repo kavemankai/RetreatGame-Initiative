@@ -50,6 +50,12 @@ const MOVE_FIRE_SHOT_FACTOR := 2
 ## Aim at or above this shaves one tick off a shot.
 const AIM_FAST_SHOT := 8
 const MIN_SHOT_TICKS := 2
+## Weapon traits (see items.json): a burst fires this many shots in one action, each this many
+## percentage points less likely to hit; an area weapon cannot be fired at a target closer than
+## AREA_MIN_RANGE tiles (its blast covers the target tile and the eight around it).
+const BURST_COUNT := 3
+const BURST_ACCURACY_PENALTY := 15
+const AREA_MIN_RANGE := 2
 ## Aim adds (aim / AIM_RANGE_DIVISOR) tiles of range.
 const AIM_RANGE_DIVISOR := 3
 ## CQB at or above this adds close-range damage.

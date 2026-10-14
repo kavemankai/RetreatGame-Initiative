@@ -6,6 +6,7 @@ extends SceneTree
 ##   godot --headless --path . -s tools/soak_combat.gd -- --battles=250 --first=500 --enemies=4
 ##   godot --headless --path . -s tools/soak_combat.gd -- --battles=40 --ap=10
 ##   godot --headless --path . -s tools/soak_combat.gd -- --battles=5 --mission=pellam_dock
+## --weapons=id,id,id,id puts those weapons in the squad's four hands (try minigun,frag_launcher,laser_rifle,long_rifle).
 ## --enemies=N fixes the enemy count (default alternates 4 and 8); --ap=N overrides AP per
 ## activation; --mission=ID plays an Act 1 mission instead of a random sandbox battle.
 
@@ -31,6 +32,8 @@ func _init() -> void:
 			opts["ap"] = int(a.substr(5))
 		elif a.begins_with("--mission="):
 			mission = a.substr(10)
+		elif a.begins_with("--weapons="):
+			opts["weapons"] = a.substr(10).split(",")
 		elif a == "--verbose":
 			verbose = true
 	var story: Dictionary = StoryData.load_dir("res://data/story")["data"]

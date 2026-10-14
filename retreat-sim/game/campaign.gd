@@ -188,7 +188,10 @@ static func apply_item(u: SimUnit, def: Dictionary) -> void:
 	u.damage = maxi(1, u.damage + int(st.get("damage", 0)))
 	u.weapon_shot_ticks = maxi(SimConst.MIN_SHOT_TICKS, u.weapon_shot_ticks + int(st.get("shot_ticks", 0)))
 	u.hit_bonus += int(st.get("accuracy", 0))
-	if def.has("trait"):
+	if def.get("slot", "") == "weapon":
+		u.weapon_class = String(def.get("class", "rifle"))
+		u.weapon_trait = String(def.get("trait", ""))  # a weapon's trait is kept apart from the mod's
+	elif def.has("trait"):
 		u.gear_trait = def["trait"]
 		if u.gear_trait == "scope":
 			u.sight_range += SimConst.SCOPE_SIGHT
@@ -212,7 +215,8 @@ func stats_with_gear(slot: int, gear: Dictionary) -> Dictionary:
 		for kind in GEAR_SLOTS:
 			apply_item(u, item(String(gear.get(kind, ""))))
 	return {"hp": u.hp, "speed": u.speed, "aim": u.aim, "cqb": u.cqb, "morale": u.morale, "sight": u.sight_range,
-		"range": u.max_range(), "damage": u.damage, "shot_cost": u.shot_ticks(), "to_hit": u.hit_bonus, "trait": u.gear_trait}
+		"range": u.max_range(), "damage": u.damage, "shot_cost": u.shot_ticks(), "to_hit": u.hit_bonus, "trait": u.gear_trait,
+		"weapon_class": u.weapon_class, "weapon_trait": u.weapon_trait}
 
 
 ## A slot's stats with what it wears now.
