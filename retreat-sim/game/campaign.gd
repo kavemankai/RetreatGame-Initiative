@@ -79,7 +79,7 @@ func item_summary(id: String) -> String:
 		return ""
 	var parts: Array[String] = []
 	var st: Dictionary = def.get("stats", {})
-	var labels := {"hp": "%+d hp", "morale": "%+d morale", "speed": "%+d speed", "range": "%+d range", "damage": "%+d damage", "shot_ticks": "%+d ticks per shot", "accuracy": "%+d%% to hit"}
+	var labels := {"hp": "%+d hp", "morale": "%+d morale", "speed": "%+d speed", "range": "%+d range", "damage": "%+d damage", "shot_ticks": "%+d AP per shot", "accuracy": "%+d%% to hit"}
 	for key in ["hp", "morale", "speed", "range", "damage", "shot_ticks", "accuracy"]:
 		if st.has(key):
 			parts.append(labels[key] % int(st[key]))
@@ -171,6 +171,48 @@ static func apply_item(u: SimUnit, def: Dictionary) -> void:
 		if u.gear_trait == "scope":
 			u.sight_range += SimConst.SCOPE_SIGHT
 			u.weapon_range += SimConst.SCOPE_RANGE
+
+
+# --- stats as the sim will see them -------------------------------------------------
+
+## The stats compared when asking "what would this item change?", in display order.
+const DELTA_STATS: Array[String] = ["hp", "morale", "speed", "sight", "range", "damage", "shot_cost", "to_hit"]
+
+
+## The stats a slot would field with `gear` ({armour, weapon, mod} item ids) folded in, built the
+## same way a mission builds its unit, so cards and comparisons show exactly what combat uses. A
+## hollow fields bare. Keys: hp, speed, aim, cqb, morale, sight, range (tiles), damage, shot_cost
+## (AP), to_hit (percentage points from gear), trait.
+func stats_with_gear(slot: int, gear: Dictionary) -> Dictionary:
+	var is_hollow := slot_status(slot) == "hollow"
+	var u := _unit(slot, 0, Vector2i.ZERO, _roster[slot]["stats"], is_hollow)
+	if not is_hollow:
+		for kind in GEAR_SLOTS:
+			apply_item(u, item(String(gear.get(kind, ""))))
+	return {"hp": u.hp, "speed": u.speed, "aim": u.aim, "cqb": u.cqb, "morale": u.morale, "sight": u.sight_range,
+		"range": u.max_range(), "damage": u.damage, "shot_cost": u.shot_ticks(), "to_hit": u.hit_bonus, "trait": u.gear_trait}
+
+
+## A slot's stats with what it wears now.
+func effective_stats(slot: int) -> Dictionary:
+	return stats_with_gear(slot, gear_of(slot))
+
+
+## What putting `item_id` on `slot`'s `kind` would change: [{stat, from, to, delta, better}] for each
+## stat that moves (a dearer shot is worse), and a "trait" row if the trait changes. Changes nothing.
+func equip_deltas(slot: int, kind: String, item_id: String) -> Array[Dictionary]:
+	var now := effective_stats(slot)
+	var gear := gear_of(slot)
+	gear[kind] = item_id
+	var then := stats_with_gear(slot, gear)
+	var out: Array[Dictionary] = []
+	for stat in DELTA_STATS:
+		var d := int(then[stat]) - int(now[stat])
+		if d != 0:
+			out.append({"stat": stat, "from": now[stat], "to": then[stat], "delta": d, "better": d < 0 if stat == "shot_cost" else d > 0})
+	if then["trait"] != now["trait"]:
+		out.append({"stat": "trait", "from": now["trait"], "to": then["trait"], "delta": 0, "better": then["trait"] != ""})
+	return out
 
 
 # --- roster ---------------------------------------------------------------------

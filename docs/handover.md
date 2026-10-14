@@ -1,5 +1,13 @@
 # Handover log
 
+## 2026-10-15: UI plan Phase B done (shared UI kit)
+- **Data (pure, tested):** `Campaign.stats_with_gear`, `effective_stats` and `equip_deltas` give the stats a merc would field with (built the same way a mission builds its unit) and what an item would change, with direction (a dearer shot is worse). `UiModel` (`view/ui/ui_model.gd`) turns campaign data into card info (`merc_info`, `item_info`, `resources_info`, `delta_line`, stat caps hp 6, sight 9, others 10).
+- **Widgets (`view/ui/`, no art):** `UiTheme` (palette, 56 px minimum tap), `TapPanel` (a tap only counts if press and release are within 12 px and the pointer did not wander, so scrolling never selects; events pass through so a ScrollContainer scrolls), `MercCard`, `ItemCard`, `StatRow`, `StatPips`, `SlotGlyph` (drawn shield, rifle and diamond; an icon at `res://assets/items/<id>.png` is used if it exists), `ResourceBar` (wraps on narrow screens), `ScrollList` (vertical only).
+- **Hosting:** `campaign_view._host(screen, on_close)` shows a built screen (a Control with `done`/`back` signals from `view/screens/`) in place of the text page; any `_show` clears it. `KitGallery` (`--demo=kit`, `--demo=kit_items`) shows every widget with real campaign data.
+- **Wording fix found on the way:** item summaries said "ticks per shot"; now "AP per shot" (campaign, sandbox view, test, roadmap).
+- **Tests:** 469 tests, 2320 checks, 0 failed (`tests/test_ui_kit.gd` adds 10). Mutation-checked: tap slop, wander-away, shot-cost direction, stat colouring. A review of screenshots caught a merc name label clipped to nothing; fixed and now tested.
+- **Verified on screen** at 540x960 and 360x800 (kit gallery). Not on a phone yet. Next: C (equipment screens), D (levelling), E (map), F (pre/post combat).
+
 ## 2026-10-15: UI plan Phase A done (campaign missions on the activation engine)
 - **What changed:** real campaign missions now launch on the activation engine (`campaign_view._deploy` goes to `initiative.tscn`; the "planned" ruleset toggle still sends them to the old screen as the rollback). The battle screen hands a finished mission to the campaign through `Session.pending_outcome`, and `_apply_outcome` applies it exactly once as before. In a campaign mission the top button is **Withdraw** (tap twice to confirm; failure with survivors, same as planned mode), not Leave.
 - **Outcome:** `MissionBuilder.outcome_for(campaign, cs, withdrawn)` returns the old keys plus `rounds`, `survivors` and `units` (one JSON-safe row per fielded merc: slot, alive, shots, hits, kills, hits_taken, steps). `outcome_of(...)` is the shared core; `outcome()` for the planned mode is unchanged in behaviour. New unit counters `hits_landed` and `kills` are bumped in `ShotResolver`.

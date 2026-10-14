@@ -24,7 +24,7 @@ Status key: **Missing** = not built, **Partial** = built but incomplete, **Tune*
 | B5 | **Overwatch cone choice** | Partial | The Watch button picks a direction automatically (toward the nearest visible enemy). Let the player choose the facing. | S |
 | B6 | **Interrupt rules review** | Superseded | The activation engine has no automatic interrupts, only armed one-shot overwatch (4 AP). Interrupts remain in the legacy `InitiativeMatch` only. | - |
 | B7 | **Enemy AI in AP mode** | Done (core) | `ActivationAI`: one legal action at a time, legality check, caps, decision log, lane weight, walking-distance objective; 1,000-battle soak clean. Still open: patrol routes (A3), retreat when hurt, memory of unseen shooters. | M |
-| B8 | **Weapon variety** | Partial | Gear changes range, damage, ticks per shot and accuracy. Add burst/auto fire, thrown items, and reload or ammo if wanted. | M |
+| B8 | **Weapon variety** | Partial | Gear changes range, damage, AP per shot and accuracy. Add burst/auto fire, thrown items, and reload or ammo if wanted. | M |
 | B9 | **Wounds and bleeding** | Missing | HP is the only damage state. JA2 has wounds that bleed and healing items. | M |
 | B10 | **Items in play** | Missing | Medkit, grenade, smoke. Needs inventory per merc and an item-use AP cost. | M |
 

@@ -217,6 +217,6 @@ func test_item_summary_describes_stats_and_traits() -> void:
 	var c := new_campaign()
 	check(c.item_summary("compact_vest") == "+1 hp", "vest: %s" % c.item_summary("compact_vest"))
 	var carbine := c.item_summary("carbine")
-	check(carbine.contains("-1 range") and carbine.contains("-1 ticks per shot") and carbine.contains("-5% to hit"), "carbine: %s" % carbine)
+	check(carbine.contains("-1 range") and carbine.contains("-1 AP per shot") and carbine.contains("-5% to hit"), "carbine: %s" % carbine)
 	check(c.item_summary("scope").contains("+2 sight"), "a mod shows its trait text")
 	check(c.item_summary("nope") == "", "unknown items have no summary")

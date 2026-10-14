@@ -275,7 +275,7 @@ func _item_summary(id: String) -> String:
 		if it["id"] == id:
 			var parts: Array[String] = []
 			var st: Dictionary = it.get("stats", {})
-			var labels := {"hp": "%+d hp", "morale": "%+d morale", "speed": "%+d speed", "range": "%+d range", "damage": "%+d damage", "shot_ticks": "%+d ticks per shot", "accuracy": "%+d%% to hit"}
+			var labels := {"hp": "%+d hp", "morale": "%+d morale", "speed": "%+d speed", "range": "%+d range", "damage": "%+d damage", "shot_ticks": "%+d AP per shot", "accuracy": "%+d%% to hit"}
 			for key in labels:
 				if st.has(key):
 					parts.append(labels[key] % int(st[key]))

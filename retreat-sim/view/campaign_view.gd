@@ -22,6 +22,8 @@ const COL_HOLLOW := "#6f7885"
 const SPEAKER_COLORS: Array[String] = ["#ffd479", "#8fd0ff", "#9be39b", "#ffa8a8", "#d0b0ff", "#ffbd80", "#a8e0ff", "#e8e8a0"]
 
 var _story: Dictionary
+var _col: VBoxContainer           # the text page column (hidden while a built screen is hosted)
+var _hosted: Control
 var _picked: Array[int] = []
 var _mission_id := ""   # the mission (or card) being briefed
 var _title: Label
@@ -80,6 +82,7 @@ func _build_ui() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
 	margin.add_child(col)
+	_col = col
 	_title = Label.new()
 	_title.add_theme_font_size_override("font_size", 26)
 	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -107,7 +110,30 @@ func _apply_layout() -> void:
 	theme.default_font_size = FONT_PORTRAIT if _portrait else FONT_LANDSCAPE
 
 
+## Shows a built screen (a Control from view/screens) in place of the text page. When it emits `done`
+## or `back`, it goes away and `on_close` runs (usually the next page). Any `_show` also clears it.
+func _host(screen: Control, on_close: Callable) -> void:
+	_unhost()
+	_col.visible = false
+	_hosted = screen
+	_col.get_parent().add_child(screen)
+	for signal_name in ["done", "back"]:
+		if screen.has_signal(signal_name):
+			screen.connect(signal_name, func() -> void:
+				_unhost()
+				on_close.call())
+
+
+func _unhost() -> void:
+	if _hosted != null:
+		_hosted.queue_free()
+		_hosted = null
+	if _col != null:
+		_col.visible = true
+
+
 func _show(title: String, bbcode: String, buttons: Array, status: String = "", columns: int = 1, footer: Array = []) -> void:
+	_unhost()
 	_title.text = title
 	_status.text = status
 	_status.visible = status != ""
@@ -673,6 +699,17 @@ func _run_demo(name: String) -> void:
 		"squad":
 			_start_new()
 			_squad_choice()
+		"kit":
+			_start_new()
+			Session.campaign.stash.append_array(["carbine", "marksman_rifle", "marksman_rifle", "plate_carrier", "scope"])
+			Session.campaign.equip(1, "scope")
+			Session.campaign.equip(1, "plate_carrier")
+			_host(KitGallery.new().setup(Session.campaign), _menu)
+		"kit_items":
+			_start_new()
+			Session.campaign.stash.append_array(["carbine", "marksman_rifle", "marksman_rifle", "plate_carrier", "scope", "sprint_boots"])
+			Session.campaign.equip(1, "plate_carrier")
+			_host(KitGallery.new().setup(Session.campaign, false), _menu)
 		"loadout":
 			_start_new()
 			Session.campaign.stash.append_array(["carbine", "scope", "mourning_cloak"])
