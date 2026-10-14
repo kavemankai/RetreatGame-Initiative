@@ -180,16 +180,20 @@ func _resources(c: Campaign) -> String:
 
 # --- menu -------------------------------------------------------------------------------
 
-func _menu() -> void:
+func _menu(status: String = "") -> void:
 	var tagline := "The war is over and nobody has told the army."
-	var buttons: Array = [{"text": "New campaign", "call": _new_pressed}]
+	var buttons: Array = []
+	var resumable := ResumeStore.peek()
+	if not resumable.is_empty():
+		buttons.append({"text": "Resume battle: %s" % resumable["label"], "call": _resume_battle})
+	buttons.append({"text": "New campaign", "call": _new_pressed})
 	if FileAccess.file_exists(SAVE_PATH):
 		buttons.append({"text": "Continue campaign", "call": _load_campaign})
 	buttons.append({"text": "Quick skirmish", "call": _quick_skirmish})
 	buttons.append({"text": "Act 1 level test", "call": _level_test_menu})
 	buttons.append({"text": "Sandbox (set stats, gear, enemies)", "call": _open_sandbox})
 	buttons.append({"text": "Sound: %s" % ("off" if _sound.settings.muted else "on"), "call": _toggle_sound})
-	_show(_story["world"]["title"], "[i]%s[/i]\n\nYou command the 9th Rearguard, the last real people in a ghost army, escorting 6,200 civilians along the Reliquary Lanes toward a refuge that may not let you in.\n\nBehind you comes a courteous man who only wants you to be counted." % tagline, buttons)
+	_show(_story["world"]["title"], "[i]%s[/i]\n\nYou command the 9th Rearguard, the last real people in a ghost army, escorting 6,200 civilians along the Reliquary Lanes toward a refuge that may not let you in.\n\nBehind you comes a courteous man who only wants you to be counted." % tagline, buttons, status)
 
 
 const LEVEL_TEST_PITCH := {
@@ -206,12 +210,20 @@ func _level_test_menu() -> void:
 	for id: String in LEVEL_TEST_PITCH:
 		buttons.append({"text": LEVEL_TEST_PITCH[id], "call": _start_level_test.bind(id)})
 	buttons.append({"text": "Ruleset: %s (tap to switch)" % Session.RULESET_LABEL[Session.ruleset], "call": _toggle_ruleset})
-	_show("Act 1 level test", "Pick a map. Each uses the new layout, enemy roles and goal. Nothing here is saved.", buttons, "", 1, [{"text": "Back", "call": _menu}])
+	_show("Act 1 level test", "Pick a map. Each uses the new layout, enemy roles and goal. Starting one replaces any battle you could resume.", buttons, "", 1, [{"text": "Back", "call": _menu}])
 
 
 func _toggle_ruleset() -> void:
 	Session.ruleset = Session.next_ruleset(Session.ruleset)
 	_level_test_menu()
+
+
+## Picks the battle up exactly where the autosave left it (no undo: it is the last committed action).
+func _resume_battle() -> void:
+	if not ResumeStore.enter_session(_story):
+		_menu("That battle could not be resumed and was discarded.")
+		return
+	get_tree().change_scene_to_file(INITIATIVE_SCENE)
 
 
 func _open_sandbox() -> void:

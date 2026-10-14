@@ -21,6 +21,8 @@ static var ruleset := "activation"
 ## Playing the sandbox: leaving returns to its setup screen. The config outlives reset() so edits stick.
 static var sandbox := false
 static var sandbox_cfg: Dictionary = {}
+## A battle restored from the autosave (ResumeStore), waiting for the battle screen to pick it up.
+static var resume_cs: CombatState
 ## Set when a campaign match ends; the campaign screen applies it once.
 static var pending_outcome: Dictionary = {}
 
@@ -46,4 +48,5 @@ static func reset() -> void:
 	level_test = false
 	ruleset = "activation"
 	sandbox = false
+	resume_cs = null
 	pending_outcome = {}

@@ -45,6 +45,14 @@ func start() -> void:
 	_sync()
 
 
+## Picks up a restored encounter (CombatSave) instead of starting one. If the save was taken on an
+## enemy unit's activation, those activations are played now so a merc is up; they come back in
+## opening_beats like at the start of a fight.
+func resume() -> void:
+	opening_beats = _run_enemy_activations()
+	_sync()
+
+
 # --- state, as the screen reads it ----------------------------------------------------
 
 func _sync() -> void:

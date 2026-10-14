@@ -32,6 +32,7 @@ var _busy := false
 var _overview := false
 var _activation := false      # the activation engine (ActivationMatch) rather than live-AP turns
 var _last_round := 0
+var _resumed := false          # this battle was restored from the autosave
 var _portrait := false
 
 var _board: BoardView
@@ -62,12 +63,21 @@ func _ready() -> void:
 		_demo_campaign(String(args["campaign"]))
 	if args.has("ruleset"):
 		Session.ruleset = String(args["ruleset"])
+	if args.has("resume") and Session.current_match == null:
+		ResumeStore.enter_session(StoryData.load_dir("res://data/story")["data"])
 	if Session.current_match == null:
 		get_tree().change_scene_to_file("res://view/campaign.tscn")
 		return
 	_activation = Session.ruleset == "activation"
 	var opening: Array[Dictionary] = []
-	if _activation:
+	if _activation and Session.resume_cs != null:
+		var restored := ActivationMatch.new(Session.resume_cs)
+		Session.resume_cs = null
+		restored.resume()
+		_im = restored
+		_resumed = true
+		opening = restored.opening_beats
+	elif _activation:
 		var am := ActivationMatch.make(Session.current_match)
 		if Session.sandbox:
 			am.cs.config.max_ap = Sandbox.ap_of(Session.sandbox_cfg)
@@ -83,10 +93,14 @@ func _ready() -> void:
 	_board.set_level_theme(_im.theme)
 	_sound.set_ambient(_im.theme)
 	_sound.set_music(_act())
-	_log_line("[color=#ffd479]%s[/color]" % ("Round 1." if _activation else "Turn 1: your move."))
+	if _resumed:
+		_log_line("[color=#ffd479]Battle resumed at round %d.[/color]" % _im.turn)
+	else:
+		_log_line("[color=#ffd479]%s[/color]" % ("Round 1." if _activation else "Turn 1: your move."))
 	_last_round = _im.turn
 	_select_active()
 	_refresh()
+	_autosave()
 	if not opening.is_empty():
 		_play(opening, true)
 	if args.has("do"):
@@ -306,6 +320,18 @@ func _say(text: String, ok: bool = true, neutral: bool = false) -> void:
 	_msg.add_theme_color_override("font_color", COL_NEUTRAL if neutral else (COL_OK if ok else COL_BAD))
 
 
+## The one autosave slot (see ResumeStore): after every command and when the app is paused.
+## Only the activation engine's level test and sandbox battles are saved; a finished fight clears it.
+func _autosave() -> void:
+	if _activation and Session.level_test and _im != null:
+		ResumeStore.save((_im as ActivationMatch).cs, {"kind": ResumeStore.KIND_SANDBOX if Session.sandbox else ResumeStore.KIND_LEVEL_TEST, "mission_id": Session.mission_id})
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT or what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_autosave()
+
+
 ## A short label for the initiative strip.
 func _short_name(id: int) -> String:
 	return _name_of(id).left(5)
@@ -453,6 +479,7 @@ var _enemy_seen := 0    # how many of those the squad could actually see
 
 
 func _play(beats: Array[Dictionary], ends_turn: bool = false) -> void:
+	_autosave()  # the command has already been applied to the state
 	_enemy_events = 0
 	_enemy_seen = 0
 	for b in beats:
@@ -573,6 +600,7 @@ func _refresh(redraw_board: bool = true) -> void:
 		_title.text = "Turn %d  %s" % [_im.turn, "your move" if _im.active_team == _im.player_team else "enemy"]
 	_banner.visible = _im.is_over()
 	if _im.is_over():
+		ResumeStore.clear()
 		_banner.text = "VICTORY" if _im.winner == _im.player_team else ("DRAW" if _im.winner == SimMatch.DRAW else "DEFEAT")
 		_end_btn.text = "Continue"
 		_end_btn.disabled = false

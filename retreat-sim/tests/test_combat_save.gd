@@ -164,3 +164,82 @@ func test_previews_and_legality_checks_never_change_the_state() -> void:
 	var am := ActivationMatch.new(cs)
 	am.route_preview(id, Vector2i(6, 6))
 	check(CombatSave.to_json(cs) == before, "previews, problem() and route_preview left no trace")
+
+
+func test_the_resume_store_peeks_loads_continues_and_clears() -> void:
+	var path := "user://resume_test.json"
+	ResumeStore.clear(path)
+	check(ResumeStore.peek(path).is_empty(), "no save: nothing to resume")
+	var cs := sandbox_cs(4)
+	play(cs, new_ais(cs), at_boundary(15))
+	check(ResumeStore.save(cs, {"kind": ResumeStore.KIND_SANDBOX}, path), "saved mid-fight")
+	var meta := ResumeStore.peek(path)
+	var label := String(meta.get("label", ""))
+	check(meta.get("kind") == "sandbox" and label.contains("round %d" % cs.round_no) and label.contains("squad"), "the label says what it is: '%s'" % label)
+	check(not label.to_lower().contains("enemy"), "and gives nothing away about unseen enemies")
+	var loaded := ResumeStore.load_battle(story, path)
+	check(not loaded.is_empty() and loaded["campaign"] != null and loaded["match"] != null, "it loads with a campaign and a match for the screen")
+	if loaded.is_empty():
+		return
+	var back: CombatState = loaded["cs"]
+	check(CombatSave.to_json(back) == CombatSave.to_json(cs), "the state is exactly the saved one")
+	play(cs, new_ais(cs))
+	play(back, new_ais(back))
+	check(final_signature(cs) == final_signature(back), "the resumed battle ends exactly as the original does")
+	check(not ResumeStore.save(back, {"kind": ResumeStore.KIND_SANDBOX}, path) and ResumeStore.peek(path).is_empty(), "a finished fight is never saved, and its old save is cleared")
+
+
+func test_a_level_test_resume_rebuilds_the_mission_and_its_goal() -> void:
+	var path := "user://resume_test.json"
+	var campaign := Campaign.new_game(story)
+	var card: Dictionary = campaign.mission_or_card("pellam_dock")
+	var slots: Array = campaign.available_slots().slice(0, int(card["squad_size"]))
+	var cs := prepared(CombatState.from_match(MissionBuilder.build(campaign, "pellam_dock", slots)))
+	play(cs, new_ais(cs), func(c: CombatState, act: CombatAction) -> bool: return act.type == CombatAction.END_TURN and c.goal.rounds_done >= 1 and not c.is_over())
+	check(ResumeStore.save(cs, {"kind": ResumeStore.KIND_LEVEL_TEST, "mission_id": "pellam_dock"}, path), "saved")
+	check(String(ResumeStore.peek(path)["label"]).begins_with("Pellam Dock"), "the label names the mission")
+	var loaded := ResumeStore.load_battle(story, path)
+	check(not loaded.is_empty(), "it loads")
+	if not loaded.is_empty():
+		var back: CombatState = loaded["cs"]
+		check(back.goal != null and back.goal.progress() == cs.goal.progress(), "the goal and its progress are back")
+		play(cs, new_ais(cs))
+		play(back, new_ais(back))
+		check(final_signature(cs) == final_signature(back), "the mission plays out identically")
+	ResumeStore.clear(path)
+
+
+func test_unusable_resume_files_are_discarded_not_offered() -> void:
+	var path := "user://resume_test.json"
+	var write := func(text: String) -> void:
+		var f := FileAccess.open(path, FileAccess.WRITE)
+		f.store_string(text)
+	write.call("garbage")
+	check(ResumeStore.peek(path).is_empty() and ResumeStore.load_battle(story, path).is_empty(), "garbage: no resume offered")
+	check(not FileAccess.file_exists(path), "and the dead file is removed")
+	var cs := sandbox_cs(4)
+	var good := {"meta": {"kind": "sandbox", "label": "x"}, "combat": CombatSave.to_dict(cs)}
+	var old: Dictionary = good.duplicate(true)
+	old["combat"]["version"] = 99
+	write.call(JSON.stringify(old))
+	check(ResumeStore.peek(path).is_empty() and ResumeStore.load_battle(story, path).is_empty(), "another save version: no resume offered")
+	var unknown: Dictionary = good.duplicate(true)
+	unknown["meta"] = {"kind": "level_test", "mission_id": "no_such_mission", "label": "x"}
+	write.call(JSON.stringify(unknown))
+	check(ResumeStore.load_battle(story, path).is_empty() and not FileAccess.file_exists(path), "an unknown mission is discarded")
+	ResumeStore.clear(path)
+
+
+func test_resuming_on_an_enemy_activation_catches_up_to_a_player_unit() -> void:
+	var cs := sandbox_cs(4)
+	play(cs, new_ais(cs), func(c: CombatState, act: CombatAction) -> bool:
+		return act.type == CombatAction.END_TURN and not c.is_over() and (c.sim.units[c.active_id] as SimUnit).team == c.ai_team and c.ledger.size() > 6)
+	check(not cs.is_over() and (cs.sim.units[cs.active_id] as SimUnit).team == cs.ai_team, "setup: saved while an enemy unit is up")
+	var back := CombatSave.from_json(CombatSave.to_json(cs), cs.sim.grid)
+	var am := ActivationMatch.new(back)
+	am.resume()
+	check(am.is_over() or (back.sim.units[am.active_unit()] as SimUnit).team == back.player_team, "after resuming a merc is up (or the fight is over)")
+	check(not am.opening_beats.is_empty(), "the enemy activations it played are returned for the screen")
+	var fresh := ActivationMatch.new(CombatSave.from_json(CombatSave.to_json(sandbox_cs(4)), cs.sim.grid))
+	fresh.resume()
+	check(fresh.turn == 1 and fresh.can_act(fresh.active_unit()) and not fresh.strip().is_empty(), "resuming at a merc's activation changes nothing and the strip works")

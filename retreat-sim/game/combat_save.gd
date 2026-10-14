@@ -31,7 +31,7 @@ static func to_dict(cs: CombatState) -> Dictionary:
 		"activations": _pairs(cs.activations), "ap": _pairs(cs.ap), "overwatch": _tile_pairs(cs.overwatch),
 		"suppressed": _keys(cs.suppressed), "broken": _keys(cs.broken), "fired": _keys(cs.fired),
 		"max_ap": cs.config.max_ap, "overwatch_cost": cs.config.overwatch_cost, "objective": [cs.objective.x, cs.objective.y],
-		"assignments": assign, "goal": cs.goal.progress() if cs.goal != null else {}, "reinforcements": waiting, "notices": cs.notices.duplicate()}
+		"assignments": assign, "theme": cs.theme, "goal": cs.goal.progress() if cs.goal != null else {}, "reinforcements": waiting, "notices": cs.notices.duplicate()}
 
 
 ## Rebuilds the encounter. `grid` is the map's grid and `goal` the mission's fresh goal (or null).
@@ -81,6 +81,7 @@ static func from_dict(d: Dictionary, grid: SimGrid, goal: SimGoal = null) -> Com
 	cs.objective = Vector2i(int(obj[0]), int(obj[1]))
 	for p: Array in d["assignments"]:
 		cs.assignments[int(p[0])] = String(p[1])
+	cs.theme = String(d.get("theme", cs.theme))
 	cs.profiles = SimAIProfile.load_file(SimMatch.PROFILE_FILE)["profiles"]
 	cs.goal = goal
 	if goal != null:
