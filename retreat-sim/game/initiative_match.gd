@@ -323,79 +323,24 @@ func _interrupts(mover: SimUnit, old_pos: Vector2i, evs: Array) -> bool:
 	return fired
 
 
-## One shot, resolved now with the planned mode's rules and dice. Returns its events.
+## One shot, resolved now with the shared rules and dice (ShotResolver). Returns its events.
 func _fire(shooter: SimUnit, target_id: int) -> Array:
-	var target: SimUnit = state.units[target_id]
-	var ev := {"type": "shot", "tick": _next_tick(), "unit": shooter.id, "target": target_id}
-	ev.merge(SimResolver.evaluate_shot(state.grid, shooter, shooter.pos, target, not _fired.has(shooter.id)))
+	var opener_ready := not _fired.has(shooter.id)
+	var out := ShotResolver.fire(state, shooter, target_id, turn, _next_tick(), opener_ready)
 	_fired[shooter.id] = true
-	var out: Array = [ev]
-	if ev["result"] == "invalid":
-		return out
-	var fired_before := int(shooter.counters.get("shots_fired", 0))
-	if ev["result"] == "hit":
-		var roll: int = state.fixed_roll
-		if roll < 0:
-			roll = SimDice.d100(state.seed, turn, _clock, shooter.id, SimConst.HIT_DIE_OFFSET + fired_before)
-		ev["roll"] = roll
-		if roll > int(ev["chance"]):
-			ev["result"] = "miss"
-			ev.erase("damage")
-	shooter.bump("shots_fired")
-	if ev["result"] != "hit":
-		return out
-	target.hp -= int(ev["damage"])
-	target.bump("hits_taken")
-	if target.hp <= 0:
-		target.alive = false
-		out.append({"type": "death", "tick": _clock, "unit": target.id, "killer": shooter.id})
-	else:
-		var m := _morale(target)
-		if not m.is_empty():
-			out.append(m)
+	for e: Dictionary in out:
+		if e["type"] != "morale":
+			continue
+		if e["result"] == "steady":
+			_suppressed[int(e["unit"])] = true
+		else:
+			_broken[int(e["unit"])] = true
+			ap[int(e["unit"])] = 0
 	return out
 
 
-func _morale(u: SimUnit) -> Dictionary:
-	if u.is_drone:
-		return {}
-	var wounds := int(u.counters.get("hits_taken", 0))
-	var need := u.morale + SimConst.MORALE_BONUS - wounds
-	if state.grid.has_cover_nearby(u.pos):
-		need += SimConst.MORALE_COVER_BONUS
-		if u.gear_trait == "bracing":
-			need += SimConst.BRACING_MORALE_BONUS
-	var roll := SimDice.d10(state.seed, turn, _clock, u.id, wounds)
-	var steady := roll <= need
-	if steady:
-		_suppressed[u.id] = true
-	else:
-		_broken[u.id] = true
-		ap[u.id] = 0
-	return {"type": "morale", "tick": _clock, "unit": u.id, "roll": roll, "need": need, "result": "steady" if steady else "broken"}
-
-
 func _check_winner() -> void:
-	if goal != null and goal.won:
-		winner = player_team
-		return
-	var mine := 0
-	var theirs := 0
-	for id in state.units:
-		var u: SimUnit = state.units[id]
-		if u.alive:
-			if u.team == player_team:
-				mine += 1
-			else:
-				theirs += 1
-	if mine > 0 and theirs > 0:
-		winner = NO_WINNER
-	elif mine > 0:
-		winner = player_team
-	elif theirs > 0:
-		winner = ai_team
-	else:
-		winner = DRAW
+	winner = CombatState.winner_for(state, goal, player_team, ai_team)
 
 
 func _spawn_reinforcements() -> void:

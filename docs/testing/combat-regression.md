@@ -19,3 +19,6 @@ Result: **392 tests, 1910 checks, 0 failed.** A few "String formatting error" li
 - AI activation cap, repeat-state detector, illegal-action rate of zero.
 - Same seed plus initial state plus commands gives an identical event log (partly covered by `test_the_mode_is_deterministic_with_real_dice`).
 - Campaign smoke test: the campaign still loads and exits a battle with the new mode on.
+
+## Phase 1 update (2026-10-14)
+**408 tests, 2001 checks, 0 failed.** `tests/test_activation.gd` covers: config load and fallback, queue order across teams, seeded tie-break and replay, one activation per round, dead-unit skip, AP refill and expiry, rejections with no side effects, hidden targets, ledger arithmetic, overwatch cost and expiry, victory stops the scheduler, invariant checker catches corruption, reinforcements at round start, shared shot resolver parity, 25 scripted 4v4 fights with invariants after every command, and same-seed replay. Still open: 1,000-seed soak (Phase 5), AI illegal-action rate (Phase 3), save/resume, campaign smoke with the new mode.

@@ -1,6 +1,6 @@
 # Initiative combat spec: as built vs the redesign plan
 
-Status 2026-10-14. "Built" is `InitiativeMatch` today; "Plan" is `docs/combat/initiative-combat-plan.md`. Rows marked **decision** need an owner call before Phase 1 starts; the recommendation is mine and nothing has been changed yet.
+Status 2026-10-14. **Decided by the owner: D1 adopt the plan (flag for the old mode), D2 config table at current values, D3 arm for 4 AP, D4 interrupts behind a flag, default off. D5 to D8 as recommended.** "Built" is `InitiativeMatch` today; "Plan" is `docs/combat/initiative-combat-plan.md`. Rows marked **decision** need an owner call before Phase 1 starts; the recommendation is mine and nothing has been changed yet.
 
 | # | Topic | Built | Plan | Recommendation |
 |---|---|---|---|---|
