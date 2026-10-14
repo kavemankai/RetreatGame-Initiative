@@ -13,7 +13,7 @@ Stress dropped (field left inert); growth is XP with a pick of 1 of 3; injury dr
 ## Order of work (each phase: tests first, mutation check, small commit, handover note)
 A -> B -> C, D, E (any order) -> F.
 
-### A. Campaign missions on the activation engine (prerequisite)
+### A. Campaign missions on the activation engine (prerequisite) — DONE 2026-10-15 (see docs/handover.md)
 - `campaign_view._deploy` launches `INITIATIVE_SCENE`; planned mode stays behind `Session.ruleset == "planned"` as the rollback.
 - `InitiativeView` end-of-fight builds a campaign outcome from `ActivationMatch` and sets `Session.pending_outcome` (same dict `MissionBuilder.outcome` returns, so `_apply_outcome` and `Campaign.complete_mission` are untouched), then returns to `campaign.tscn`.
 - Extend the outcome with `survivors`, per-slot `{shots, hits, kills, hits_taken, steps}` and `rounds`. Add `hits_landed` and `kills` counters in `game/shot_resolver.gd` (bump on the shooter).

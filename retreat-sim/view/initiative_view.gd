@@ -50,6 +50,8 @@ var _end_btn: Button
 var _watch_btn: Button
 var _map_btn: Button
 var _mute_btn: Button
+var _leave_btn: Button
+var _withdraw_armed := false   # a first tap on Withdraw, waiting for the confirming second tap
 var _sound: SoundBoard
 var _timer: Timer
 
@@ -60,7 +62,7 @@ func _ready() -> void:
 	if args.has("sandbox") and Session.current_match == null:
 		_demo_sandbox()
 	elif args.has("campaign") and Session.current_match == null:
-		_demo_campaign(String(args["campaign"]))
+		_demo_campaign(String(args["campaign"]), args.has("live"))
 	if args.has("ruleset"):
 		Session.ruleset = String(args["ruleset"])
 	if args.has("resume") and Session.current_match == null:
@@ -118,14 +120,14 @@ func _parse_args() -> Dictionary:
 	return out
 
 
-func _demo_campaign(mission_id: String) -> void:
+func _demo_campaign(mission_id: String, live := false) -> void:
 	var story: Dictionary = StoryData.load_dir("res://data/story")["data"]
 	Session.reset()
 	Session.campaign = Campaign.new_game(story)
 	var m: Dictionary = Session.campaign.mission_or_card(mission_id)
 	var slots: Array = Session.campaign.available_slots().slice(0, int(m["squad_size"]))
 	Session.mission_id = mission_id
-	Session.level_test = true
+	Session.level_test = not live  # --live plays it as a real campaign mission (outcome goes to the campaign)
 	Session.current_match = MissionBuilder.build(Session.campaign, mission_id, slots)
 
 
@@ -179,7 +181,9 @@ func _build_ui() -> void:
 	top.add_child(_map_btn)
 	_mute_btn = _small_button("", _toggle_mute)
 	top.add_child(_mute_btn)
-	top.add_child(_small_button("Leave", _leave))
+	_leave_btn = _small_button("Withdraw" if _is_campaign_mission() else "Leave", _leave)
+	_leave_btn.custom_minimum_size = Vector2(88, 40)
+	top.add_child(_leave_btn)
 	_update_mute_label()
 
 	_goal_label = Label.new()
@@ -287,11 +291,36 @@ func _update_mute_label() -> void:
 	_mute_btn.text = "Muted" if _sound.settings.muted else "Sound"
 
 
+## A real campaign mission (not the level test or the sandbox): it ends by handing an outcome to the campaign.
+func _is_campaign_mission() -> bool:
+	return Session.campaign != null and Session.current_match != null and not Session.level_test
+
+
 func _leave() -> void:
+	if _is_campaign_mission() and not _im.is_over():
+		if not _withdraw_armed:
+			_withdraw_armed = true
+			_leave_btn.text = "Sure?"
+			_say("Tap Withdraw again to leave the field: the mission counts as failed and the survivors keep their lives.", false)
+			return
+		_finish_campaign_mission(true)
+		return
 	_timer.stop()
 	var back := SANDBOX_SCENE if Session.sandbox else MENU_SCENE
 	Session.reset()
 	get_tree().change_scene_to_file(back)
+
+
+## Hands the finished (or abandoned) mission to the campaign screen, which applies it exactly once.
+func _finish_campaign_mission(withdrawn: bool) -> void:
+	_timer.stop()
+	if _activation:
+		Session.pending_outcome = MissionBuilder.outcome_for(Session.campaign, (_im as ActivationMatch).cs, withdrawn)
+	else:
+		Session.pending_outcome = MissionBuilder.outcome_of(Session.campaign, _im.state, _im.player_team, _im.goal, _im.is_over() and _im.winner == _im.player_team, withdrawn)
+	Session.withdrawn = withdrawn
+	ResumeStore.clear()
+	get_tree().change_scene_to_file("res://view/campaign.tscn")
 
 
 # --- naming and logging ----------------------------------------------------------------
@@ -321,10 +350,11 @@ func _say(text: String, ok: bool = true, neutral: bool = false) -> void:
 
 
 ## The one autosave slot (see ResumeStore): after every command and when the app is paused.
-## Only the activation engine's level test and sandbox battles are saved; a finished fight clears it.
+## Activation-engine battles are saved (campaign missions, the level test and the sandbox); a finished fight clears it.
 func _autosave() -> void:
-	if _activation and Session.level_test and _im != null:
-		ResumeStore.save((_im as ActivationMatch).cs, {"kind": ResumeStore.KIND_SANDBOX if Session.sandbox else ResumeStore.KIND_LEVEL_TEST, "mission_id": Session.mission_id})
+	if _activation and Session.campaign != null and _im != null:
+		var kind := ResumeStore.KIND_SANDBOX if Session.sandbox else (ResumeStore.KIND_CAMPAIGN if _is_campaign_mission() else ResumeStore.KIND_LEVEL_TEST)
+		ResumeStore.save((_im as ActivationMatch).cs, {"kind": kind, "mission_id": Session.mission_id})
 
 
 func _notification(what: int) -> void:
@@ -604,8 +634,9 @@ func _refresh(redraw_board: bool = true) -> void:
 		_banner.text = "VICTORY" if _im.winner == _im.player_team else ("DRAW" if _im.winner == SimMatch.DRAW else "DEFEAT")
 		_end_btn.text = "Continue"
 		_end_btn.disabled = false
-		_end_btn.pressed.disconnect(_on_end_turn)
-		_end_btn.pressed.connect(_leave)
+		if _end_btn.pressed.is_connected(_on_end_turn):
+			_end_btn.pressed.disconnect(_on_end_turn)
+			_end_btn.pressed.connect(_finish_campaign_mission.bind(false) if _is_campaign_mission() else _leave)
 		_sound.play("stinger_win" if _im.winner == _im.player_team else "stinger_loss")
 	_rebuild_squad()
 	_hint.text = _hint_text()
@@ -731,6 +762,8 @@ func _run_script(script: String) -> void:
 			"end":
 				_on_end_turn()
 				_drain()
+			"withdraw":
+				_leave()
 
 
 ## Plays every queued beat at once (scripts and screenshots do not wait on timers).

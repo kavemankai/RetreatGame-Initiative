@@ -455,8 +455,10 @@ func _deploy() -> void:
 	var c := Session.campaign
 	Session.mission_id = _mission_id
 	Session.withdrawn = false
+	Session.level_test = false
 	Session.current_match = MissionBuilder.build(c, _mission_id, _picked.duplicate())
-	get_tree().change_scene_to_file(PLAY_SCENE)
+	_save()  # the campaign as it stands, so an interrupted mission can be resumed against it
+	get_tree().change_scene_to_file(PLAY_SCENE if Session.scene_ruleset_is_planned(Session.ruleset) else INITIATIVE_SCENE)
 
 
 # --- after a mission ------------------------------------------------------------------------

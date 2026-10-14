@@ -42,7 +42,7 @@ static func config_for(story: Dictionary, seed_: int, enemies := 0) -> Dictionar
 static func run_battle(story: Dictionary, seed_: int, keep_log := false, opts := {}) -> Dictionary:
 	var built := Sandbox.build(story, config_for(story, seed_, int(opts.get("enemies", 0))))
 	built.state.seed = seed_
-	return _play(CombatState.from_match(built), seed_, keep_log, opts)
+	return play_state(CombatState.from_match(built), seed_, keep_log, opts)
 
 
 ## Plays an Act 1 mission (its map, goal, roles and reinforcements) the same way.
@@ -52,10 +52,39 @@ static func run_mission(story: Dictionary, mission_id: String, seed_: int, keep_
 	var slots: Array = campaign.available_slots().slice(0, int(card["squad_size"]))
 	var built := MissionBuilder.build(campaign, mission_id, slots)
 	built.state.seed += seed_
-	return _play(CombatState.from_match(built), seed_, keep_log, opts)
+	return play_state(CombatState.from_match(built), seed_, keep_log, opts)
 
 
-static func _play(cs: CombatState, seed_: int, keep_log: bool, opts: Dictionary) -> Dictionary:
+## Plays the campaign from the start: each story mission in order with the usual squad (named mercs
+## first), applying every outcome through `Campaign.complete_mission` like the campaign screen does.
+## Contingency cards are skipped. Returns {"campaign", "missions_played", "problems"}.
+static func run_campaign(story: Dictionary, seed_ := 0, max_missions := 12, opts := {}) -> Dictionary:
+	var c := Campaign.new_game(story)
+	var problems: Array[String] = []
+	var played := 0
+	while played < max_missions and not c.over and not c.finished:
+		var id := c.current
+		var card: Dictionary = c.mission_or_card(id)
+		var named: Array[int] = []
+		var hollow: Array[int] = []
+		for slot in c.available_slots():
+			(named if c.slot_status(slot) == "named" else hollow).append(slot)
+		var slots: Array = (named + hollow).slice(0, mini(int(card["squad_size"]), c.available_slots().size()))
+		if slots.is_empty() or not c.can_complete(id):
+			break
+		var built := MissionBuilder.build(c, id, slots)
+		built.state.seed += seed_
+		var r := play_state(CombatState.from_match(built), seed_ + played, false, opts)
+		if not r["finished"] or r["frozen"] or r["rejected"] > 0 or not (r["invariant_problems"] as Array).is_empty():
+			problems.append("%s: finished %s, frozen %s, refused %d, invariants %s" % [id, r["finished"], r["frozen"], r["rejected"], (r["invariant_problems"] as Array).slice(0, 2)])
+		var o := MissionBuilder.outcome_for(c, r["cs"], false)
+		c.complete_mission(id, o["success"], o["dead_slots"], o["writ_dead"], [], o["squad_wiped"], int(o.get("procession_loss", 0)))
+		played += 1
+	return {"campaign": c, "missions_played": played, "problems": problems}
+
+
+## Plays an already built encounter with the AI on both sides (the squad side scouts and is bold).
+static func play_state(cs: CombatState, seed_: int, keep_log := false, opts := {}) -> Dictionary:
 	if opts.has("ap"):
 		cs.config.max_ap = int(opts["ap"])
 	var ais := {cs.player_team: ActivationAI.new(cs.player_team, keep_log), cs.ai_team: ActivationAI.new(cs.ai_team, keep_log)}
@@ -102,7 +131,7 @@ static func _summary(cs: CombatState, ais: Dictionary, seed_: int, commands: int
 		"oscillations": 0, "cap_hits": 0, "activations": 0, "idle_activations": 0, "plan_ms_p95": 0.0,
 		"squad_dead": start_counts[cs.player_team] - _alive(cs)[cs.player_team],
 		"enemy_dead": start_counts[cs.ai_team] - _alive(cs)[cs.ai_team], "first_round_dead": first_round_dead, "logs": [],
-		"telemetry": CombatTelemetry.summarize(cs)}
+		"telemetry": CombatTelemetry.summarize(cs), "cs": cs}
 	var tel: Dictionary = out["telemetry"]
 	out["shots"] = tel["shots"]
 	out["hits"] = tel["hits"]

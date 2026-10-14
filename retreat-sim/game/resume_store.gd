@@ -13,6 +13,8 @@ extends RefCounted
 const PATH := "user://combat_resume.json"
 const KIND_SANDBOX := "sandbox"
 const KIND_LEVEL_TEST := "level_test"
+const KIND_CAMPAIGN := "campaign"  ## a real campaign mission: rebuilt against the saved campaign
+const CAMPAIGN_PATH := "user://campaign.json"
 
 
 ## Writes the slot. A finished fight is never saved (and clears the slot). Returns true if written.
@@ -43,12 +45,12 @@ static func peek(path: String = PATH) -> Dictionary:
 
 ## Rebuilds the battle: {"cs", "match", "campaign", "meta"} for the screen, or {} (and the slot is
 ## cleared) if it cannot be trusted.
-static func load_battle(story: Dictionary, path: String = PATH) -> Dictionary:
+static func load_battle(story: Dictionary, path: String = PATH, campaign_path: String = CAMPAIGN_PATH) -> Dictionary:
 	var meta := peek(path)
 	if meta.is_empty():
 		clear(path)
 		return {}
-	var rebuilt := _rebuild(story, meta)
+	var rebuilt := _rebuild(story, meta, campaign_path)
 	if rebuilt.is_empty():
 		clear(path)
 		return {}
@@ -62,14 +64,14 @@ static func load_battle(story: Dictionary, path: String = PATH) -> Dictionary:
 
 ## Puts a loaded battle into Session for the battle screen to pick up (the same way the menu does
 ## it). Returns false, with the slot cleared, if the save could not be used.
-static func enter_session(story: Dictionary) -> bool:
-	var loaded := load_battle(story)
+static func enter_session(story: Dictionary, path: String = PATH, campaign_path: String = CAMPAIGN_PATH) -> bool:
+	var loaded := load_battle(story, path, campaign_path)
 	if loaded.is_empty():
 		return false
 	var meta: Dictionary = loaded["meta"]
 	Session.reset()
 	Session.ruleset = "activation"
-	Session.level_test = true
+	Session.level_test = meta.get("kind") != KIND_CAMPAIGN
 	Session.sandbox = meta.get("kind") == KIND_SANDBOX
 	Session.campaign = loaded["campaign"]
 	Session.mission_id = Sandbox.MAP if Session.sandbox else String(meta.get("mission_id", ""))
@@ -109,7 +111,9 @@ static func _read(path: String) -> Dictionary:
 
 
 ## The match (for its grid and a fresh goal) and the throwaway campaign the screen's names come from.
-static func _rebuild(story: Dictionary, meta: Dictionary) -> Dictionary:
+static func _rebuild(story: Dictionary, meta: Dictionary, campaign_path: String = CAMPAIGN_PATH) -> Dictionary:
+	if meta.get("kind") == KIND_CAMPAIGN:
+		return _rebuild_campaign_mission(story, String(meta.get("mission_id", "")), campaign_path)
 	var campaign := Campaign.new_game(story)
 	match meta.get("kind"):
 		KIND_SANDBOX:
@@ -127,3 +131,22 @@ static func _rebuild(story: Dictionary, meta: Dictionary) -> Dictionary:
 			var slots: Array = campaign.available_slots().slice(0, int(card["squad_size"]))
 			return {"match": MissionBuilder.build(campaign, id, slots), "campaign": campaign}
 	return {}
+
+
+## A real mission: the saved campaign, with the mission still open (so finishing it applies exactly once).
+static func _rebuild_campaign_mission(story: Dictionary, id: String, campaign_path: String) -> Dictionary:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(campaign_path)) if FileAccess.file_exists(campaign_path) else null
+	if not parsed is Dictionary:
+		return {}
+	var campaign: Campaign = Campaign.from_dict(parsed, story)
+	if campaign == null or id == "" or campaign.mission_or_card(id).is_empty() or not campaign.can_complete(id):
+		return {}
+	var card: Dictionary = campaign.mission_or_card(id)
+	var named: Array[int] = []
+	var hollow: Array[int] = []
+	for slot in campaign.available_slots():
+		(named if campaign.slot_status(slot) == "named" else hollow).append(slot)
+	var slots: Array = (named + hollow).slice(0, mini(int(card["squad_size"]), campaign.available_slots().size()))
+	if slots.is_empty():
+		return {}
+	return {"match": MissionBuilder.build(campaign, id, slots), "campaign": campaign}

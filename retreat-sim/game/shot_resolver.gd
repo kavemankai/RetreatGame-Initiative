@@ -28,8 +28,10 @@ static func fire(state: SimState, shooter: SimUnit, target_id: int, turn: int, t
 		return out
 	target.hp -= int(ev["damage"])
 	target.bump("hits_taken")
+	shooter.bump("hits_landed")
 	if target.hp <= 0:
 		target.alive = false
+		shooter.bump("kills")
 		out.append({"type": "death", "tick": tick, "unit": target.id, "killer": shooter.id})
 	else:
 		var m := morale(state, target, turn, tick)

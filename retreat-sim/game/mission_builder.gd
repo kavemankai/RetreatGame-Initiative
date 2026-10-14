@@ -65,23 +65,52 @@ static func mission_seed(campaign: Campaign, mission_id: String) -> int:
 ## What the campaign needs from a match: {success, dead_slots, writ_dead,
 ## squad_wiped}. A withdrawal is a failure with survivors.
 static func outcome(campaign: Campaign, m: SimMatch, withdrawn: bool) -> Dictionary:
+	return outcome_of(campaign, m.state, m.player_team, m.goal, m.is_over() and m.winner == m.player_team, withdrawn)
+
+
+## The same outcome for the activation engine, plus what the debrief and levelling need:
+## "rounds", "survivors" (living squad ids) and "units", one JSON-safe row per fielded merc:
+## {slot, alive, shots, hits, kills, hits_taken, steps}.
+static func outcome_for(campaign: Campaign, cs: CombatState, withdrawn: bool) -> Dictionary:
+	var o := outcome_of(campaign, cs.sim, cs.player_team, cs.goal, cs.is_over() and cs.winner == cs.player_team, withdrawn)
+	var ids: Array = cs.sim.units.keys()
+	ids.sort()
+	var survivors: Array[int] = []
+	var rows: Array[Dictionary] = []
+	for id in ids:
+		var u: SimUnit = cs.sim.units[id]
+		if u.team != cs.player_team:
+			continue
+		if u.alive:
+			survivors.append(int(id))
+		rows.append({"slot": int(id), "alive": u.alive, "shots": int(u.counters.get("shots_fired", 0)), "hits": int(u.counters.get("hits_landed", 0)),
+			"kills": int(u.counters.get("kills", 0)), "hits_taken": int(u.counters.get("hits_taken", 0)), "steps": int(u.counters.get("steps_moved", 0))})
+	o["rounds"] = cs.round_no
+	o["survivors"] = survivors
+	o["units"] = rows
+	return o
+
+
+## The outcome from the parts any ruleset has: its board, the player's team, the goal, and whether
+## the player's side won. A withdrawal is a failure with survivors.
+static func outcome_of(campaign: Campaign, state: SimState, player_team: int, goal: SimGoal, won: bool, withdrawn: bool) -> Dictionary:
 	var dead_slots: Array[int] = []
 	var writ_dead: Array[String] = []
 	var living := 0
-	for id in m.state.units:
-		var u: SimUnit = m.state.units[id]
+	for id in state.units:
+		var u: SimUnit = state.units[id]
 		if u.alive:
-			if u.team == m.player_team:
+			if u.team == player_team:
 				living += 1
 			continue
-		if u.team == m.player_team:
+		if u.team == player_team:
 			dead_slots.append(id)
 		elif _is_officer(id):
 			writ_dead.append(_officer_id(campaign, id - Campaign.WRIT_ID_BASE))
 	dead_slots.sort()
 	return {
-		"procession_loss": m.goal.penalty_total if m.goal != null else 0,
-		"success": m.is_over() and m.winner == m.player_team and not withdrawn,
+		"procession_loss": goal.penalty_total if goal != null else 0,
+		"success": won and not withdrawn,
 		"dead_slots": dead_slots,
 		"writ_dead": writ_dead,
 		"squad_wiped": living == 0,

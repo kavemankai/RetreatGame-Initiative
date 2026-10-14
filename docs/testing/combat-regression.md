@@ -20,6 +20,9 @@ Result: **392 tests, 1910 checks, 0 failed.** A few "String formatting error" li
 - Same seed plus initial state plus commands gives an identical event log (partly covered by `test_the_mode_is_deterministic_with_real_dice`).
 - Campaign smoke test: the campaign still loads and exits a battle with the new mode on.
 
+## Phase A update (2026-10-15)
+**459 tests, 2259 checks, 0 failed.** `tests/test_campaign_engine.gd`: shot counters, outcome parity with the planned mode, survivors and per-merc stats, outcome inside a saved campaign, the first four missions played in order by the AI, resume of a campaign mission and refusal of a stale one. Whole-campaign soak: `CombatSoak.run_campaign` (three seeds: no engine problems; the stand-in squad is eventually wiped in later missions).
+
 ## Phase 5 update (2026-10-14)
 **448 tests, 2171 checks, 0 failed.** Gate: 1,000 seeded 4v4 AI-vs-AI battles, all finished, 0 frozen, 0 invariant problems, 0 illegal actions. Repeat: four parallel runs of `godot --headless --path . -s tools/soak_combat.gd -- --battles=250 --first=1000 --enemies=4` (each about 6.5 minutes), changing `--first` per run. AP sweep: `-- --battles=40 --first=3000 --enemies=4 --ap=N`. Mission smoke: `-- --battles=4 --mission=karsa_breakout` (also the_weir, pellam_dock, orchard_ring). `tests/test_combat_save.gd` covers save, resume and refusal of bad saves.
 
