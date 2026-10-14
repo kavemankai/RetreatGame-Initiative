@@ -7,13 +7,10 @@ Owner decisions: earn XP then pick 1 of 3 stat steps; items stay find-only (no c
 
 Findings that shape the plan: no item icons, portraits or UI art exist (sprites are 64x64 full-body); every screen is built from `_show(title, bbcode, buttons, status, columns, footer)`; `campaign.pending` is a saved queue of debrief steps (a new step type plugs in there); `MissionBuilder.outcome` returns only success, dead slots, Writ dead, wipe and loss, with no survivors or per-merc counters; stress is never set; the route is a single chain in `route.json` with no map coordinates; docs `MECHANICS_SPEC.md` still describe tick-era growth and stress.
 
-## Settled decisions (2026-10-15)
-Stress dropped (field left inert); growth is XP with a pick of 1 of 3; injury dropped; level caps hp 6, speed/aim/cqb/morale 10, sight 9 (gear may exceed hp and morale caps, morale total stays within 0..12). The remaining stale-doc items (stat effect wording, tick-era combat text, map sizes, my own status tables) are still open.
-
 ## Order of work (each phase: tests first, mutation check, small commit, handover note)
 A -> B -> C, D, E (any order) -> F.
 
-### A. Campaign missions on the activation engine (prerequisite) — DONE 2026-10-15 (see docs/handover.md)
+### A. Campaign missions on the activation engine (prerequisite)
 - `campaign_view._deploy` launches `INITIATIVE_SCENE`; planned mode stays behind `Session.ruleset == "planned"` as the rollback.
 - `InitiativeView` end-of-fight builds a campaign outcome from `ActivationMatch` and sets `Session.pending_outcome` (same dict `MissionBuilder.outcome` returns, so `_apply_outcome` and `Campaign.complete_mission` are untouched), then returns to `campaign.tscn`.
 - Extend the outcome with `survivors`, per-slot `{shots, hits, kills, hits_taken, steps}` and `rounds`. Add `hits_landed` and `kills` counters in `game/shot_resolver.gd` (bump on the shooter).
@@ -77,6 +74,58 @@ Tests: stakes text matches the mission data, readiness warnings, the pending cha
 - Screenshot every new screen with scripted `--demo=` captures at 540x960, 360x800 and landscape, and read them.
 - End-to-end in the real engine: new campaign, brief, pick squad, equip, deploy, finish, see report, level up, arrive on the map; then save, quit mid-battle, resume.
 - Build the APK only when you ask.
+
+## Gear appearance and weapon types: tools and assets found (researched 2026-10-15)
+Goal: weapon type (pistol, carbine, rifle, shotgun, sniper) and armour class visible without regenerating 575 sprite frames. The existing sprites are baked whole-body frames (25 per character), so layers, tints or a new pipeline are needed. Everything below was read from the vendor or listing pages; items marked verify were not confirmed.
+
+**Free now (no credits, no art spend):**
+- Weapon glyphs: CC0 "Guns" pack by SnoopethDuckDuck (111 weapons, 32x32, DawnBringer palette) and CC0 "2D Gun Pack" on OpenGameArt (pistols, rifles, grenades). Use as references or recolour for the item cards; none confirmed to include a sniper (verify). Keep the code-drawn `SlotGlyph` as the fallback. Avoid RandGameDev "Pixel Guns" (restricted licence) and CC-BY packs unless a credit line is acceptable.
+- Muzzle flashes: Reactorcore "Gun Muzzle Flash Effects" (232 pixel sprites). Listed CC0 on OpenGameArt but CC-BY 4.0 on RenderHub: check the creator's page before use. Also CC0: CodeManu "Free VFX asset pack" (22 effects) and ansimuz "Warped Shooting Fx" (beams, suits energy weapons). No free tracer pack found: tracers stay code-drawn per weapon class in `BoardView`.
+- Gun sounds: keep synthesising in code (`art/make_sounds.py`, your standing rule). sfxr-family tools (jsfxr, Bfxr, the gdfxr Godot port) are useful for auditioning; gdfxr stores parameters only and does not synthesise at runtime. Starting recipe per class (my knowledge, unverified): noise burst, near-zero attack, fast decay, falling pitch, low-pass sweep; shotgun longer and heavier, sniper a sharp crack plus low thump, pistol short.
+- Armour looks by colour: Godot palette-swap shaders (Godot Shaders "Palette Swap" and "Advanced Palette"; a ten-line key-colour shader with a tolerance works; MIT editor add-ons exist). Needs nearest filtering. Changes colour, not silhouette.
+- Equip logic and paper-doll UI references (not needed for our data model): Equipment Lite (MIT), Layered Sprite (MIT).
+
+**Layered 2D sprites:** the standard method stacks one sprite per slot over a base body, which requires every layer to share one canvas size and pivot per frame. The LPC generator is the best-known source but is CC BY-SA / GPL (share-alike and credit duties) and is top-down, not isometric: poor fit. Our baked sprites cannot be split into layers.
+
+**Modular 3D rendered to pixel sprites (the scalable route, a style change):**
+- Base art: Quaternius Ultimate Modular Characters (CC0, 11 characters each in 4 swappable models, 24 animations; no separate equipment pieces listed) and Sci-Fi Essentials Kit (CC0, textured guns and robots).
+- Animations: Mixamo (free with an Adobe ID; raw files may not be redistributed; read Adobe's current terms).
+- Rendering: free Blender add-on Omnidirectional Isometric Render (sprite sheet export, transparent background; direction count and output licence not stated: verify). Paid alternatives: Render 8 Directions (pay what you want), Pre Render Creator ($17.99), Get Sheet Done ($17.95), Blaterna Studio. Forum workflow: render body and each gear piece as separate layers with the same camera and frames, downscale with nearest neighbour to a shared palette, composite, mirror to halve directions.
+- Fit: gives every weapon-by-armour-by-merc combination for free once built, but would replace the current AI-drawn look for all 23 sets or live beside it. A Blender connection exists in this session for scripting renders.
+
+**AI sprite tools for variants (compare against the credit cost of Higgsfield):**
+- PixelLab: 4 and 8 directions including isometric, skeleton animation, inpaint and edit, a "Transfer outfit (Pro)" tool, REST API and MCP (subscription; pricing not verified). Does not document that an edited sprite keeps frame alignment: test.
+- SpriteCook: free 40 credits per 30 days, paid from $8 a month (vendor page, June 2026), commercial use stated; animates an uploaded sprite keeping its design and palette; no documented equipment-variant tool. Its plugin is installed in this session but needs your authorisation.
+- Retro Diffusion (paid Aseprite extension): outputs usable commercially per the developer's informal statement, no variant tool documented.
+- Test before committing: one merc, one armour class, check that the 25 frames stay aligned and on style.
+
+**Recommended path:** (1) now, free: weapon-class glyphs, class tracers and muzzle flashes, synthesised class sounds, armour tint shader and trait badges, plus the variant lookup with fallback in code. (2) small paid trial: one merc through PixelLab or SpriteCook free credits for an armour class. (3) only if appearance becomes a pillar: the modular Blender pipeline with Quaternius CC0 bases, accepting the style change.
+
+## Roster of eight and weapon classes (decided 2026-10-15; build before Phase C)
+**Roster (keep slot numbers so sprite keys and unit ids do not change):** slot 1 Warden rifle, 9 Gran rifle, 4 Sable sniper, 8 Needle shotgun, 5 Bulwark heavy, 3 Moth carbine/SMG; joiners 12 Wren grenade launcher (joins at Orchard Ring) and 11 Ghost laser (joins at Cinder Market). Cut: 2 Quill, 6 Static, 7 Pilgrim, 10 Tinker. Missions still field 3 to 4. Remembrance thresholds are left alone (owner: do not worry about them).
+
+**Classes:** a class is the weapon type and is fixed per merc, so the baked sprite weapon is always right. Weapon items become class-locked upgrade lines (a merc's weapon slot only takes their class); armour and mods stay shared. Each merc starts with their class's base weapon. Hollows keep a class chip but use the generic hollow sprite. Enemy tiers can later be given classes so their looks and sounds match.
+| Class | Rule | Example upgrade line |
+|---|---|---|
+| Rifle | baseline | issue rifle, then two new rifles |
+| Carbine | cheap shot (3 AP), shorter range | carbine, repeater |
+| Sniper | long range, +to hit, dearer shot | marksman rifle, Seal's rifle, long rifle |
+| Shotgun | short range, +1 damage | scatter gun, breacher |
+| Heavy | damage, dear shot; top of the line is a **minigun** with **burst**: three low-accuracy shots at one target for one action at a higher AP cost | heavy rifle, then LMG, then minigun |
+| Grenade launcher (Wren) | **area**: hits the target tile and the 8 around it, blocked by full walls, lower accuracy, more AP, can hurt allies | launcher upgrades |
+| Laser (Ghost) | **beam**: ignores half cover and range falloff; full walls still block | laser upgrades |
+
+**Engine changes (all deterministic, integer, tested, soaked):**
+- `SimUnit` gains `weapon_class` and a separate `weapon_trait`. Today `apply_item` writes a single `gear_trait`, so a weapon trait and a mod trait would overwrite each other.
+- Beam: `SimResolver.evaluate_shot` skips half-cover and the distance penalty when the shooter's trait is beam.
+- Area: `ShotResolver` resolves a splash (target plus neighbours, allies included, full walls block), one event per victim, morale checks and kill attribution per victim.
+- Burst: three rolls (distinct dice indices) per action, stops early if the target dies, one ledger row; overwatch stays a single shot.
+- Previews (`shot_preview`) report burst count and splash tiles for the UI; `SimAI._best_shot` values burst (three expected shots) and area (enemy damage minus ally damage); the 1,000-battle soak must stay clean.
+- Presentation per class: glyph, tracer style, muzzle flash and a synthesised sound (see the research section).
+
+**Churn (mostly mechanical):** `cast.json` 12 to 8 entries plus `class`, relationship and route references (about 15 in `route.json`, 1 in `scenes.json`); `story_lint` and tests that assume 12 mercs or the old joiners (slots 2, 6, 7, 10 appear in some tests); `UnitSprites` keeps its keys; sandbox default squad becomes four of the eight; `items.json` weapons gain `class`, base weapons added, about 14 new weapon items in total.
+
+**Order:** R1 data and class lock, R2 sim rules (beam, area, burst) with tests and soak, R3 presentation, then Phases C to F built once for class-locked weapons.
 
 ## Out of scope
 New art, music, story text, shops and currency, branching routes, mid-mission loadout, enemy gear, and the optional `spare_battery` trait until you approve the engine hook.
