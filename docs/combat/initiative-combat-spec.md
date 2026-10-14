@@ -11,7 +11,7 @@ Status 2026-10-14. **Decided by the owner: D1 adopt the plan (flag for the old m
 | D5 | Initiative | `speed*10 + aim - 3*hits_taken`, live. | Stable per battle; base speed plus small explicit modifiers; seeded tie value then unit id. | **Adopt the plan:** fix at round start from `speed*10 + aim`, drop the wound term for the MVP, add a seeded tie value. |
 | D6 | Reload, ammo, stance | None. | Reload 4, stance 2, "if present". | **Defer;** there is no ammo or stance model. |
 | D7 | Morale | A hit unit rolls morale: steady = cannot shoot until its next turn, broken = no AP. | Keep unchanged. | Keep. |
-| D8 | AI | Utility planner, whole-unit plan, up to 2 replans. | One legal action at a time, decision cap, repeat detector, END_TURN fallback. | Adopt in Phase 3. |
+| D8 | AI | Utility planner, whole-unit plan, up to 2 replans. | One legal action at a time, decision cap, repeat detector, END_TURN fallback. | **Done (Phase 3):** `ActivationAI`, 100-battle soak clean. |
 
 ## Proposed order for this repo
 1. **Phase 0:** audit, baseline, checklist. Done.

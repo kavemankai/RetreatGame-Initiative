@@ -64,6 +64,14 @@ static func from_match(m: SimMatch, p_config: CombatConfig = null) -> CombatStat
 	return cs
 
 
+## The tile a side drifts toward while it sees no enemy: `objective` for the AI side, mirrored
+## across the map for the other (used when a soak plays both sides with the AI).
+func objective_for(team: int) -> Vector2i:
+	if team == ai_team:
+		return objective
+	return Vector2i(sim.grid.width - 1 - objective.x, objective.y)
+
+
 func is_over() -> bool:
 	return phase == Phase.ENDED
 

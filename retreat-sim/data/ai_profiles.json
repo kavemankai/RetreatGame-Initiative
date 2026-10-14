@@ -7,7 +7,8 @@
   "preferred_range": 4,
   "w_range": 2,
   "w_objective": 2,
-  "w_watch": 0
+  "w_watch": 0,
+  "w_lane": 8
  },
  "aggressor": {
   "w_damage": 10,
@@ -17,7 +18,8 @@
   "preferred_range": 3,
   "w_range": 3,
   "w_objective": 3,
-  "w_watch": 0
+  "w_watch": 0,
+  "w_lane": 8
  },
  "defender": {
   "w_damage": 10,

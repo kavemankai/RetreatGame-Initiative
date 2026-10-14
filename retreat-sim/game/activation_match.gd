@@ -11,7 +11,7 @@ extends InitiativeMatch
 ## again; there are no automatic interrupts, only armed one-shot overwatch (4 AP).
 
 var cs: CombatState
-var ai := ActivationAI.new()
+var ai: ActivationAI
 ## Beats from the enemy activations played while start() ran (the enemy can win initiative).
 var opening_beats: Array[Dictionary] = []
 ## The reason the last refused player command was refused ("" if it was accepted).
@@ -25,6 +25,7 @@ static func make(m: SimMatch) -> ActivationMatch:
 func _init(p_cs: CombatState) -> void:
 	super._init(p_cs.sim, p_cs.profiles, p_cs.assignments, p_cs.objective)
 	cs = p_cs
+	ai = ActivationAI.new(cs.ai_team)
 	cs.capture_beats = true
 	theme = cs.theme
 	goal = cs.goal

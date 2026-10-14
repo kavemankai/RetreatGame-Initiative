@@ -20,6 +20,9 @@ Result: **392 tests, 1910 checks, 0 failed.** A few "String formatting error" li
 - Same seed plus initial state plus commands gives an identical event log (partly covered by `test_the_mode_is_deterministic_with_real_dice`).
 - Campaign smoke test: the campaign still loads and exits a battle with the new mode on.
 
+## Phase 3 update (2026-10-14)
+**440 tests, 2130 checks, 0 failed.** Soak (`tools/soak_combat.gd -- --battles=100`): 100 of 100 finish, 0 illegal actions, 0 frozen, 0 invariant breaks, 0 oscillations, avg 4.7 rounds, 2 idle-with-target of 2,767 activations, p95 plan 45 ms (desktop). Command for repeat: `godot --headless --path . -s tools/soak_combat.gd -- --battles=100` (about 3.5 minutes). `tests/test_ai_scenarios.gd` holds the scenario and diagnostics tests.
+
 ## Phase 2 update (2026-10-14)
 **418 tests, 2057 checks, 0 failed.** `tests/test_activation_match.gd`: enemy-first start hands over to a merc, one beat per move step, off-turn commands refused with a reason, End Activation plays enemy activations and returns to a merc, a lone enemy acts every round, snapshots only when asked, six full games finish with zero AI refusals, strip hides unseen enemies, reason wording, ruleset plumbing.
 
