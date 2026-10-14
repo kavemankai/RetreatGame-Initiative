@@ -10,11 +10,11 @@ func new_campaign() -> Campaign:
 
 # --- roster ---------------------------------------------------------------
 
-func test_new_campaign_starts_with_ten_named_mercs_and_full_resources() -> void:
+func test_new_campaign_starts_with_six_named_mercs_and_full_resources() -> void:
 	var c := new_campaign()
-	check(c.available_slots().size() == 10, "ten slots are available at the start")
+	check(c.available_slots().size() == 6, "six slots are available at the start")
 	check(c.procession == 6200 and c.reserves == 24 and c.remembrance == 0, "starting resources come from the world data")
-	check(c.slot_status(1) == "named" and c.slot_status(11) == "absent" and c.slot_status(12) == "absent", "Ghost and Wren have not joined yet")
+	check(c.slot_status(1) == "named" and c.slot_status(7) == "absent" and c.slot_status(8) == "absent", "Wren and Ghost have not joined yet")
 
 
 func test_mercs_join_when_their_mission_is_completed() -> void:
@@ -22,9 +22,14 @@ func test_mercs_join_when_their_mission_is_completed() -> void:
 	c.complete_mission("karsa_breakout", true, [], [], [])
 	c.complete_mission("the_weir", true, [], [], [])
 	c.complete_mission("pellam_dock", true, [], [], [])
-	check(c.slot_status(12) == "absent", "Wren is not here yet")
+	check(c.slot_status(7) == "absent", "Wren is not here yet")
 	c.complete_mission("orchard_ring", true, [], [], [])
-	check(c.slot_status(12) == "named" and c.available_slots().size() == 11, "Wren joins after Orchard Ring")
+	check(c.slot_status(7) == "named" and c.available_slots().size() == 7, "Wren joins after Orchard Ring")
+	check(c.slot_status(8) == "absent", "Ghost is not here yet")
+	for id in ["quiet_wards", "anselm", "cinder_market"]:
+		c.complete_mission(id, true, [], [], [])
+	check(c.slot_status(8) == "named" and c.available_slots().size() == 8, "Ghost joins after Cinder Market")
+	check(c.gear_of(7)["weapon"] == "grenade_launcher" and c.gear_of(8)["weapon"] == "laser_rifle", "joiners arrive with their class's base weapon")
 
 
 # --- the Hollowing --------------------------------------------------------
@@ -111,7 +116,7 @@ func test_squad_units_build_from_the_roster() -> void:
 	check(units.size() == 3 and units[0].id == 1 and units[1].id == 3, "unit ids are slot numbers")
 	check(not units[0].is_drone and units[0].team == 0, "a named merc fields normally")
 	check(units[1].is_drone and units[1].morale == 0 and units[1].aim < 8, "a hollowed slot fields as a drone with frozen stats")
-	check(c.squad_units("the_weir", [11]).is_empty(), "a merc who has not joined cannot be fielded")
+	check(c.squad_units("the_weir", [8]).is_empty(), "a merc who has not joined cannot be fielded")
 
 
 func test_enemy_forces_match_the_mission_data() -> void:
@@ -255,7 +260,7 @@ func test_can_complete_guards_order_and_repeats() -> void:
 func test_a_campaign_with_no_one_left_to_field_is_over() -> void:
 	var c := new_campaign()
 	c.reserves = 0
-	c.complete_mission("karsa_breakout", true, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [], [])
+	c.complete_mission("karsa_breakout", true, [1, 2, 3, 4, 5, 6], [], [])
 	check(c.available_slots().is_empty() and c.over and c.over_reason == "no_one_left", "every slot vacant ends the campaign instead of soft-locking")
 
 

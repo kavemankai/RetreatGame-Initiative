@@ -1,0 +1,48 @@
+{
+ "version": 1,
+ "note": "A class is a weapon type, fixed per merc. Each class has a line of weapons (items with the same class); a merc only carries weapons of their own class. base_item is what they start with.",
+ "classes": {
+  "rifle": {
+   "name": "Rifleman",
+   "weapon": "rifle",
+   "base_item": "service_rifle",
+   "summary": "Balanced and reliable at any range."
+  },
+  "carbine": {
+   "name": "Scout",
+   "weapon": "carbine",
+   "base_item": "carbine",
+   "summary": "Quick shots at short range."
+  },
+  "sniper": {
+   "name": "Marksman",
+   "weapon": "sniper rifle",
+   "base_item": "hunting_rifle",
+   "summary": "Reaches far and lands more often."
+  },
+  "shotgun": {
+   "name": "Breacher",
+   "weapon": "shotgun",
+   "base_item": "scatter_gun",
+   "summary": "Brutal up close, weak at range."
+  },
+  "heavy": {
+   "name": "Heavy",
+   "weapon": "heavy gun",
+   "base_item": "support_rifle",
+   "summary": "Slow, heavy hits. The line ends in a minigun that fires bursts."
+  },
+  "grenade": {
+   "name": "Grenadier",
+   "weapon": "grenade launcher",
+   "base_item": "grenade_launcher",
+   "summary": "Splash damage on a tile and its neighbours."
+  },
+  "beam": {
+   "name": "Laser gunner",
+   "weapon": "laser",
+   "base_item": "laser_rifle",
+   "summary": "Cuts through low cover and loses nothing to range."
+  }
+ }
+}

@@ -435,7 +435,7 @@ func _loadout_kind(slot: int, kind: String) -> void:
 	var c := Session.campaign
 	var worn: String = c.gear_of(slot)[kind]
 	var buttons: Array = []
-	for id in c.stash_for(kind):
+	for id in c.stash_for(kind, slot):
 		buttons.append({"text": "%s   %s" % [_gear_name(c, id), c.item_summary(id)], "call": _loadout_equip.bind(slot, id)})
 	if worn != "":
 		buttons.append({"text": "Take off %s" % _gear_name(c, worn), "call": _loadout_unequip.bind(slot, kind)})

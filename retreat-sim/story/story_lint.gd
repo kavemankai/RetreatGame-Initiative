@@ -11,13 +11,14 @@ const MAX_SAMPLE := 140
 const STAT_RANGES := {"hp": [2, 4], "speed": [1, 9], "aim": [1, 9], "cqb": [1, 9], "morale": [1, 9], "sight": [4, 8]}
 const NON_CAST_SPEAKERS: Array[String] = ["narrator", "hollow", "keeper", "orrick"]
 const MIN_CARDS_PER_ACT := 2
-const MIN_CAMP_SCENES := 6
+const MIN_CAMP_SCENES := 5  # four of the nine were about mercs who left the roster of eight
 ## Enemy spawn points every map provides (tests check each map has at least this many).
 const MAX_ENEMIES := 8
 ## Each enemy tier owns this many consecutive unit ids.
 const ID_SPAN := 10
 const ITEM_STATS: Array[String] = ["hp", "morale", "speed", "range", "damage", "shot_ticks", "accuracy"]
 const MAX_WRIT_SLOT := 6
+const WEAPON_TRAITS: Array[String] = ["beam", "area", "burst"]
 
 static var _banned_re: RegEx
 
@@ -55,6 +56,8 @@ static func _lint_cast(d: Dictionary, errs: Array[String], mercs: Array, mission
 			errs.append("duplicate slot %d (%s)" % [slot, id])
 		slots[slot] = true
 		_stat_ranges(errs, id, m["stats"])
+		if not (d["classes"]["classes"] as Dictionary).has(m.get("class", "")):
+			errs.append("%s: unknown weapon class '%s'" % [id, m.get("class", "")])
 		for key in ["callsign", "name", "role", "bio", "wound", "death_line", "hollow_note"]:
 			if str(m.get(key, "")) == "":
 				errs.append("%s: missing %s" % [id, key])
@@ -170,10 +173,17 @@ static func _lint_items(errs: Array[String], d: Dictionary) -> void:
 		if not slots.has(it["slot"]):
 			errs.append("item %s: unknown slot '%s'" % [id, it["slot"]])
 		if it["slot"] == "mod":
-			if not (items["traits"] as Dictionary).has(it.get("trait", "")):
-				errs.append("item %s: unknown trait '%s'" % [id, it.get("trait", "")])
+			if not (items["traits"] as Dictionary).has(it.get("trait", "")) or WEAPON_TRAITS.has(it.get("trait", "")):
+				errs.append("item %s: unknown mod trait '%s'" % [id, it.get("trait", "")])
+		elif it["slot"] == "weapon":
+			if not (d["classes"]["classes"] as Dictionary).has(it.get("class", "")):
+				errs.append("weapon %s: unknown class '%s'" % [id, it.get("class", "")])
+			if it.has("trait") and not WEAPON_TRAITS.has(it["trait"]):
+				errs.append("weapon %s: '%s' is not a weapon trait (%s)" % [id, it["trait"], WEAPON_TRAITS])
 		elif it.has("trait"):
-			errs.append("item %s: only mod items carry a trait" % id)
+			errs.append("item %s: only mods and weapons carry a trait" % id)
+		if it["slot"] != "weapon" and it.has("class"):
+			errs.append("item %s: only weapons have a class" % id)
 		for stat in (it.get("stats", {}) as Dictionary):
 			if not ITEM_STATS.has(stat):
 				errs.append("item %s: unknown stat '%s'" % [id, stat])
@@ -182,6 +192,10 @@ static func _lint_items(errs: Array[String], d: Dictionary) -> void:
 		var start: String = items["starting"][slot]
 		if not by_id.has(start) or by_id[start]["slot"] != slot:
 			errs.append("starting %s '%s' is not an item of that slot" % [slot, start])
+	for cid in (d["classes"]["classes"] as Dictionary):
+		var base: String = d["classes"]["classes"][cid].get("base_item", "")
+		if not by_id.has(base) or by_id[base]["slot"] != "weapon" or by_id[base].get("class", "") != cid or int(by_id[base]["tier"]) != 1:
+			errs.append("class %s: base_item '%s' must be a tier 1 weapon of that class" % [cid, base])
 	var officer_ids := {}
 	for o: Dictionary in d["writ"]["officers"]:
 		officer_ids[o["id"]] = true

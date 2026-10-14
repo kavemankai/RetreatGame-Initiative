@@ -9,7 +9,7 @@ extends RefCounted
 ## refill costs reserves, and with none the slot goes vacant.
 
 const OVER_ENDING := "campaign_over"
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3  # 3: the roster of eight and weapon classes; older saves use the old twelve slots and are refused
 const PCT_BASE := 100
 const GEAR_SLOTS: Array[String] = ["armour", "weapon", "mod"]
 const PROVOST_ID := 100
@@ -52,7 +52,7 @@ static func new_game(p_story: Dictionary) -> Campaign:
 	c.remembrance = int(res["remembrance"]["start"])
 	c.current = p_story["route"]["start"]
 	for m: Dictionary in p_story["cast"]["mercs"]:
-		c._roster[int(m["slot"])] = {"status": "named" if m["start"] else "absent", "stats": _int_stats(m["stats"]), "gear": c._starting_gear() if m["start"] else c._empty_gear()}
+		c._roster[int(m["slot"])] = {"status": "named" if m["start"] else "absent", "stats": _int_stats(m["stats"]), "gear": c._starting_gear(int(m["slot"])) if m["start"] else c._empty_gear()}
 	for o: Dictionary in p_story["writ"]["officers"]:
 		c._writ[o["id"]] = "named"
 	return c
@@ -88,12 +88,16 @@ func item_summary(id: String) -> String:
 	return ", ".join(parts)
 
 
-## Stash items for one kind, sorted by id.
-func stash_for(kind: String) -> Array[String]:
+## Stash items for one kind, sorted by id. With a slot, weapons are limited to that merc's class.
+func stash_for(kind: String, slot: int = -1) -> Array[String]:
 	var out: Array[String] = []
 	for id in stash:
-		if item(id).get("slot", "") == kind:
-			out.append(id)
+		var def := item(id)
+		if def.get("slot", "") != kind:
+			continue
+		if kind == "weapon" and slot >= 0 and def.get("class", "") != class_of(slot):
+			continue
+		out.append(id)
 	out.sort()
 	return out
 
@@ -109,6 +113,8 @@ func equip(slot: int, item_id: String) -> String:
 	if not stash.has(item_id):
 		return "That item is not in the stash."
 	var kind: String = def["slot"]
+	if kind == "weapon" and def.get("class", "") != class_of(slot):
+		return "That is a %s weapon; this merc carries %s." % [class_name_of(String(def.get("class", ""))), class_name_of(class_of(slot)).to_lower()]
 	var worn: String = _roster[slot]["gear"][kind]
 	stash.erase(item_id)
 	if worn != "":
@@ -131,11 +137,27 @@ func _empty_gear() -> Dictionary:
 	return {"armour": "", "weapon": "", "mod": ""}
 
 
-func _starting_gear() -> Dictionary:
+## What a merc starts with: the standard armour and their class's base weapon.
+func _starting_gear(slot: int) -> Dictionary:
 	var g := _empty_gear()
 	for kind in story["items"]["starting"]:
 		g[kind] = story["items"]["starting"][kind]
+	var cls: Dictionary = story["classes"]["classes"].get(class_of(slot), {})
+	g["weapon"] = String(cls.get("base_item", ""))
 	return g
+
+
+## A merc's weapon class ("rifle", "sniper", ...), fixed by the cast.
+func class_of(slot: int) -> String:
+	for m: Dictionary in story["cast"]["mercs"]:
+		if int(m["slot"]) == slot:
+			return String(m.get("class", "rifle"))
+	return "rifle"
+
+
+## The display name of a class ("Marksman"), or the id if unknown.
+func class_name_of(class_id: String) -> String:
+	return String(story["classes"]["classes"].get(class_id, {}).get("name", class_id))
 
 
 ## A slot's worn items go back to the stash (it died, or hollowed).
@@ -562,8 +584,8 @@ static func save_problem(d: Dictionary) -> String:
 			return "missing '%s'" % key
 		if not (required[key] as Array).has(typeof(d[key])):
 			return "'%s' has the wrong type" % key
-	if int(d["version"]) != SAVE_VERSION and int(d["version"]) != 1:
-		return "unknown save version %s" % d["version"]
+	if int(d["version"]) != SAVE_VERSION:
+		return "unknown save version %s (this build needs %d; older saves use the previous roster)" % [d["version"], SAVE_VERSION]
 	for key in d["roster"]:
 		var slot: Variant = d["roster"][key]
 		if typeof(slot) != TYPE_DICTIONARY or not slot.has("status") or not slot.has("stats") or typeof(slot["stats"]) != TYPE_DICTIONARY:
@@ -600,13 +622,11 @@ static func from_dict(d: Dictionary, p_story: Dictionary) -> Campaign:
 			stats[k] = int(d["roster"][key]["stats"][k])
 		var status: String = d["roster"][key]["status"]
 		var gear: Dictionary = c._empty_gear()
-		if (d["roster"][key] as Dictionary).has("gear"):
-			for kind in GEAR_SLOTS:
-				var worn := str(d["roster"][key]["gear"].get(kind, ""))
-				if c.item(worn).get("slot", "") == kind:
-					gear[kind] = worn  # an unknown or mismatched id is dropped, not carried
-		elif status == "named":
-			gear = c._starting_gear()  # a v1 save: everyone still named gets the standard vest
+		for kind in GEAR_SLOTS:
+			var worn := str(d["roster"][key].get("gear", {}).get(kind, ""))
+			var def := c.item(worn)
+			if def.get("slot", "") == kind and (kind != "weapon" or def.get("class", "") == c.class_of(int(key))):
+				gear[kind] = worn  # an unknown, mismatched or wrong-class id is dropped, not carried
 		c._roster[int(key)] = {"status": status, "stats": stats, "gear": gear}
 	for id in d["writ"]:
 		c._writ[id] = d["writ"][id]
@@ -652,7 +672,7 @@ func _join(merc_id: String) -> void:
 	for m: Dictionary in story["cast"]["mercs"]:
 		if m["id"] == merc_id and slot_status(int(m["slot"])) == "absent":
 			_roster[int(m["slot"])]["status"] = "named"
-			_roster[int(m["slot"])]["gear"] = _starting_gear()
+			_roster[int(m["slot"])]["gear"] = _starting_gear(int(m["slot"]))
 
 
 func _apply_sets(sets: Dictionary) -> void:

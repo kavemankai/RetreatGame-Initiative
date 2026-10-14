@@ -31,13 +31,13 @@ func test_shipped_story_data_is_clean() -> void:
 
 func test_story_has_the_promised_shape() -> void:
 	var d := story()
-	check(d["cast"]["mercs"].size() == 12, "12 mercs")
+	check(d["cast"]["mercs"].size() == 8, "8 mercs: six start, two join")
 	check(d["writ"]["officers"].size() == 6, "6 Writ officers")
 	check(d["route"]["missions"].size() == 12, "12 story missions")
 	check(d["route"]["cards"].size() >= 6, "a contingency pool")
 	check(d["scenes"]["scenes"].size() >= 40, "a substantial scene set")
 	var starters: Array = d["cast"]["mercs"].filter(func(m): return m["start"])
-	check(starters.size() == 10, "ten mercs start; two join later")
+	check(starters.size() == 6, "six mercs start; two join later")
 
 
 func test_lint_catches_duplicate_ids() -> void:

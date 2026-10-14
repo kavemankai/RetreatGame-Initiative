@@ -242,7 +242,7 @@ func test_morale_log_hides_the_roll_and_target_number() -> void:
 
 
 func test_sprite_keys_map_every_unit_kind() -> void:
-	check(UnitSprites.key_for(1, 0, false) == "warden" and UnitSprites.key_for(12, 0, false) == "wren", "player slots map to their merc")
+	check(UnitSprites.key_for(1, 0, false) == "warden" and UnitSprites.key_for(7, 0, false) == "wren" and UnitSprites.key_for(8, 0, false) == "ghost", "player slots map to their merc")
 	check(UnitSprites.key_for(4, 0, true) == "hollow", "a hollowed player slot draws as a hollow")
 	check(UnitSprites.key_for(200, 1, false) == "conscript" and UnitSprites.key_for(211, 1, false) == "regular" and UnitSprites.key_for(220, 1, false) == "veteran", "enemy tiers by id range")
 	check(UnitSprites.key_for(300, 1, true) == "hollow" and UnitSprites.key_for(321, 1, true) == "hollow", "enemy hollows by id range")

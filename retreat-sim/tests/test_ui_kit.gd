@@ -8,9 +8,9 @@ var story: Dictionary = StoryData.load_dir("res://data/story")["data"]
 func campaign_with_gear() -> Campaign:
 	var c := Campaign.new_game(story)
 	c.stash.append_array(["scope", "marksman_rifle", "plate_carrier", "sprint_boots", "carbine"])
-	c.equip(1, "scope")
-	c.equip(1, "marksman_rifle")
-	c.equip(1, "plate_carrier")
+	c.equip(3, "scope")  # Sable, the Marksman
+	c.equip(3, "marksman_rifle")
+	c.equip(3, "plate_carrier")
 	return c
 
 
@@ -43,7 +43,7 @@ func test_effective_stats_match_the_unit_a_mission_fields() -> void:
 		var u: SimUnit = c.squad_units("karsa_breakout", [slot])[0]
 		check(eff["hp"] == u.hp and eff["speed"] == u.speed and eff["aim"] == u.aim and eff["cqb"] == u.cqb and eff["morale"] == u.morale, "slot %d: core stats match the fielded unit" % slot)
 		check(eff["sight"] == u.sight_range and eff["range"] == u.max_range() and eff["damage"] == u.damage and eff["shot_cost"] == u.shot_ticks() and eff["to_hit"] == u.hit_bonus and eff["trait"] == u.gear_trait, "slot %d: sight, range, damage, shot cost, to-hit and trait match" % slot)
-	check(c.effective_stats(1)["to_hit"] == 10 and c.effective_stats(1)["trait"] == "scope", "the loaded merc really carries the rifle's accuracy and the scope trait")
+	check(c.effective_stats(3)["to_hit"] == 10 and c.effective_stats(3)["trait"] == "scope", "the loaded merc really carries the rifle's accuracy and the scope trait")
 
 
 func test_a_hollow_shows_bare_stats() -> void:
@@ -77,7 +77,7 @@ func test_equip_deltas_show_what_changes_and_which_way_is_better() -> void:
 	check(by["shot_cost"]["delta"] == -1 and by["shot_cost"]["better"], "carbine: a cheaper shot counts as better")
 	var scope := c.equip_deltas(2, "mod", "scope")
 	check(scope.any(func(d: Dictionary) -> bool: return d["stat"] == "trait" and d["to"] == "scope"), "a mod with a trait lists the trait")
-	check(c.gear_of(2)["weapon"] == "" and c.stash.size() == 4, "asking never changes the campaign")
+	check(c.gear_of(2)["weapon"] == "service_rifle" and c.stash.size() == 4, "asking never changes the campaign")
 
 
 func test_card_data_builders() -> void:
@@ -129,7 +129,7 @@ func test_cards_are_tappable_but_a_drag_is_not_a_tap() -> void:
 
 func test_widgets_show_the_data_and_keep_tap_targets_large() -> void:
 	var c := campaign_with_gear()
-	var merc := MercCard.new().setup(UiModel.merc_info(c, 1))
+	var merc := MercCard.new().setup(UiModel.merc_info(c, 3))
 	TestBase.tree.root.add_child(merc)
 	check(merc.custom_minimum_size.y >= UiTheme.MIN_TAP, "a merc card is at least %d px tall" % UiTheme.MIN_TAP)
 	var texts: Array[String] = []
@@ -138,14 +138,14 @@ func test_widgets_show_the_data_and_keep_tap_targets_large() -> void:
 	var joined := " ".join(texts)
 	for stat in ["HP", "SPD", "AIM", "CQB", "MOR", "SIGHT"]:
 		check(joined.contains(stat), "the card shows %s" % stat)
-	check(joined.contains(String(UiModel.merc_info(c, 1)["name"])), "and the callsign")
+	check(joined.contains(String(UiModel.merc_info(c, 3)["name"])), "and the callsign")
 	var name_label: Label = null
 	for label in merc.find_children("*", "Label", true, false):
-		if (label as Label).text == String(UiModel.merc_info(c, 1)["name"]):
+		if (label as Label).text == String(UiModel.merc_info(c, 3)["name"]):
 			name_label = label as Label
 	check(name_label != null and name_label.clip_text == false and name_label.size_flags_horizontal & Control.SIZE_EXPAND != 0, "the callsign label is allowed to take width (it was once clipped to nothing)")
 	check(nodes_of(merc, "SlotGlyph").size() == 3, "and one glyph per gear slot")
-	var info := UiModel.merc_info(c, 1)
+	var info := UiModel.merc_info(c, 3)
 	var colors := {}
 	for label in merc.find_children("*", "Label", true, false):
 		colors[(label as Label).text] = (label as Label).get_theme_color("font_color")

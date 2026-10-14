@@ -82,7 +82,7 @@
     "debrief": "debrief_karsa_breakout"
    },
    "rewards": [
-    "carbine"
+    "scope"
    ]
   },
   {
@@ -137,7 +137,7 @@
     "debrief": "debrief_the_weir"
    },
    "rewards": [
-    "scope"
+    "mourning_cloak"
    ]
   },
   {
@@ -193,7 +193,7 @@
     "debrief": "debrief_pellam_dock"
    },
    "rewards": [
-    "mourning_cloak"
+    "sprint_boots"
    ]
   },
   {
@@ -251,7 +251,7 @@
     "debrief": "debrief_orchard_ring"
    },
    "rewards": [
-    "sprint_boots"
+    "padded_jacket"
    ]
   },
   {
@@ -309,7 +309,8 @@
     "debrief": "debrief_quiet_wards"
    },
    "rewards": [
-    "plate_carrier"
+    "plate_carrier",
+    "assault_rifle"
    ]
   },
   {
@@ -356,8 +357,7 @@
     "reserves": -5
    },
    "beats": [
-    "Sable finds a slot number she knows.",
-    "Static learns to cut a tether."
+    "Sable finds a slot number she knows."
    ],
    "orrick_present": false,
    "joins": [],
@@ -370,7 +370,8 @@
     "debrief": "debrief_anselm"
    },
    "rewards": [
-    "marksman_rifle"
+    "marksman_rifle",
+    "repeater"
    ]
   },
   {
@@ -429,7 +430,8 @@
     "debrief": "debrief_cinder_market"
    },
    "rewards": [
-    "scatter_gun"
+    "breacher",
+    "heavy_rifle"
    ]
   },
   {
@@ -476,10 +478,7 @@
     "procession": -900,
     "reserves": -6
    },
-   "beats": [
-    "Static jams the net.",
-    "Tinker rigs the frame."
-   ],
+   "beats": [],
    "orrick_present": false,
    "joins": [],
    "choices": [],
@@ -488,7 +487,9 @@
     "debrief": "debrief_mirror_gate"
    },
    "rewards": [
-    "stanchion"
+    "stanchion",
+    "frag_launcher",
+    "focused_laser"
    ]
   },
   {
@@ -550,7 +551,9 @@
     "debrief": "debrief_reliquary_lane"
    },
    "rewards": [
-    "heavy_rifle"
+    "long_rifle",
+    "designated_rifle",
+    "minigun"
    ]
   },
   {
@@ -607,7 +610,9 @@
     "debrief": "debrief_long_corridor"
    },
    "rewards": [
-    "ablative_coat"
+    "ablative_coat",
+    "riot_gun",
+    "heavy_launcher"
    ]
   },
   {
@@ -652,7 +657,6 @@
     "reserves": -4
    },
    "beats": [
-    "Quill opens the ledger to the squad.",
     "Wren finds her mother's name."
    ],
    "orrick_present": false,
@@ -666,7 +670,9 @@
     "debrief": "debrief_tamsins_rest"
    },
    "rewards": [
-    "reflex_rig"
+    "reflex_rig",
+    "machine_pistol",
+    "pulse_laser"
    ]
   },
   {
