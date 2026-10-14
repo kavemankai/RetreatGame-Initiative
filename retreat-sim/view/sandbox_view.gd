@@ -40,6 +40,7 @@ var _content: VBoxContainer
 var _msg: Label
 var _tab_btns: Dictionary = {}
 var _ruleset_btn: Button
+var _ap_btn: Button
 var _stat_labels: Dictionary = {}  # "index:key" -> Label
 var _gear_notes: Dictionary = {}   # "index:slot" -> Label
 var _sound: SoundBoard
@@ -124,6 +125,9 @@ func _build_ui() -> void:
 	_content.add_theme_constant_override("separation", 8)
 	scroll.add_child(_content)
 
+	_ap_btn = _button("", _cycle_ap, Vector2(0, 44))
+	_panel.add_child(_ap_btn)
+	_update_ap_label()
 	_ruleset_btn = _button("", _toggle_ruleset, Vector2(0, 44))
 	_panel.add_child(_ruleset_btn)
 	_panel.add_child(_button("Start", _start, Vector2(0, 56)))
@@ -417,6 +421,15 @@ func _click_enemies(tile: Vector2i) -> void:
 
 
 # --- start / leave ----------------------------------------------------------------------------------
+
+func _cycle_ap() -> void:
+	_cfg = Sandbox.with_next_ap(_cfg)
+	_update_ap_label()
+
+
+func _update_ap_label() -> void:
+	_ap_btn.text = "AP per activation: %d (tap to change; activation ruleset)" % Sandbox.ap_of(_cfg)
+
 
 func _toggle_ruleset() -> void:
 	_cfg = Sandbox.with_ruleset(_cfg, Session.next_ruleset(_cfg["ruleset"]))

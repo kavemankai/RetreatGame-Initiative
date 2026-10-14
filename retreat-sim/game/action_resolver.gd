@@ -130,16 +130,19 @@ static func _move(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
 			break
 		var old := u.pos
 		u.pos = dest
-		cs.ap[u.id] = cs.ap_of(u.id) - cost
+		_spend(cs, u, res, cost)
 		u.bump("steps_moved")
 		_emit(cs, res, [{"type": "move", "tick": cs.next_tick(), "unit": u.id, "from": old, "to": dest}])
+		_react(cs, u, res)
+		if not u.alive:
+			break  # the rest of the path is cancelled; a broken mover has no AP left to continue
 	return _finish(cs, u, a, res)
 
 
 static func _shoot(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
 	var pv := preview_shot(cs, u.id, a.target_id)
 	var res := _begin(cs, u)
-	cs.ap[u.id] = cs.ap_of(u.id) - int(pv["cost"])
+	_spend(cs, u, res, int(pv["cost"]))
 	var events := ShotResolver.fire(cs.sim, u, a.target_id, cs.round_no, cs.next_tick(), not cs.fired.has(u.id))
 	cs.fired[u.id] = true
 	for e: Dictionary in events:
@@ -150,7 +153,7 @@ static func _shoot(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult
 
 static func _overwatch(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
 	var res := _begin(cs, u)
-	cs.ap[u.id] = cs.ap_of(u.id) - cs.config.overwatch_cost
+	_spend(cs, u, res, cs.config.overwatch_cost)
 	cs.overwatch[u.id] = a.dir
 	_emit(cs, res, [{"type": "watch", "tick": cs.next_tick(), "unit": u.id, "dir": a.dir}])
 	return _finish(cs, u, a, res)
@@ -166,6 +169,44 @@ static func _end_turn(cs: CombatState, u: SimUnit) -> ActionResult:
 	ActivationScheduler.end_activation(cs)
 	res.next_active = cs.active_id
 	return res
+
+
+# --- reactions ----------------------------------------------------------------------------
+
+## Armed enemies of `mover` that would fire at it on `tile`: facing it (cone), in weapon range and
+## sight, with a clear line, and neither shaken nor broken. Initiative order, then unit id.
+static func watchers_covering(cs: CombatState, mover: SimUnit, tile: Vector2i) -> Array[SimUnit]:
+	var out: Array[SimUnit] = []
+	for id in cs.overwatch:
+		var d: SimUnit = cs.sim.units.get(id)
+		if d == null or not d.alive or d.team == mover.team or cs.suppressed.has(id) or cs.broken.has(id):
+			continue
+		if SimLos.in_cone(d.pos, cs.overwatch[id], tile) and _can_fire(cs, d, tile):
+			out.append(d)
+	out.sort_custom(func(a: SimUnit, b: SimUnit) -> bool:
+		var ia := ActivationScheduler.initiative_of(a)
+		var ib := ActivationScheduler.initiative_of(b)
+		return ia > ib if ia != ib else a.id < b.id)
+	return out
+
+
+static func _can_fire(cs: CombatState, d: SimUnit, tile: Vector2i) -> bool:
+	return SimLos.chebyshev(d.pos, tile) <= mini(d.max_range(), d.sight_range) and SimLos.can_shoot(cs.sim.grid, d.pos, tile)
+
+
+## One-shot overwatch: after the mover's step, each covering watcher fires once for free and its
+## charge is spent. A reaction never triggers another (nothing listens to reaction shots).
+static func _react(cs: CombatState, mover: SimUnit, res: ActionResult) -> void:
+	for d in watchers_covering(cs, mover, mover.pos):
+		if not mover.alive:
+			return
+		cs.overwatch.erase(d.id)
+		var events := ShotResolver.fire(cs.sim, d, mover.id, cs.round_no, cs.next_tick(), not cs.fired.has(d.id))
+		(events[0] as Dictionary)["reaction"] = true
+		cs.fired[d.id] = true
+		for e: Dictionary in events:
+			_apply_outcome(cs, e)
+		_emit(cs, res, events)
 
 
 # --- bookkeeping --------------------------------------------------------------------------
@@ -187,9 +228,15 @@ static func _emit(cs: CombatState, res: ActionResult, events: Array) -> void:
 		res.beats.append({"events": typed, "state": cs.sim.clone()})
 
 
+## Pays AP for the action. The ledger records what was paid, even if the unit is later killed
+## (which zeroes its pool) before the action finishes.
+static func _spend(cs: CombatState, u: SimUnit, res: ActionResult, amount: int) -> void:
+	cs.ap[u.id] = cs.ap_of(u.id) - amount
+	res.cost += amount
+
+
 static func _post(cs: CombatState, u: SimUnit, type: String, res: ActionResult) -> void:
-	res.ap_after = cs.ap_of(u.id)
-	res.cost = res.ap_before - res.ap_after
+	res.ap_after = res.ap_before - res.cost
 	cs.ledger.append({"seq": cs.ledger.size(), "round": cs.round_no, "actor": u.id, "type": type,
 		"ap_before": res.ap_before, "cost": res.cost, "ap_after": res.ap_after})
 

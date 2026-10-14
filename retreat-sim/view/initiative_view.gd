@@ -69,6 +69,8 @@ func _ready() -> void:
 	var opening: Array[Dictionary] = []
 	if _activation:
 		var am := ActivationMatch.make(Session.current_match)
+		if Session.sandbox:
+			am.cs.config.max_ap = Sandbox.ap_of(Session.sandbox_cfg)
 		_im = am
 		_im.start()
 		opening = am.opening_beats
@@ -183,11 +185,10 @@ func _build_ui() -> void:
 	var tools := HBoxContainer.new()
 	_panel.add_child(tools)
 	_watch_btn = Button.new()
-	_watch_btn.text = "Overwatch (all AP)"
+	_watch_btn.text = "Overwatch (%d AP)" % CombatConfig.load_file().overwatch_cost if _activation else "Overwatch (all AP)"
 	_watch_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_watch_btn.focus_mode = Control.FOCUS_NONE
 	_watch_btn.pressed.connect(_on_watch)
-	_watch_btn.visible = not _activation  # overwatch has no reaction yet in the activation engine
 	tools.add_child(_watch_btn)
 
 	_hint = Label.new()
@@ -351,8 +352,10 @@ func _tap_target(enemy: SimUnit) -> void:
 	_pending = enemy.pos
 	_pending_is_shot = true
 	var cost := int(pv["cost"])
+	var left := _im.ap_of(_sel) - cost
+	var range_ := SimLos.chebyshev(_im.state.units[_sel].pos, enemy.pos)
 	if pv["result"] == "blocked":
-		_say("Blocked by cover (%d AP). Tap again to fire anyway." % cost, true, true)
+		_say("%s: blocked by cover, range %d, %d AP (%d left). Tap again to fire anyway." % [_name_of(enemy.id), range_, cost, left], true, true)
 	elif _im.ap_of(_sel) < cost:
 		_say("Not enough AP: %d needed, %d left." % [cost, _im.ap_of(_sel)], false)
 		_clear_pending()
@@ -360,7 +363,7 @@ func _tap_target(enemy: SimUnit) -> void:
 		_say("Shaken: it cannot shoot this turn.", false)
 		_clear_pending()
 	else:
-		_say("Shot: %d%% to hit, %d damage, %d AP. Tap again to fire." % [pv["chance"], pv["damage"], cost], true, true)
+		_say("%s: %d%% to hit, %d damage, range %d, %d AP (%d left). Tap again to fire." % [_name_of(enemy.id), pv["chance"], pv["damage"], range_, cost, left], true, true)
 	_refresh(false)
 
 
@@ -423,7 +426,7 @@ func _on_watch() -> void:
 	_clear_pending()
 	var beats := _im.hold_watch(_sel, dir)
 	if beats.is_empty():
-		_say("It cannot hold a watch now.", false)
+		_say(CombatReasons.text((_im as ActivationMatch).last_reason) if _activation else "It cannot hold a watch now.", false)
 		return
 	_say("%s holds overwatch." % _name_of(_sel), true, true)
 	_play(beats)
@@ -445,9 +448,15 @@ func _on_end_turn() -> void:
 # --- playback ------------------------------------------------------------------------------
 
 var _ends_turn := false
+var _enemy_events := 0  # enemy moves/shots in the beats being played
+var _enemy_seen := 0    # how many of those the squad could actually see
 
 
 func _play(beats: Array[Dictionary], ends_turn: bool = false) -> void:
+	_enemy_events = 0
+	_enemy_seen = 0
+	for b in beats:
+		_enemy_events += _enemy_event_count(b["events"], b["state"])
 	_queue = beats.duplicate()
 	_ends_turn = ends_turn
 	_busy = true
@@ -475,6 +484,7 @@ func _play_next_beat() -> void:
 	var state: SimState = beat["state"]
 	var fog := _fog_for(state)
 	var shown: Array[Dictionary] = []
+	_enemy_seen += _enemy_event_count(_visible_events(beat["events"], fog), state)
 	for ev: Dictionary in beat["events"]:
 		if ev["type"] in ["watch"] or ReplayModel.event_visible(ev, fog):
 			shown.append(ev)
@@ -486,7 +496,23 @@ func _play_next_beat() -> void:
 	_sound.play_events(shown)
 
 
+## Events caused by enemy units (their moves and shots), counted without revealing where.
+func _enemy_event_count(events: Array, state: SimState) -> int:
+	var n := 0
+	for ev: Dictionary in events:
+		var u: SimUnit = state.units.get(int(ev.get("unit", -1)))
+		if u != null and u.team != _im.player_team and ev["type"] in ["move", "shot", "watch"]:
+			n += 1
+	return n
+
+
+func _visible_events(events: Array, fog: Dictionary) -> Array:
+	return events.filter(func(ev: Dictionary) -> bool: return ev["type"] == "watch" or ReplayModel.event_visible(ev, fog))
+
+
 func _finish_playback() -> void:
+	if _activation and _enemy_events > 0 and _enemy_seen == 0:
+		_log_line("[color=#8a93a0]The enemy acts out of sight.[/color]")
 	_busy = false
 	_set_controls(true)
 	if _ends_turn and not _im.is_over():
@@ -526,6 +552,7 @@ func _refresh(redraw_board: bool = true) -> void:
 			_add_route(overlay, _im.route_preview(_sel, _pending))
 		if _pending != NO_TILE and _pending_is_shot:
 			overlay["shots"].append({"from": state.units[_sel].pos, "to": _pending, "color": PlayOverlay.COL_FIRE})
+			overlay["marks"].append({"tile": _pending, "text": _shot_mark(state), "lane": 0, "color": PlayOverlay.COL_FIRE})
 		overlay["pending"] = _pending
 	_board.set_overlay(overlay)
 	_board.show_frame(state, [], _watch_cones(), fog)
@@ -554,6 +581,17 @@ func _refresh(redraw_board: bool = true) -> void:
 		_sound.play("stinger_win" if _im.winner == _im.player_team else "stinger_loss")
 	_rebuild_squad()
 	_hint.text = _hint_text()
+
+
+## The shot summary drawn on the targeted tile: chance, damage and AP (or cover).
+func _shot_mark(state: SimState) -> String:
+	var target: SimUnit = state.unit_at(_pending)
+	if target == null:
+		return ""
+	var pv := _im.shot_preview(_sel, target.id)
+	if pv["result"] == "hit":
+		return "%d%% | %d dmg | %d AP" % [pv["chance"], pv["damage"], pv["cost"]]
+	return "COVER | %d AP" % int(pv.get("cost", 0))
 
 
 ## The route to the pending tile: blue where safe, red on steps where a visible enemy would
@@ -627,7 +665,7 @@ func _hint_text() -> String:
 	if _activation:
 		if _sel < 0 or not _im.can_act(_sel):
 			return "Units act one at a time in the order shown above. Tap a tile to move or an enemy to shoot, then End Activation."
-		return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4. End Activation to pass to the next unit." % [_name_of(_sel), _im.ap_of(_sel)]
+		return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4, overwatch 4 (one free shot at the first enemy to move in its cone). End Activation to pass." % [_name_of(_sel), _im.ap_of(_sel)]
 	if _sel < 0:
 		return "Tap a merc, then a tile to move or an enemy to shoot. Waiting units get one interrupt shot at anyone who steps into their sights first."
 	return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4." % [_name_of(_sel), _im.ap_of(_sel)]

@@ -5,7 +5,7 @@ extends RefCounted
 ## asks ActionResolver.problem() whether the step is still legal given what the team knows
 ## now; a stale step (a merc came into view, a target died) is dropped and the unit replans
 ## instead of submitting a refusal. Hard caps and a guaranteed END_TURN mean an activation
-## can never spin. Overwatch orders are skipped until reactions exist (phase 4 of the plan).
+## can never spin. An overwatch order arms the unit, which then holds (ends its activation).
 
 const MAX_REPLANS := 3
 const MAX_ACTIONS := 40
@@ -30,8 +30,8 @@ func next_action(cs: CombatState) -> CombatAction:
 		_replans = 0
 		_actions = 0
 		_pending = []
-	if _actions >= MAX_ACTIONS:
-		return CombatAction.end_turn(id)
+	if _actions >= MAX_ACTIONS or cs.overwatch.has(id):
+		return CombatAction.end_turn(id)  # out of budget, or armed and holding
 	while true:
 		if _pending.is_empty():
 			if _replans >= MAX_REPLANS or cs.ap_of(id) <= 0:
@@ -67,6 +67,8 @@ func _convert(cs: CombatState, id: int, a: SimAction) -> CombatAction:
 			return CombatAction.move_to(id, u.pos + a.dir)
 		SimConst.ACTION_SHOOT:
 			return CombatAction.shoot(id, a.target_id)
+		SimConst.ACTION_OVERWATCH:
+			return CombatAction.overwatch(id, a.dir)
 	return null
 
 

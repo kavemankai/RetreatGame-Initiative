@@ -190,3 +190,20 @@ func test_ruleset_plumbing() -> void:
 	check(Session.ruleset == "activation", "so does a fresh session")
 	for r in Session.RULESETS:
 		check(Session.RULESET_LABEL.has(r), "%s has a label" % r)
+
+
+func test_the_sandbox_ap_setting_cycles_and_sets_the_pool() -> void:
+	var cfg := Sandbox.default_config(story)
+	check(Sandbox.ap_of(cfg) == 14, "the default is the data file's 14")
+	var seen: Array[int] = []
+	var c := cfg
+	for i in Sandbox.AP_CHOICES.size():
+		c = Sandbox.with_next_ap(c)
+		seen.append(Sandbox.ap_of(c))
+	check(seen[seen.size() - 1] == 14 and seen.has(8) and seen.has(20), "it cycles through every choice and wraps: %s" % [seen])
+	check(Sandbox.ap_of(cfg) == 14, "the original config is untouched")
+	var built := Sandbox.build(story, cfg)
+	var am := ActivationMatch.make(built)
+	am.cs.config.max_ap = 8
+	am.start()
+	check(am.ap_of(am.active_unit()) == 8 - am.state.units[am.active_unit()].stress_penalty, "the activation pool follows the setting")

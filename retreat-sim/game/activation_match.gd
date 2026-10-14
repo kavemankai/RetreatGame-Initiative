@@ -8,7 +8,7 @@ extends InitiativeMatch
 ##
 ## Differences a screen must know: the active unit is one merc, not a whole side; end_turn()
 ## ends that merc's activation and then plays every enemy activation until a merc is active
-## again; there are no automatic interrupts and (until phase 4) overwatch is not offered.
+## again; there are no automatic interrupts, only armed one-shot overwatch (4 AP).
 
 var cs: CombatState
 var ai := ActivationAI.new()
@@ -35,6 +35,10 @@ func _init(p_cs: CombatState) -> void:
 
 
 func start() -> void:
+	for id in cs.sim.units:
+		var u: SimUnit = cs.sim.units[id]
+		if u.alive and u.team == ai_team and u.watch_dir != Vector2i.ZERO:
+			cs.overwatch[id] = u.watch_dir  # sentries are already looking down their lane
 	ActivationScheduler.start(cs)
 	opening_beats = _run_enemy_activations()
 	_sync()
@@ -100,18 +104,23 @@ func path_preview(id: int, tile: Vector2i) -> Array[Vector2i]:
 	return SimPathing.path_to(r, tile)
 
 
-## The walk to `tile` with the running AP cost. There are no automatic interrupts in this
-## engine, so no step ever carries threats.
+## The walk to `tile` with the running AP cost. A step carries "threats": the enemies the
+## player can see whose overwatch cone and range cover it (they would fire as it arrives).
 func route_preview(id: int, tile: Vector2i) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var u: SimUnit = cs.sim.units.get(id)
 	var path := path_preview(id, tile)
 	if u == null or path.size() < 2:
 		return out
+	var seen := SimVision.visible_unit_ids(cs.sim, player_team)
 	var spent := 0
 	for i in range(1, path.size()):
 		spent += u.step_cost(path[i] - path[i - 1])
-		out.append({"tile": path[i], "cost": spent, "threats": [] as Array[int]})
+		var threats: Array[int] = []
+		for d in ActionResolver.watchers_covering(cs, u, path[i]):
+			if seen.has(d.id):
+				threats.append(d.id)
+		out.append({"tile": path[i], "cost": spent, "threats": threats})
 	return out
 
 
