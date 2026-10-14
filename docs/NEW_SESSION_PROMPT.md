@@ -32,7 +32,7 @@ After the user answers the decisions, start **Phase 1**: a pure, headless `Comba
 - No attribution lines in commits or PR text. Commit messages: `<type>: <description>`.
 - Higgsfield credit budget is nearly spent (about 36 of the approved 45 credits left in the earlier project); do not spend credits without asking. Never use Higgsfield music/SFX models; synthesise audio in code (`art/make_sounds.py`). Art is for the later phase.
 - The user cannot see inline widgets; give art or screenshots as image files.
-- Use Alt-neutral pronouns (they/them) unless stated.
+- Use they/them for anyone whose pronouns are not stated.
 - Prefer the TDD workflow in the user's global rules: write tests, mutation-check rule changes, run the full suite before reporting.
 
 ## Gotchas
