@@ -1,0 +1,883 @@
+{
+ "version": 1,
+ "start": "karsa_breakout",
+ "finale": "vesper_threshold",
+ "objective_types": [
+  "breakout",
+  "scavenge",
+  "defend",
+  "rescue",
+  "infiltrate",
+  "extract",
+  "hold",
+  "ambush",
+  "last_stand",
+  "finale"
+ ],
+ "acts": [
+  {
+   "act": 1,
+   "name": "The Breakout"
+  },
+  {
+   "act": 2,
+   "name": "The Counting"
+  },
+  {
+   "act": 3,
+   "name": "The Door"
+  }
+ ],
+ "contingencies_per_act": 1,
+ "missions": [
+  {
+   "id": "karsa_breakout",
+   "act": 1,
+   "name": "Karsa Breakout",
+   "place": "Karsa Station",
+   "summary": "Cut a path through the dying station so the Procession can load.",
+   "objective": {
+    "type": "breakout",
+    "text": "Clear the north spine and hold the lock until the convoy is aboard."
+   },
+   "squad_size": 3,
+   "map": {
+    "archetype": "station_deck",
+    "size": [
+     16,
+     12
+    ],
+    "features": [
+     "bulkheads",
+     "fire doors",
+     "emergency lighting"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "conscript": 3
+    }
+   },
+   "next": [
+    "the_weir"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": -2
+   },
+   "on_failure": {
+    "procession": -300,
+    "reserves": -4
+   },
+   "beats": [
+    "The first false roll is signed.",
+    "Needle breaches the first door."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_karsa_breakout",
+    "debrief": "debrief_karsa_breakout"
+   },
+   "rewards": [
+    "carbine"
+   ]
+  },
+  {
+   "id": "the_weir",
+   "act": 1,
+   "name": "The Weir",
+   "place": "Wreck-field",
+   "summary": "Thread the convoy's scouts through a field of hulls that are still blinking.",
+   "objective": {
+    "type": "scavenge",
+    "text": "Find fuel and a safe lane before the field closes."
+   },
+   "squad_size": 3,
+   "map": {
+    "archetype": "wreck_field",
+    "size": [
+     18,
+     14
+    ],
+    "features": [
+     "hull cover",
+     "fog",
+     "dead lights"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "conscript": 3
+    }
+   },
+   "next": [
+    "pellam_dock"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": 3
+   },
+   "on_failure": {
+    "procession": -150,
+    "reserves": -3
+   },
+   "beats": [
+    "Moth leads by lantern.",
+    "Gran teaches fog movement."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_the_weir",
+    "debrief": "debrief_the_weir"
+   },
+   "rewards": [
+    "scope"
+   ]
+  },
+  {
+   "id": "pellam_dock",
+   "act": 1,
+   "name": "Pellam Dock",
+   "place": "Pellam Dock",
+   "summary": "Hold the gantries while the convoy refuels.",
+   "objective": {
+    "type": "defend",
+    "text": "Keep the gantries for eleven hours. No ship may be cut loose."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "dock_ring",
+    "size": [
+     16,
+     14
+    ],
+    "features": [
+     "gantries",
+     "cargo stacks",
+     "tug berths"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "conscript": 4,
+     "regular": 1
+    }
+   },
+   "next": [
+    "orchard_ring"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": -2
+   },
+   "on_failure": {
+    "procession": -400,
+    "reserves": -5
+   },
+   "beats": [
+    "The first muster drop arrives. The first hollow stands.",
+    "Sable refuses the Roll Call."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_pellam_dock",
+    "debrief": "debrief_pellam_dock"
+   },
+   "rewards": [
+    "mourning_cloak"
+   ]
+  },
+  {
+   "id": "orchard_ring",
+   "act": 1,
+   "name": "Orchard Ring",
+   "place": "Orchard Ring",
+   "summary": "Bring the families of the lower gardens out under sweeping fire.",
+   "objective": {
+    "type": "rescue",
+    "text": "Escort the civilians to the aft lock. Do not let the garden burn."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "garden_deck",
+    "size": [
+     14,
+     14
+    ],
+    "features": [
+     "planters",
+     "grow-lamps",
+     "narrow paths"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "conscript": 2,
+     "regular": 2
+    }
+   },
+   "next": [
+    "quiet_wards"
+   ],
+   "on_success": {
+    "procession": 120,
+    "reserves": -1
+   },
+   "on_failure": {
+    "procession": -250,
+    "reserves": -3
+   },
+   "beats": [
+    "Wren joins.",
+    "Bulwark is hurt shielding a family."
+   ],
+   "orrick_present": false,
+   "joins": [
+    "wren"
+   ],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_orchard_ring",
+    "debrief": "debrief_orchard_ring"
+   },
+   "rewards": [
+    "sprint_boots"
+   ]
+  },
+  {
+   "id": "quiet_wards",
+   "act": 2,
+   "name": "The Quiet Wards",
+   "place": "Hospital hulk",
+   "summary": "Evacuate eighty wounded while a polite voice offers terms.",
+   "objective": {
+    "type": "defend",
+    "text": "Hold the long ward until every stretcher is out."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "hospital_hulk",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "long ward",
+     "bulkhead doors",
+     "sterile light"
+    ]
+   },
+   "enemies": {
+    "writ": [
+     "clerk",
+     "gavel"
+    ],
+    "roster": {
+     "conscript": 2
+    }
+   },
+   "next": [
+    "anselm"
+   ],
+   "on_success": {
+    "procession": 80,
+    "reserves": -2
+   },
+   "on_failure": {
+    "procession": -500,
+    "reserves": -4
+   },
+   "beats": [
+    "Orrick's first transmission.",
+    "The first Writ officers are met."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_quiet_wards",
+    "debrief": "debrief_quiet_wards"
+   },
+   "rewards": [
+    "plate_carrier"
+   ]
+  },
+  {
+   "id": "anselm",
+   "act": 2,
+   "name": "The Anselm",
+   "place": "Foundry ship",
+   "summary": "Raid the Foundry where the hollows are made.",
+   "objective": {
+    "type": "infiltrate",
+    "text": "Reach the vat hall. Choose: break the vats or take the key."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "foundry_hold",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "vats",
+     "gantries",
+     "warm fog"
+    ]
+   },
+   "enemies": {
+    "writ": [
+     "seal"
+    ],
+    "roster": {
+     "regular": 2,
+     "veteran": 1
+    }
+   },
+   "next": [
+    "cinder_market"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": -3
+   },
+   "on_failure": {
+    "procession": -200,
+    "reserves": -5
+   },
+   "beats": [
+    "Sable finds a slot number she knows.",
+    "Static learns to cut a tether."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [
+    "destroy_vats",
+    "take_key"
+   ],
+   "scenes": {
+    "briefing": "briefing_anselm",
+    "debrief": "debrief_anselm"
+   },
+   "rewards": [
+    "marksman_rifle"
+   ]
+  },
+  {
+   "id": "cinder_market",
+   "act": 2,
+   "name": "Cinder Market",
+   "place": "Cinder Market",
+   "summary": "Trade for passage through a market that sells everything.",
+   "objective": {
+    "type": "extract",
+    "text": "Reach the dealer's door and walk out with the way through the Gate."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "market_concourse",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "stalls",
+     "crowds",
+     "lamp-light"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "regular": 2,
+     "veteran": 1,
+     "hollow_regular": 1
+    }
+   },
+   "next": [
+    "mirror_gate"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": 4
+   },
+   "on_failure": {
+    "procession": -100,
+    "reserves": -2
+   },
+   "beats": [
+    "Ghost joins.",
+    "Gran meets the hollows of her old company."
+   ],
+   "orrick_present": false,
+   "joins": [
+    "ghost"
+   ],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_cinder_market",
+    "debrief": "debrief_cinder_market"
+   },
+   "rewards": [
+    "scatter_gun"
+   ]
+  },
+  {
+   "id": "mirror_gate",
+   "act": 2,
+   "name": "The Mirror Gate",
+   "place": "Jump gate",
+   "summary": "Hold the gate frame open long enough for eleven ships.",
+   "objective": {
+    "type": "hold",
+    "text": "Hold the frame for forty minutes while the convoy passes."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "gate_frame",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "struts",
+     "control cage",
+     "vacuum edge"
+    ]
+   },
+   "enemies": {
+    "writ": [
+     "notary"
+    ],
+    "roster": {
+     "regular": 1,
+     "veteran": 1,
+     "hollow_regular": 1
+    }
+   },
+   "next": [
+    "reliquary_lane"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": -3
+   },
+   "on_failure": {
+    "procession": -900,
+    "reserves": -6
+   },
+   "beats": [
+    "Static jams the net.",
+    "Tinker rigs the frame."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_mirror_gate",
+    "debrief": "debrief_mirror_gate"
+   },
+   "rewards": [
+    "stanchion"
+   ]
+  },
+  {
+   "id": "reliquary_lane",
+   "act": 3,
+   "name": "Reliquary Lane",
+   "place": "Memorial drift",
+   "summary": "Cross ten thousand named hulls with Orrick's officers in pursuit.",
+   "objective": {
+    "type": "ambush",
+    "text": "Break the ambush and reach the lane's far end."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "memorial_drift",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "named hulls",
+     "long sightlines",
+     "wreckage"
+    ]
+   },
+   "enemies": {
+    "writ": [
+     "surveyor",
+     "usher"
+    ],
+    "roster": {
+     "regular": 1,
+     "hollow_regular": 2
+    }
+   },
+   "next": [
+    "long_corridor"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": -3
+   },
+   "on_failure": {
+    "procession": -300,
+    "reserves": -5
+   },
+   "beats": [
+    "Sable reads one hull's name.",
+    "Two more officers fall."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [
+    "read_a_name",
+    "press_on"
+   ],
+   "scenes": {
+    "briefing": "briefing_reliquary_lane",
+    "debrief": "debrief_reliquary_lane"
+   },
+   "rewards": [
+    "heavy_rifle"
+   ]
+  },
+  {
+   "id": "long_corridor",
+   "act": 3,
+   "name": "The Long Corridor",
+   "place": "Hull corridor",
+   "summary": "Hold one door for the whole Procession.",
+   "objective": {
+    "type": "last_stand",
+    "text": "Hold the door until the last ship has cleared."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "hull_corridor",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "one door",
+     "smoke",
+     "long approach"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "veteran": 1,
+     "hollow_regular": 3
+    }
+   },
+   "next": [
+    "tamsins_rest"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": -4
+   },
+   "on_failure": {
+    "procession": -1200,
+    "reserves": -6
+   },
+   "beats": [
+    "Orrick walks out of the smoke.",
+    "Ghost names Orrick's missing past.",
+    "Bulwark holds the door alone."
+   ],
+   "orrick_present": true,
+   "joins": [],
+   "choices": [],
+   "scenes": {
+    "briefing": "briefing_long_corridor",
+    "debrief": "debrief_long_corridor"
+   },
+   "rewards": [
+    "ablative_coat"
+   ]
+  },
+  {
+   "id": "tamsins_rest",
+   "act": 3,
+   "name": "Tamsin's Rest",
+   "place": "Relay station",
+   "summary": "Reach the second copy of the Roll before the Bureau does.",
+   "objective": {
+    "type": "infiltrate",
+    "text": "Reach the archive and read what the Roll truly is."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "relay_station",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "server stacks",
+     "cold corridors",
+     "dead screens"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "veteran": 2,
+     "hollow_regular": 3
+    }
+   },
+   "next": [
+    "vesper_threshold"
+   ],
+   "on_success": {
+    "procession": 0,
+    "reserves": -2
+   },
+   "on_failure": {
+    "procession": -400,
+    "reserves": -4
+   },
+   "beats": [
+    "Quill opens the ledger to the squad.",
+    "Wren finds her mother's name."
+   ],
+   "orrick_present": false,
+   "joins": [],
+   "choices": [
+    "open_the_roll",
+    "keep_it_closed"
+   ],
+   "scenes": {
+    "briefing": "briefing_tamsins_rest",
+    "debrief": "debrief_tamsins_rest"
+   },
+   "rewards": [
+    "reflex_rig"
+   ]
+  },
+  {
+   "id": "vesper_threshold",
+   "act": 3,
+   "name": "Vesper Threshold",
+   "place": "Vesper Reach",
+   "summary": "At the door, decide what the squad becomes.",
+   "objective": {
+    "type": "finale",
+    "text": "Survive the last count and choose."
+   },
+   "squad_size": 4,
+   "map": {
+    "archetype": "station_threshold",
+    "size": [
+     12,
+     10
+    ],
+    "features": [
+     "the door",
+     "rows of Keepers",
+     "black glass"
+    ]
+   },
+   "enemies": {
+    "writ": [],
+    "roster": {
+     "hollow_veteran": 4
+    }
+   },
+   "next": [],
+   "on_success": {
+    "procession": 0,
+    "reserves": 0
+   },
+   "on_failure": {
+    "procession": -600,
+    "reserves": -6
+   },
+   "beats": [
+    "Orrick has six hollows and no one to command.",
+    "The door opens or it does not."
+   ],
+   "orrick_present": true,
+   "joins": [],
+   "choices": [
+    "read_the_roll",
+    "take_orrick_alive",
+    "accept_terms",
+    "hold_the_door"
+   ],
+   "scenes": {
+    "briefing": "briefing_vesper_threshold",
+    "debrief": "debrief_vesper_threshold"
+   },
+   "rewards": []
+  }
+ ],
+ "cards": [
+  {
+   "id": "stranded_tug",
+   "act": 1,
+   "name": "A Tug Adrift",
+   "objective": {
+    "type": "rescue",
+    "text": "Recover a tug and its crew before the Bureau does."
+   },
+   "squad_size": 3,
+   "on_success": {
+    "procession": 40,
+    "reserves": 2
+   },
+   "on_failure": {
+    "procession": -60,
+    "reserves": -1
+   },
+   "scene": "card_stranded_tug"
+  },
+  {
+   "id": "signal_fire",
+   "act": 1,
+   "name": "Signal Fire",
+   "objective": {
+    "type": "ambush",
+    "text": "Put out a beacon someone lit to call the Hegemony."
+   },
+   "squad_size": 3,
+   "on_success": {
+    "procession": 0,
+    "reserves": -1
+   },
+   "on_failure": {
+    "procession": -200,
+    "reserves": -2
+   },
+   "scene": "card_signal_fire"
+  },
+  {
+   "id": "picket_line",
+   "act": 2,
+   "name": "Picket Line",
+   "objective": {
+    "type": "ambush",
+    "text": "Break a Hegemony picket on the lane."
+   },
+   "squad_size": 4,
+   "on_success": {
+    "procession": 0,
+    "reserves": -2
+   },
+   "on_failure": {
+    "procession": -250,
+    "reserves": -4
+   },
+   "scene": "card_picket_line"
+  },
+  {
+   "id": "salvage_claim",
+   "act": 2,
+   "name": "Salvage Claim",
+   "objective": {
+    "type": "scavenge",
+    "text": "Strip a dead cruiser before the claim-jumpers arrive."
+   },
+   "squad_size": 4,
+   "on_success": {
+    "procession": 0,
+    "reserves": 5
+   },
+   "on_failure": {
+    "procession": 0,
+    "reserves": -2
+   },
+   "scene": "card_salvage_claim"
+  },
+  {
+   "id": "mutiny_aboard",
+   "act": 2,
+   "name": "Mutiny Aboard",
+   "objective": {
+    "type": "hold",
+    "text": "Calm a convoy ship that wants to turn back."
+   },
+   "squad_size": 4,
+   "on_success": {
+    "procession": 60,
+    "reserves": 0
+   },
+   "on_failure": {
+    "procession": -350,
+    "reserves": 0
+   },
+   "scene": "card_mutiny_aboard"
+  },
+  {
+   "id": "dead_air",
+   "act": 3,
+   "name": "Dead Air",
+   "objective": {
+    "type": "infiltrate",
+    "text": "Restore a silent relay so the convoy can hear its own heading."
+   },
+   "squad_size": 4,
+   "on_success": {
+    "procession": 0,
+    "reserves": -1
+   },
+   "on_failure": {
+    "procession": -150,
+    "reserves": -2
+   },
+   "scene": "card_dead_air"
+  },
+  {
+   "id": "last_tender",
+   "act": 3,
+   "name": "The Last Tender",
+   "objective": {
+    "type": "defend",
+    "text": "Protect the last fuel tender from a Bureau strike."
+   },
+   "squad_size": 4,
+   "on_success": {
+    "procession": 0,
+    "reserves": 4
+   },
+   "on_failure": {
+    "procession": -300,
+    "reserves": -4
+   },
+   "scene": "card_last_tender"
+  },
+  {
+   "id": "lanterns_out",
+   "act": 3,
+   "name": "Lanterns Out",
+   "objective": {
+    "type": "rescue",
+    "text": "Reach a lamp-keepers' dock before it goes dark for good."
+   },
+   "squad_size": 4,
+   "on_success": {
+    "procession": 90,
+    "reserves": 1
+   },
+   "on_failure": {
+    "procession": -200,
+    "reserves": -2
+   },
+   "scene": "card_lanterns_out"
+  }
+ ]
+}

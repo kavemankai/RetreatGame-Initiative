@@ -1,0 +1,140 @@
+{
+ "version": 1,
+ "title": "The Long Retreat",
+ "calendar": "Compact Years (CY)",
+ "timeline": [
+  {
+   "year": 160,
+   "event": "The Lantern Compact is founded: forty outer colonies, each lighting a lantern on its dock."
+  },
+  {
+   "year": 199,
+   "event": "The Meridian Hegemony begins absorbing Compact worlds by treaty and blockade."
+  },
+  {
+   "year": 207,
+   "event": "Battle of Ostrava Narrows. Muster Law, Article Nine: Strength Is Presence. The Foundry begins making hollows."
+  },
+  {
+   "year": 212,
+   "event": "Fall of Karsa Station. The 9th Rearguard breaks out with the Procession."
+  }
+ ],
+ "factions": [
+  {
+   "id": "compact",
+   "name": "The Lantern Compact",
+   "role": "player",
+   "summary": "A defeated league whose procedures outlived its institutions."
+  },
+  {
+   "id": "hegemony",
+   "name": "The Meridian Hegemony",
+   "role": "antagonist",
+   "summary": "Orderly, reasonable, patient. Governs by Reconciliation."
+  },
+  {
+   "id": "keepers",
+   "name": "The Keepers of Vesper",
+   "role": "neutral",
+   "summary": "A silent custodial order guarding the refuge."
+  },
+  {
+   "id": "procession",
+   "name": "The Procession",
+   "role": "civilians",
+   "summary": "Six thousand two hundred souls in eleven ships."
+  }
+ ],
+ "resources": {
+  "procession": {
+   "start": 6200,
+   "min": 0,
+   "note": "Souls in the convoy."
+  },
+  "reserves": {
+   "start": 24,
+   "min": 0,
+   "note": "Ammunition, medicine, fuel and muster drops."
+  },
+  "remembrance": {
+   "start": 0,
+   "note": "Names read aloud; never spent."
+  }
+ },
+ "hollowing": {
+  "drone_percent": 60,
+  "refill_cost_reserves": 1,
+  "designation_format": "HX-{slot:02d}",
+  "automatic": true,
+  "frozen": true,
+  "no_morale": true,
+  "vacant_when_no_reserves": true
+ },
+ "remembrance": {
+  "per_name_read": 1,
+  "roll_read_threshold": 7
+ },
+ "pursuit": {
+  "stage_max": 6,
+  "quiet_stage": 6,
+  "true_name_remembrance": 6
+ },
+ "endings": [
+  {
+   "id": "roll_read",
+   "name": "The Roll Read",
+   "choice": "read_the_roll",
+   "requires": {
+    "remembrance_min": 7,
+    "flags": [
+     "foundry_destroyed",
+     "roll_opened"
+    ]
+   },
+   "summary": "The Procession enters Vesper. The Rearguard reads the whole Roll at the door; the Foundry key is gone; the hollows stop and stand.",
+   "scene": "ending_roll_read"
+  },
+  {
+   "id": "orrick_rest",
+   "name": "Orrick's Rest",
+   "choice": "take_orrick_alive",
+   "requires": {
+    "writ_stage_min": 6
+   },
+   "summary": "Orrick is taken alive among six silent bodies. The last person in a room of tallies.",
+   "scene": "ending_orrick_rest"
+  },
+  {
+   "id": "quiet_terms",
+   "name": "Quiet Terms",
+   "choice": "accept_terms",
+   "requires": {},
+   "summary": "The squad is counted. The Procession is resettled. Safe, ordinary, and a loss.",
+   "scene": "ending_quiet_terms"
+  },
+  {
+   "id": "long_watch",
+   "name": "The Long Watch",
+   "choice": "hold_the_door",
+   "requires": {},
+   "summary": "The squad holds the door for forty years, hollowing slot by slot as the muster drops keep coming.",
+   "scene": "ending_long_watch"
+  }
+ ],
+ "fallback_ending": "long_watch",
+ "glossary": {
+  "roll": "The ledger of the Compact's soldiers, living and not.",
+  "muster": "A resupply drop; the moment of refill.",
+  "hollow": "A tethered, vat-grown replacement body with the dead soldier's slot number.",
+  "slot": "A soldier's number; it outlives them.",
+  "tether": "The neural harness and squad net.",
+  "echo": "The process of making a hollow.",
+  "strength": "The Law's word for a full roll.",
+  "the quiet": "The state of Orrick's squad when all six officers are hollow.",
+  "reconciliation": "The Hegemony's word for absorption.",
+  "writ": "Orrick's squad.",
+  "procession": "The civilian convoy.",
+  "remembrance": "The count of names read."
+ }
+}

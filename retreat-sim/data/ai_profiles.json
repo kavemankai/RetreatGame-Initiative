@@ -1,0 +1,52 @@
+{
+ "default": {
+  "w_damage": 10,
+  "w_kill": 25,
+  "w_exposed": 6,
+  "w_cover": 3,
+  "preferred_range": 4,
+  "w_range": 2,
+  "w_objective": 2,
+  "w_watch": 0
+ },
+ "aggressor": {
+  "w_damage": 10,
+  "w_kill": 25,
+  "w_exposed": 4,
+  "w_cover": 2,
+  "preferred_range": 3,
+  "w_range": 3,
+  "w_objective": 3,
+  "w_watch": 0
+ },
+ "defender": {
+  "w_damage": 10,
+  "w_kill": 25,
+  "w_exposed": 10,
+  "w_cover": 5,
+  "preferred_range": 6,
+  "w_range": 1,
+  "w_objective": 1,
+  "w_watch": 1
+ },
+ "sentry": {
+  "w_damage": 10,
+  "w_kill": 25,
+  "w_exposed": 0,
+  "w_cover": 0,
+  "preferred_range": 6,
+  "w_range": 0,
+  "w_objective": 0,
+  "w_watch": 4
+ },
+ "guard": {
+  "w_damage": 10,
+  "w_kill": 25,
+  "w_exposed": 0,
+  "w_cover": 0,
+  "preferred_range": 6,
+  "w_range": 0,
+  "w_objective": 0,
+  "w_watch": 1
+ }
+}

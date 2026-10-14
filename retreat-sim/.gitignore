@@ -1,0 +1,4 @@
+build/
+shots/
+.godot/
+*.import

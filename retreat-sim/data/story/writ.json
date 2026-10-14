@@ -1,0 +1,179 @@
+{
+ "version": 1,
+ "provost": {
+  "id": "orrick",
+  "designation": "Orrick-IV",
+  "title": "Provost of the Retrieval Bureau",
+  "stats": {
+   "hp": 4,
+   "speed": 7,
+   "aim": 7,
+   "cqb": 6,
+   "morale": 9,
+   "sight": 8
+  },
+  "public": "Courteous, relentless, without grievance. Opens every transmission with terms.",
+  "truth": "Orrick is a designation. The fourth holder volunteered to be made efficient; his personal history was edited out.",
+  "true_name": "Teodor",
+  "reveal_mission": "long_corridor"
+ },
+ "stage_names": [
+  "intact",
+  "one replaced",
+  "two replaced",
+  "three replaced",
+  "four replaced",
+  "five replaced",
+  "the Quiet"
+ ],
+ "officers": [
+  {
+   "id": "clerk",
+   "slot": 1,
+   "callsign": "Clerk",
+   "name": "Hester Pell",
+   "rank": "Lieutenant",
+   "stats": {
+    "hp": 3,
+    "speed": 6,
+    "aim": 5,
+    "cqb": 4,
+    "morale": 8,
+    "sight": 6
+   },
+   "alive_lines": [
+    "Captain, the paperwork will be so much easier if you simply stop.",
+    "I have never lost a file."
+   ],
+   "hollow_lines": [
+    "Present.",
+    "File closed."
+   ],
+   "introduced": "quiet_wards"
+  },
+  {
+   "id": "gavel",
+   "slot": 2,
+   "callsign": "Gavel",
+   "name": "Jonas Dunmore",
+   "rank": "Sergeant",
+   "stats": {
+    "hp": 4,
+    "speed": 4,
+    "aim": 5,
+    "cqb": 7,
+    "morale": 9,
+    "sight": 5
+   },
+   "alive_lines": [
+    "Terms are terms, Captain. We do not shout.",
+    "I would hate to make this unpleasant."
+   ],
+   "hollow_lines": [
+    "Present.",
+    "Order restored."
+   ],
+   "introduced": "quiet_wards"
+  },
+  {
+   "id": "seal",
+   "slot": 3,
+   "callsign": "Seal",
+   "name": "Isolde Ashe",
+   "rank": "Corporal",
+   "stats": {
+    "hp": 2,
+    "speed": 7,
+    "aim": 7,
+    "cqb": 3,
+    "morale": 6,
+    "sight": 7
+   },
+   "alive_lines": [
+    "I only stamp what has already happened.",
+    "The record will be kind to you if you let it."
+   ],
+   "hollow_lines": [
+    "Present.",
+    "Sealed."
+   ],
+   "introduced": "anselm"
+  },
+  {
+   "id": "notary",
+   "slot": 4,
+   "callsign": "Notary",
+   "name": "Teo Reeve",
+   "rank": "Auxiliary",
+   "stats": {
+    "hp": 3,
+    "speed": 6,
+    "aim": 4,
+    "cqb": 5,
+    "morale": 7,
+    "sight": 6
+   },
+   "alive_lines": [
+    "Witnessed. Everything is witnessed.",
+    "You should be counted before the gate closes."
+   ],
+   "hollow_lines": [
+    "Present.",
+    "Witnessed."
+   ],
+   "introduced": "mirror_gate"
+  },
+  {
+   "id": "surveyor",
+   "slot": 5,
+   "callsign": "Surveyor",
+   "name": "Marit Solheim",
+   "rank": "Auxiliary",
+   "stats": {
+    "hp": 2,
+    "speed": 8,
+    "aim": 8,
+    "cqb": 2,
+    "morale": 7,
+    "sight": 8
+   },
+   "alive_lines": [
+    "Distance is only a number you have not agreed to yet.",
+    "Everything out here has already been measured."
+   ],
+   "hollow_lines": [
+    "Present.",
+    "Measured."
+   ],
+   "introduced": "reliquary_lane"
+  },
+  {
+   "id": "usher",
+   "slot": 6,
+   "callsign": "Usher",
+   "name": "Bram Tolliver",
+   "rank": "Auxiliary",
+   "stats": {
+    "hp": 4,
+    "speed": 5,
+    "aim": 4,
+    "cqb": 7,
+    "morale": 8,
+    "sight": 5
+   },
+   "alive_lines": [
+    "After you, Captain. After you.",
+    "Doors are only waiting rooms."
+   ],
+   "hollow_lines": [
+    "Present.",
+    "Door held."
+   ],
+   "introduced": "reliquary_lane"
+  }
+ ],
+ "hollowing": {
+  "order": "by death",
+  "backfill": "A killed officer's slot is refilled at the next Bureau muster; the hollow keeps the slot number and speaks only the hollow lines."
+ }
+}

@@ -1,0 +1,77 @@
+{
+ "version": 1,
+ "note": "Five enemy tiers. Conscript, regular and veteran are defined here; elite is the Writ officers (writ.json) and boss is the Provost and Orrick. Every tier has a hollow_<tier> variant built at world.hollowing.drone_percent: no morale, never breaks, keeps shooting after a hit.",
+ "tiers": {
+  "conscript": {
+   "rank": 1,
+   "name": "Conscript",
+   "min_act": 1,
+   "id_base": 200,
+   "profile": "aggressor",
+   "note": "Bureau levies in borrowed kit. Act 1 fodder: poor aim, nervous.",
+   "stats": {
+    "hp": 2,
+    "speed": 4,
+    "aim": 2,
+    "cqb": 2,
+    "morale": 3,
+    "sight": 5
+   }
+  },
+  "regular": {
+   "rank": 2,
+   "name": "Regular",
+   "min_act": 1,
+   "id_base": 210,
+   "profile": "aggressor",
+   "note": "Line troops. The Bureau's baseline soldier.",
+   "stats": {
+    "hp": 2,
+    "speed": 5,
+    "aim": 4,
+    "cqb": 3,
+    "morale": 5,
+    "sight": 6
+   }
+  },
+  "veteran": {
+   "rank": 3,
+   "name": "Veteran",
+   "min_act": 2,
+   "id_base": 220,
+   "profile": "default",
+   "note": "Seasoned and steady; they use cover and range.",
+   "stats": {
+    "hp": 3,
+    "speed": 5,
+    "aim": 5,
+    "cqb": 4,
+    "morale": 6,
+    "sight": 6
+   }
+  },
+  "elite": {
+   "rank": 4,
+   "name": "Elite",
+   "min_act": 2,
+   "id_base": 100,
+   "profile": "defender",
+   "source": "writ.officers",
+   "note": "The Writ's officers, each with a hand-built stat block."
+  },
+  "boss": {
+   "rank": 5,
+   "name": "Boss",
+   "min_act": 3,
+   "id_base": 100,
+   "profile": "defender",
+   "source": "writ.provost",
+   "note": "The Provost, and Orrick when he stands in the line."
+  }
+ },
+ "hollow": {
+  "min_act": 2,
+  "id_base_offset": 100,
+  "note": "A hollow variant of conscript, regular or veteran uses the tier's stats at the hollowing percentage; its id base is the tier's plus the offset (300, 310, 320)."
+ }
+}

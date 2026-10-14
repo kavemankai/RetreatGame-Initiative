@@ -1,0 +1,1054 @@
+{
+ "version": 1,
+ "scenes": [
+  {
+   "id": "briefing_karsa_breakout",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Karsa Station is dying slowly, the way a lit window dies when the building empties. The convoy leaves in nine hours."
+    },
+    {
+     "who": "warden",
+     "text": "Three of us clear the north spine. The Procession loads behind us. Nobody stops to count."
+    },
+    {
+     "who": "quill",
+     "text": "For the record, the Roll says we are two thousand. I count three of us."
+    }
+   ]
+  },
+  {
+   "id": "debrief_karsa_breakout",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The lock cycles. Behind them the station's lights go out one deck at a time."
+    },
+    {
+     "who": "warden",
+     "text": "Four hundred and six aboard. I will say it again tomorrow."
+    },
+    {
+     "who": "gran",
+     "text": "Say it as many times as it takes."
+    }
+   ]
+  },
+  {
+   "id": "briefing_the_weir",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The Weir is where the fleet came to die: a field of hulls with their running lights still blinking."
+    },
+    {
+     "who": "moth",
+     "text": "Follow my lantern. Hulls on the left are cover. Hulls on the right are graves."
+    },
+    {
+     "who": "sable",
+     "text": "If it blinks, it has not finished dying. Do not trust it."
+    }
+   ]
+  },
+  {
+   "id": "debrief_the_weir",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "They find fuel, and a hull with seventeen names still painted on the bulkhead."
+    },
+    {
+     "who": "pilgrim",
+     "text": "Seventeen. I will keep them."
+    },
+    {
+     "who": "tinker",
+     "text": "Fuel for nine days. I counted twice."
+    }
+   ]
+  },
+  {
+   "id": "briefing_pellam_dock",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Pellam Dock is a long iron mouth. The Procession needs eleven hours at its throat."
+    },
+    {
+     "who": "warden",
+     "text": "Hold the gantries. Let the tugs finish. Four on each side."
+    },
+    {
+     "who": "tinker",
+     "text": "The muster drop is scheduled for midnight. I would rather it was not."
+    }
+   ]
+  },
+  {
+   "id": "debrief_pellam_dock",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The first drop falls through the dock's cold air at midnight. It is not supplies."
+    },
+    {
+     "who": "pilgrim",
+     "text": "Say his name. Say it before it stands."
+    },
+    {
+     "who": "sable",
+     "text": "Do not. It is not him."
+    }
+   ],
+   "when": "first_death"
+  },
+  {
+   "id": "briefing_orchard_ring",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The Orchard Ring grows food in the dark, under lamps older than the war."
+    },
+    {
+     "who": "warden",
+     "text": "Families in the lower gardens. The Hegemony is sweeping from the aft."
+    },
+    {
+     "who": "wren",
+     "text": "I know the paths. Let me show you."
+    }
+   ]
+  },
+  {
+   "id": "debrief_orchard_ring",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Wren walks out with them, carrying a name that is not hers."
+    },
+    {
+     "who": "warden",
+     "text": "You are not enlisted."
+    },
+    {
+     "who": "wren",
+     "text": "Then count me as a guest."
+    }
+   ]
+  },
+  {
+   "id": "briefing_quiet_wards",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The Quiet Wards is a hospital hulk drifting dark. Someone has left the lights on in the long ward."
+    },
+    {
+     "who": "pilgrim",
+     "text": "There are eighty of them. They cannot be moved without us."
+    },
+    {
+     "who": "quill",
+     "text": "A polite voice is on the net. It says it only wants to talk."
+    }
+   ]
+  },
+  {
+   "id": "debrief_quiet_wards",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Provost Orrick's first transmission comes in clean and courteous."
+    },
+    {
+     "who": "orrick",
+     "text": "Captain. Stand down and be counted. The Procession will be resettled. No one will be hurt."
+    },
+    {
+     "who": "warden",
+     "text": "Say it to the wounded."
+    }
+   ]
+  },
+  {
+   "id": "briefing_anselm",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The Foundry ship Anselm hangs in the dark, still working. Inside, the vats are warm."
+    },
+    {
+     "who": "static",
+     "text": "I can hear it from here. A hum under the teeth."
+    },
+    {
+     "who": "quill",
+     "text": "Everything we have lied about is in there."
+    }
+   ]
+  },
+  {
+   "id": "debrief_anselm",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Rows of bodies hang in the fluid, each with a slot number and no face."
+    },
+    {
+     "who": "sable",
+     "text": "That one has my brother's number."
+    },
+    {
+     "who": "warden",
+     "text": "We choose. Break the vats, or take the key."
+    }
+   ],
+   "choices": [
+    {
+     "id": "destroy_vats",
+     "text": "Break the vats.",
+     "sets": {
+      "foundry_destroyed": true
+     }
+    },
+    {
+     "id": "take_key",
+     "text": "Take the key.",
+     "sets": {
+      "foundry_key": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "briefing_cinder_market",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Cinder Market runs on light and rumour. Everything is for sale, including the way out."
+    },
+    {
+     "who": "gran",
+     "text": "We trade. We do not linger. Anyone who lingers gets counted."
+    },
+    {
+     "who": "ghost",
+     "text": "You do not know me. I know him."
+    }
+   ]
+  },
+  {
+   "id": "debrief_cinder_market",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Oriel Vance sits among them with a stolen ledger and a stillness the squad recognises."
+    },
+    {
+     "who": "ghost",
+     "text": "I can tell you how he thinks. I cannot tell you why he does."
+    },
+    {
+     "who": "needle",
+     "text": "Why should we trust you?"
+    }
+   ]
+  },
+  {
+   "id": "briefing_mirror_gate",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The Mirror Gate opens for forty minutes in every day. The Hegemony holds its frame."
+    },
+    {
+     "who": "tinker",
+     "text": "Forty minutes. Eleven ships. Do the arithmetic."
+    },
+    {
+     "who": "static",
+     "text": "I can jam the net. Not for long."
+    }
+   ]
+  },
+  {
+   "id": "debrief_mirror_gate",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The last ship slips through as the gate closes; its lights fold into the dark."
+    },
+    {
+     "who": "warden",
+     "text": "Eleven. Eleven. Eleven."
+    },
+    {
+     "who": "quill",
+     "text": "I think she says it so she does not have to say the others."
+    }
+   ]
+  },
+  {
+   "id": "briefing_reliquary_lane",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The Reliquary Lane is a memorial that drifted: ten thousand hulls, each one named."
+    },
+    {
+     "who": "pilgrim",
+     "text": "Every hull has a roll. Read none of them. We have no time."
+    },
+    {
+     "who": "sable",
+     "text": "I will read one."
+    }
+   ]
+  },
+  {
+   "id": "debrief_reliquary_lane",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Two of Orrick's officers lie still in the half-light. Their replacements are already on the way."
+    },
+    {
+     "who": "ghost",
+     "text": "Count them. He will."
+    },
+    {
+     "who": "warden",
+     "text": "Count them."
+    }
+   ],
+   "choices": [
+    {
+     "id": "read_a_name",
+     "text": "Read one hull's name.",
+     "sets": {
+      "remembrance": 1
+     }
+    },
+    {
+     "id": "press_on",
+     "text": "Press on.",
+     "sets": {}
+    }
+   ]
+  },
+  {
+   "id": "briefing_long_corridor",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "A hundred metres of hull, one door, and the whole Procession behind it."
+    },
+    {
+     "who": "bulwark",
+     "text": "I hold the door."
+    },
+    {
+     "who": "warden",
+     "text": "You hold it with us."
+    }
+   ]
+  },
+  {
+   "id": "debrief_long_corridor",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Orrick comes through the smoke alone, unhurried, courteous. His face has nothing in it."
+    },
+    {
+     "who": "ghost",
+     "text": "He taught me the course. I never once saw him blink."
+    },
+    {
+     "who": "orrick",
+     "text": "Captain, I have been trying to reach you. May I count you?"
+    }
+   ]
+  },
+  {
+   "id": "briefing_tamsins_rest",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Tamsin's Rest is a relay station at the lip of the dark. Its archive still answers."
+    },
+    {
+     "who": "quill",
+     "text": "The Roll has a second copy here. It is not what we have been carrying."
+    },
+    {
+     "who": "warden",
+     "text": "Show me."
+    }
+   ]
+  },
+  {
+   "id": "debrief_tamsins_rest",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Two hundred and twelve thousand names, and fourteen companies that never existed."
+    },
+    {
+     "who": "quill",
+     "text": "I knew. I have known since Karsa. I am sorry."
+    },
+    {
+     "who": "wren",
+     "text": "My mother is on this list. Is she dead, or just counted?"
+    }
+   ],
+   "choices": [
+    {
+     "id": "open_the_roll",
+     "text": "Open the Roll to everyone.",
+     "sets": {
+      "roll_opened": true,
+      "remembrance": 2
+     }
+    },
+    {
+     "id": "keep_it_closed",
+     "text": "Keep it closed.",
+     "sets": {}
+    }
+   ]
+  },
+  {
+   "id": "briefing_vesper_threshold",
+   "kind": "briefing",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Vesper Reach opens its dark door slowly. The Keepers stand in rows without weapons."
+    },
+    {
+     "who": "keeper",
+     "text": "The Procession is welcome. The Roll is welcome. Weapons and tethers are not."
+    },
+    {
+     "who": "warden",
+     "text": "Then we are not."
+    }
+   ]
+  },
+  {
+   "id": "debrief_vesper_threshold",
+   "kind": "debrief",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "At the threshold, the squad has to decide what it is."
+    },
+    {
+     "who": "orrick",
+     "text": "I have six officers and no one to command. I would like, very much, to be counted."
+    },
+    {
+     "who": "warden",
+     "text": "Then count with us."
+    }
+   ],
+   "choices": [
+    {
+     "id": "read_the_roll",
+     "text": "Read the Roll at the door.",
+     "sets": {
+      "choice": "read_the_roll"
+     }
+    },
+    {
+     "id": "take_orrick_alive",
+     "text": "Take Orrick alive.",
+     "sets": {
+      "choice": "take_orrick_alive"
+     }
+    },
+    {
+     "id": "accept_terms",
+     "text": "Accept the terms.",
+     "sets": {
+      "choice": "accept_terms"
+     }
+    },
+    {
+     "id": "hold_the_door",
+     "text": "Hold the door.",
+     "sets": {
+      "choice": "hold_the_door"
+     }
+    }
+   ]
+  },
+  {
+   "id": "card_stranded_tug",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "A tug turns slowly end over end, its crew tapping on the hull."
+    },
+    {
+     "who": "moth",
+     "text": "Three of them. Still counting seconds."
+    },
+    {
+     "who": "warden",
+     "text": "Bring them in."
+    }
+   ]
+  },
+  {
+   "id": "card_signal_fire",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Someone has lit a beacon. In this dark, that is a confession."
+    },
+    {
+     "who": "static",
+     "text": "It is a Hegemony frequency. They are already coming."
+    },
+    {
+     "who": "gran",
+     "text": "Put it out."
+    }
+   ]
+  },
+  {
+   "id": "card_picket_line",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "A picket sits across the lane, polite and patient."
+    },
+    {
+     "who": "ghost",
+     "text": "They will ask for papers. Do not have any."
+    },
+    {
+     "who": "needle",
+     "text": "Gladly."
+    }
+   ]
+  },
+  {
+   "id": "card_salvage_claim",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "A dead cruiser, still warm, with a claim-jumper's flag already on it."
+    },
+    {
+     "who": "tinker",
+     "text": "Everything in there is a reserve."
+    },
+    {
+     "who": "gran",
+     "text": "Be quick. Be quiet."
+    }
+   ]
+  },
+  {
+   "id": "card_mutiny_aboard",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "One convoy ship has stopped answering and begun to turn."
+    },
+    {
+     "who": "pilgrim",
+     "text": "They are frightened. That is all it is."
+    },
+    {
+     "who": "warden",
+     "text": "Then we talk first."
+    }
+   ]
+  },
+  {
+   "id": "card_dead_air",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "A relay has gone silent in the middle of the lane."
+    },
+    {
+     "who": "static",
+     "text": "Colourless. No hum at all. I do not like it."
+    },
+    {
+     "who": "quill",
+     "text": "For the record, silence is also a signal."
+    }
+   ]
+  },
+  {
+   "id": "card_last_tender",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The last fuel tender limps beside the convoy, trailing frost."
+    },
+    {
+     "who": "tinker",
+     "text": "Lose it and we walk."
+    },
+    {
+     "who": "warden",
+     "text": "Then we do not lose it."
+    }
+   ]
+  },
+  {
+   "id": "card_lanterns_out",
+   "kind": "card",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "A lamp-keepers' dock is going dark, one lantern at a time."
+    },
+    {
+     "who": "moth",
+     "text": "I know this place. Someone has to be there."
+    },
+    {
+     "who": "warden",
+     "text": "Go."
+    }
+   ]
+  },
+  {
+   "id": "roll_call_prompt",
+   "kind": "roll_call",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The squad forms up in the cold light. One slot on the roll is empty, and will not be for long."
+    },
+    {
+     "who": "pilgrim",
+     "text": "We read the name. Or we do not."
+    }
+   ],
+   "choices": [
+    {
+     "id": "read_name",
+     "text": "Read the name.",
+     "sets": {
+      "remembrance": 1
+     }
+    },
+    {
+     "id": "say_nothing",
+     "text": "Say nothing.",
+     "sets": {}
+    }
+   ]
+  },
+  {
+   "id": "roll_call_read",
+   "kind": "roll_call",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The name is spoken once, slowly, into the quiet."
+    },
+    {
+     "who": "pilgrim",
+     "text": "It is not much. It is what we have."
+    }
+   ]
+  },
+  {
+   "id": "roll_call_silent",
+   "kind": "roll_call",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "No one speaks. The recyclers hum. The slot waits."
+    },
+    {
+     "who": "gran",
+     "text": "That is also a way to grieve."
+    }
+   ]
+  },
+  {
+   "id": "hollow_arrives",
+   "kind": "roll_call",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The muster drop opens. A body steps out wearing the dead soldier's number and nothing else."
+    },
+    {
+     "who": "static",
+     "text": "There is the hum."
+    },
+    {
+     "who": "hollow",
+     "text": "Present."
+    }
+   ]
+  },
+  {
+   "id": "orrick_stage_0",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Captain. I am Provost Orrick of the Retrieval Bureau. Stand down and be counted. The Procession will be resettled, and no one will be harmed."
+    }
+   ]
+  },
+  {
+   "id": "orrick_stage_1",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Captain. I regret the losses on both sides. My offer stands. Be counted, and you will be fed."
+    }
+   ]
+  },
+  {
+   "id": "orrick_stage_2",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Captain. Two of mine are replaced. Two of yours are replaced. We are converging. Be counted."
+    }
+   ]
+  },
+  {
+   "id": "orrick_stage_3",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Captain. The count is closer than it was. I find I do not mind it. Be counted."
+    }
+   ]
+  },
+  {
+   "id": "orrick_stage_4",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Captain. Four replaced. The terms are unchanged. The terms are the terms."
+    }
+   ]
+  },
+  {
+   "id": "orrick_stage_5",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Captain. Five. Be counted."
+    }
+   ]
+  },
+  {
+   "id": "orrick_stage_6",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Count: six. Count: one. Terms: unchanged. Terms: unchanged. Be counted."
+    }
+   ]
+  },
+  {
+   "id": "orrick_true_name",
+   "kind": "orrick",
+   "lines": [
+    {
+     "who": "orrick",
+     "text": "Teodor."
+    },
+    {
+     "who": "orrick",
+     "text": "It was Teodor. I had forgotten that I was permitted to say so."
+    }
+   ],
+   "when": "remembrance>=8 and writ_stage>=6"
+  },
+  {
+   "id": "camp_warden_count",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Night shift. The convoy ticks and settles."
+    },
+    {
+     "who": "warden",
+     "text": "Four hundred and six. Four hundred and six."
+    },
+    {
+     "who": "gran",
+     "text": "Go to sleep, Mara."
+    }
+   ]
+  },
+  {
+   "id": "camp_moth_lights",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "moth",
+     "text": "I name them after the ones we lose. That one is Dov."
+    },
+    {
+     "who": "wren",
+     "text": "Dov is not dead."
+    },
+    {
+     "who": "moth",
+     "text": "It is a good star. Keep it."
+    }
+   ]
+  },
+  {
+   "id": "camp_sable_range",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "sable",
+     "text": "Two-forty. Breathe."
+    },
+    {
+     "who": "pilgrim",
+     "text": "Who are you talking to?"
+    },
+    {
+     "who": "sable",
+     "text": "Whoever is listening."
+    }
+   ]
+  },
+  {
+   "id": "camp_bulwark_carry",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "bulwark",
+     "text": "I have it."
+    },
+    {
+     "who": "needle",
+     "text": "You do not have to have everything."
+    },
+    {
+     "who": "bulwark",
+     "text": "Someone does."
+    }
+   ]
+  },
+  {
+   "id": "camp_static_hum",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "static",
+     "text": "Listen. Under the recyclers. Do you hear the hum?"
+    },
+    {
+     "who": "ghost",
+     "text": "No."
+    },
+    {
+     "who": "static",
+     "text": "Good. Stay that way."
+    }
+   ]
+  },
+  {
+   "id": "camp_pilgrim_names",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "pilgrim",
+     "text": "Three hundred and four. Shall I say them?"
+    },
+    {
+     "who": "quill",
+     "text": "All of them?"
+    },
+    {
+     "who": "pilgrim",
+     "text": "Slowly."
+    }
+   ]
+  },
+  {
+   "id": "camp_gran_lost",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "gran",
+     "text": "I have lost this war once, kid."
+    },
+    {
+     "who": "needle",
+     "text": "And?"
+    },
+    {
+     "who": "gran",
+     "text": "And I am still walking. That is the whole lesson."
+    }
+   ]
+  },
+  {
+   "id": "camp_tinker_ledger",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "tinker",
+     "text": "I keep two ledgers. One for the rounds. One for the jokes."
+    },
+    {
+     "who": "warden",
+     "text": "Which is longer?"
+    },
+    {
+     "who": "tinker",
+     "text": "Do not make me count."
+    }
+   ]
+  },
+  {
+   "id": "camp_quill_roll",
+   "kind": "camp",
+   "lines": [
+    {
+     "who": "quill",
+     "text": "For the record, I have not slept since Karsa."
+    },
+    {
+     "who": "warden",
+     "text": "Neither have I."
+    },
+    {
+     "who": "quill",
+     "text": "That is not for the record."
+    }
+   ]
+  },
+  {
+   "id": "ending_roll_read",
+   "kind": "ending",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The Procession passes the black glass and the door closes behind it, gently."
+    },
+    {
+     "who": "warden",
+     "text": "Read them all. From the first."
+    },
+    {
+     "who": "narrator",
+     "text": "It takes eleven days. At the end, every hollow in the dark stops and stands. The lights stay on."
+    }
+   ]
+  },
+  {
+   "id": "ending_long_watch",
+   "kind": "ending",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The squad holds the door. The muster drops keep coming, and the slots keep filling."
+    },
+    {
+     "who": "gran",
+     "text": "Forty years is a long time to count."
+    },
+    {
+     "who": "narrator",
+     "text": "Every year there are fewer people and more of them standing still. Someone, somewhere, keeps the lantern lit."
+    }
+   ]
+  },
+  {
+   "id": "ending_quiet_terms",
+   "kind": "ending",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "The squad is counted, and found to be exactly what the ledger said."
+    },
+    {
+     "who": "orrick",
+     "text": "Thank you, Captain. The Procession will be resettled."
+    },
+    {
+     "who": "narrator",
+     "text": "It is safe. It is ordinary. No one remembers the lanterns."
+    }
+   ]
+  },
+  {
+   "id": "ending_orrick_rest",
+   "kind": "ending",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "Orrick sits in a room of six silent bodies and does not speak."
+    },
+    {
+     "who": "warden",
+     "text": "Count with us."
+    },
+    {
+     "who": "orrick",
+     "text": "One."
+    },
+    {
+     "who": "narrator",
+     "text": "It is the first number he has not asked anyone else to be."
+    }
+   ]
+  }
+ ]
+}

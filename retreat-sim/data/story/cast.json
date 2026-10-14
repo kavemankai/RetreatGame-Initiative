@@ -1,0 +1,743 @@
+{
+ "version": 1,
+ "mercs": [
+  {
+   "id": "warden",
+   "slot": 1,
+   "callsign": "Warden",
+   "name": "Mara Ilesh",
+   "age": 41,
+   "pronouns": "she/her",
+   "role": "Commander",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 3,
+    "speed": 6,
+    "aim": 6,
+    "cqb": 5,
+    "morale": 7,
+    "sight": 6
+   },
+   "bio": "Commanded a supply company until Karsa made her a rearguard. Counts her people every night; the number is the only prayer she has left.",
+   "wound": "Reported her old company at strength for a year, knowing it was empty.",
+   "voice": {
+    "tone": "level, tired, exact",
+    "tics": [
+     "counts aloud",
+     "never says 'fine'"
+    ],
+    "samples": [
+     "Four on my left. Four on my right. Good.",
+     "Nobody goes on the ledger who is not on the ship.",
+     "I will sleep when the number stops changing."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "quill",
+     "kind": "trust",
+     "note": "She needs his honesty and fears it."
+    },
+    {
+     "with": "gran",
+     "kind": "mentor",
+     "note": "Gran was her sergeant first."
+    },
+    {
+     "with": "wren",
+     "kind": "guilt",
+     "note": "She let the girl stay."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "karsa_breakout",
+     "beat": "Orders the breakout and signs the first false roll herself."
+    },
+    {
+     "mission": "quiet_wards",
+     "beat": "Reads the first name aloud."
+    },
+    {
+     "mission": "tamsins_rest",
+     "beat": "Learns what the Roll really is."
+    },
+    {
+     "mission": "vesper_threshold",
+     "beat": "Decides what the squad becomes at the door."
+    }
+   ],
+   "death_line": "Count them again. I think I lost one.",
+   "hollow_note": "Its hands still count to four before it fires."
+  },
+  {
+   "id": "quill",
+   "slot": 2,
+   "callsign": "Quill",
+   "name": "Tobias Quill",
+   "age": 47,
+   "pronouns": "he/him",
+   "role": "Muster Officer",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 2,
+    "speed": 4,
+    "aim": 3,
+    "cqb": 2,
+    "morale": 4,
+    "sight": 6
+   },
+   "bio": "A Muster Officer who audited the Roll and found the dead outnumber the living nine to one. Carries the ledger on a slate and cannot put it down.",
+   "wound": "Signed the Article Nine reports for three years.",
+   "voice": {
+    "tone": "dry, precise, apologetic",
+    "tics": [
+     "says 'for the record'"
+    ],
+    "samples": [
+     "For the record, we are fourteen companies. For the record, that is untrue.",
+     "A number is not a mercy. It only looks like one.",
+     "I can tell you how many. I cannot tell you who."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "warden",
+     "kind": "trust",
+     "note": "He gives her the truth in small doses."
+    },
+    {
+     "with": "pilgrim",
+     "kind": "kinship",
+     "note": "They keep the names between them."
+    },
+    {
+     "with": "ghost",
+     "kind": "distrust",
+     "note": "A bureaucrat knows a bureaucrat."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "karsa_breakout",
+     "beat": "Hides what the Roll says."
+    },
+    {
+     "mission": "anselm",
+     "beat": "Confesses to the Warden what the vats are for."
+    },
+    {
+     "mission": "tamsins_rest",
+     "beat": "Opens the ledger to the whole squad."
+    }
+   ],
+   "death_line": "Put it in the record. Put me in the record.",
+   "hollow_note": "It carries the slate and never opens it."
+  },
+  {
+   "id": "moth",
+   "slot": 3,
+   "callsign": "Moth",
+   "name": "Rennick Aldous",
+   "age": 29,
+   "pronouns": "he/him",
+   "role": "Scout",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 2,
+    "speed": 8,
+    "aim": 5,
+    "cqb": 4,
+    "morale": 5,
+    "sight": 8
+   },
+   "bio": "Grew up on a lamp-keeper's dock and learned to read distance by light. Jokes softly to keep the dark at a distance.",
+   "wound": "Cannot sleep with the lights off.",
+   "voice": {
+    "tone": "warm, wry",
+    "tics": [
+     "names stars after the dead"
+    ],
+    "samples": [
+     "Lights on the left. Not ours.",
+     "I would tell a joke, but the room is sad enough already.",
+     "Keep one lantern lit. I do not care what it costs."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "sable",
+     "kind": "kinship",
+     "note": "Found family; he talks so she does not have to."
+    },
+    {
+     "with": "needle",
+     "kind": "teasing",
+     "note": "He calls her the fastest coward alive."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "the_weir",
+     "beat": "Leads them through the wreck-field by lantern light."
+    },
+    {
+     "mission": "cinder_market",
+     "beat": "Finds a working lamp and cannot stop looking at it."
+    }
+   ],
+   "death_line": "Leave the light on, would you.",
+   "hollow_note": "It never blinks at a bright light."
+  },
+  {
+   "id": "sable",
+   "slot": 4,
+   "callsign": "Sable",
+   "name": "Sable Okonkwo",
+   "age": 33,
+   "pronouns": "she/her",
+   "role": "Marksman",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 2,
+    "speed": 5,
+    "aim": 9,
+    "cqb": 2,
+    "morale": 6,
+    "sight": 7
+   },
+   "bio": "Grieves in precise units: one breath, one shot, one name. Rarely speaks outside a scope.",
+   "wound": "Her twin died at Ostrava; their slot was refilled within the week.",
+   "voice": {
+    "tone": "clipped, quiet",
+    "tics": [
+     "measures distance aloud"
+    ],
+    "samples": [
+     "Distance is two-forty. Breathe.",
+     "I keep a tally. It is not kind.",
+     "Do not read his name over that thing. It is not him."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "moth",
+     "kind": "kinship",
+     "note": "He fills her silences."
+    },
+    {
+     "with": "pilgrim",
+     "kind": "conflict",
+     "note": "He would read the names; she would not."
+    },
+    {
+     "with": "static",
+     "kind": "respect",
+     "note": "Both listen for what others cannot hear."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "pellam_dock",
+     "beat": "Refuses the first Roll Call."
+    },
+    {
+     "mission": "anselm",
+     "beat": "Finds her brother's slot number in the vats."
+    },
+    {
+     "mission": "reliquary_lane",
+     "beat": "Reads one hull's name aloud."
+    }
+   ],
+   "death_line": "Two-forty. Breathe.",
+   "hollow_note": "It holds its breath exactly as long as she did."
+  },
+  {
+   "id": "bulwark",
+   "slot": 5,
+   "callsign": "Bulwark",
+   "name": "Dov Karelian",
+   "age": 38,
+   "pronouns": "he/him",
+   "role": "Heavy",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 4,
+    "speed": 3,
+    "aim": 5,
+    "cqb": 6,
+    "morale": 8,
+    "sight": 5
+   },
+   "bio": "Carries the squad's heaviest kit and its heaviest silences. Protects without being asked.",
+   "wound": "Carried his dying brother four kilometres; the hollow that replaced him was waiting at the muster.",
+   "voice": {
+    "tone": "slow, plain, gentle",
+    "tics": [
+     "says 'I have it'"
+    ],
+    "samples": [
+     "I have it. Go.",
+     "The weight is not the problem.",
+     "Stand behind me. It is the only thing I am good for."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "needle",
+     "kind": "protective",
+     "note": "He keeps her behind him and she hates it."
+    },
+    {
+     "with": "gran",
+     "kind": "respect",
+     "note": "He does what she says without a word."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "orchard_ring",
+     "beat": "Shields a family and is badly hurt."
+    },
+    {
+     "mission": "long_corridor",
+     "beat": "Holds the door alone."
+    }
+   ],
+   "death_line": "I have it. Go.",
+   "hollow_note": "It stands in doorways and does not step aside."
+  },
+  {
+   "id": "static",
+   "slot": 6,
+   "callsign": "Static",
+   "name": "Ines Valcourt",
+   "age": 31,
+   "pronouns": "she/her",
+   "role": "Signals",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 2,
+    "speed": 7,
+    "aim": 4,
+    "cqb": 3,
+    "morale": 5,
+    "sight": 6
+   },
+   "bio": "Hears the Tether net as a hum under the teeth. Can tell, within a word, when someone is speaking in their own voice.",
+   "wound": "Her own Tether implant was never removed.",
+   "voice": {
+    "tone": "quick, nervous, exact",
+    "tics": [
+     "describes sounds as colours"
+    ],
+    "samples": [
+     "It is a hum. It is always a hum. Listen.",
+     "That was not a person. That was a procedure.",
+     "I can cut one tether. Just one. Choose."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "sable",
+     "kind": "respect",
+     "note": "Both listen for what others cannot hear."
+    },
+    {
+     "with": "ghost",
+     "kind": "trust",
+     "note": "She hears no hum in him."
+    },
+    {
+     "with": "quill",
+     "kind": "debt",
+     "note": "He kept her implant off the Roll."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "anselm",
+     "beat": "Learns she can cut a single hollow's tether."
+    },
+    {
+     "mission": "mirror_gate",
+     "beat": "Jams the gate's net long enough."
+    },
+    {
+     "mission": "vesper_threshold",
+     "beat": "Holds the key that stops every hollow at once."
+    }
+   ],
+   "death_line": "Tell it I said stop.",
+   "hollow_note": "It hums at the same pitch she does."
+  },
+  {
+   "id": "pilgrim",
+   "slot": 7,
+   "callsign": "Pilgrim",
+   "name": "Yusuf Adeyemi-Roth",
+   "age": 52,
+   "pronouns": "he/him",
+   "role": "Medic and chaplain",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 3,
+    "speed": 5,
+    "aim": 3,
+    "cqb": 3,
+    "morale": 9,
+    "sight": 6
+   },
+   "bio": "Learned a hundred and twelve names in the first week and has not lost one since. Treats the wounded and the dead with the same patience.",
+   "wound": "Believes the names are all that is left of anyone.",
+   "voice": {
+    "tone": "patient, low, kind",
+    "tics": [
+     "says the name before the prayer"
+    ],
+    "samples": [
+     "Say the name. Say it once. That is all.",
+     "I will not tell you it will be alright. I will tell you I am here.",
+     "Three hundred and four. I have them all."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "quill",
+     "kind": "kinship",
+     "note": "They keep the names between them."
+    },
+    {
+     "with": "sable",
+     "kind": "conflict",
+     "note": "He would read the names; she would not."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "pellam_dock",
+     "beat": "Insists on the first Roll Call."
+    },
+    {
+     "mission": "quiet_wards",
+     "beat": "Tends eighty wounded under fire."
+    }
+   ],
+   "death_line": "Read mine. Please. Slowly.",
+   "hollow_note": "It does not answer to its name."
+  },
+  {
+   "id": "needle",
+   "slot": 8,
+   "callsign": "Needle",
+   "name": "Calla Voss",
+   "age": 20,
+   "pronouns": "she/her",
+   "role": "Breacher",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 3,
+    "speed": 8,
+    "aim": 4,
+    "cqb": 9,
+    "morale": 4,
+    "sight": 5
+   },
+   "bio": "Twenty, fast and furious, and treats every locked door as a personal insult. Hides fear under speed.",
+   "wound": "Her first deployment was Karsa.",
+   "voice": {
+    "tone": "quick, blunt, defensive",
+    "tics": [
+     "talks faster when frightened"
+    ],
+    "samples": [
+     "A door is a door. Stand back.",
+     "Do not tell me to be careful. Careful is how Dov got hurt.",
+     "I am not scared. I am fast."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "bulwark",
+     "kind": "protective",
+     "note": "He keeps her behind him and she hates it."
+    },
+    {
+     "with": "moth",
+     "kind": "teasing",
+     "note": "He calls her the fastest coward alive."
+    },
+    {
+     "with": "ghost",
+     "kind": "rivalry",
+     "note": "She cannot forgive where he came from."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "karsa_breakout",
+     "beat": "Breaches the first door."
+    },
+    {
+     "mission": "orchard_ring",
+     "beat": "Chooses mercy over speed."
+    }
+   ],
+   "death_line": "Door is open. Go.",
+   "hollow_note": "It breaches without hesitation, which is how you know."
+  },
+  {
+   "id": "gran",
+   "slot": 9,
+   "callsign": "Gran",
+   "name": "Anneliese Brandt",
+   "age": 58,
+   "pronouns": "she/her",
+   "role": "Sergeant",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 3,
+    "speed": 5,
+    "aim": 7,
+    "cqb": 6,
+    "morale": 9,
+    "sight": 6
+   },
+   "bio": "Fifty-eight, has lost one war already and is not interested in a second. Teaches the young how to be afraid usefully.",
+   "wound": "Commanded a company at Ostrava; it was reported at strength the day after it died.",
+   "voice": {
+    "tone": "flat, dry, unhurried",
+    "tics": [
+     "calls everyone 'kid' once"
+    ],
+    "samples": [
+     "Fear is fine. Fear is a tool. Use it.",
+     "I have buried this army once.",
+     "We walk. Walking is all a retreat is."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "warden",
+     "kind": "mentor",
+     "note": "Her former subordinate now gives the orders."
+    },
+    {
+     "with": "needle",
+     "kind": "mentor",
+     "note": "She teaches her to be afraid on purpose."
+    },
+    {
+     "with": "tinker",
+     "kind": "friendship",
+     "note": "Two people who remember the old books."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "the_weir",
+     "beat": "Teaches the squad to move in fog."
+    },
+    {
+     "mission": "cinder_market",
+     "beat": "Meets the hollows of her old company."
+    }
+   ],
+   "death_line": "Walk. Do not stop to count me.",
+   "hollow_note": "It walks with her limp."
+  },
+  {
+   "id": "tinker",
+   "slot": 10,
+   "callsign": "Tinker",
+   "name": "Kit Marrow",
+   "age": 36,
+   "pronouns": "they/them",
+   "role": "Quartermaster and demolitions",
+   "start": true,
+   "joins": null,
+   "stats": {
+    "hp": 3,
+    "speed": 4,
+    "aim": 5,
+    "cqb": 5,
+    "morale": 6,
+    "sight": 6
+   },
+   "bio": "Keeps the books on every bullet and bandage, and a private ledger of bad jokes. Treats supply as the last honest art.",
+   "wound": "Signs the muster drops.",
+   "voice": {
+    "tone": "dry, gallows, careful",
+    "tics": [
+     "counts things twice"
+    ],
+    "samples": [
+     "We have twenty-one reserves. I counted twice. Still twenty-one.",
+     "Every round is a promise. Spend slowly.",
+     "Do not thank me. Thank the accountant who lost the war."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "gran",
+     "kind": "friendship",
+     "note": "Two people who remember the old books."
+    },
+    {
+     "with": "warden",
+     "kind": "debt",
+     "note": "They signed the first false roll together."
+    },
+    {
+     "with": "quill",
+     "kind": "friction",
+     "note": "Two ledgers, one truth."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "pellam_dock",
+     "beat": "Finds the muster drop manifest and reads it twice."
+    },
+    {
+     "mission": "mirror_gate",
+     "beat": "Rigs the gate frame to hold."
+    }
+   ],
+   "death_line": "Reserves: one fewer.",
+   "hollow_note": "It issues ammunition with perfect indifference."
+  },
+  {
+   "id": "ghost",
+   "slot": 11,
+   "callsign": "Ghost",
+   "name": "Oriel Vance",
+   "age": 40,
+   "pronouns": "they/them",
+   "role": "Hegemony deserter",
+   "start": false,
+   "joins": "cinder_market",
+   "stats": {
+    "hp": 3,
+    "speed": 7,
+    "aim": 7,
+    "cqb": 6,
+    "morale": 6,
+    "sight": 7
+   },
+   "bio": "Served the Retrieval Bureau for nine years and left the night a counting went wrong. Knows how Orrick thinks because Orrick taught the course.",
+   "wound": "Helped count a village into a register.",
+   "voice": {
+    "tone": "calm, courteous, guarded",
+    "tics": [
+     "speaks in procedure when afraid"
+    ],
+    "samples": [
+     "He will be polite. He is always polite. That is the danger.",
+     "You cannot outrun a procedure. You can only be inconvenient.",
+     "I used to read the lists. Now I read the faces."
+    ]
+   },
+   "relationships": [
+    {
+     "with": "static",
+     "kind": "trust",
+     "note": "She hears no hum in them."
+    },
+    {
+     "with": "needle",
+     "kind": "rivalry",
+     "note": "She cannot forgive where they came from."
+    },
+    {
+     "with": "quill",
+     "kind": "distrust",
+     "note": "A bureaucrat knows a bureaucrat."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "cinder_market",
+     "beat": "Joins the squad with a stolen ledger."
+    },
+    {
+     "mission": "long_corridor",
+     "beat": "Names the secret of Orrick's missing past."
+    }
+   ],
+   "death_line": "Be inconvenient. For me.",
+   "hollow_note": "It speaks only in procedural phrases."
+  },
+  {
+   "id": "wren",
+   "slot": 12,
+   "callsign": "Wren",
+   "name": "Wren Haldane",
+   "age": 17,
+   "pronouns": "she/her",
+   "role": "Civilian volunteer",
+   "start": false,
+   "joins": "orchard_ring",
+   "stats": {
+    "hp": 2,
+    "speed": 7,
+    "aim": 6,
+    "cqb": 3,
+    "morale": 3,
+    "sight": 6
+   },
+   "bio": "Seventeen, the youngest voice in a squad of tired ones. Joined to carry her mother's name and refuses to go back.",
+   "wound": "Her mother is on the Roll as living.",
+   "voice": {
+    "tone": "quick, honest, unguarded",
+    "tics": [
+     "asks the question nobody asked"
+    ],
+    "samples": [
+     "I can carry that. Give it here.",
+     "You keep saying careful. Careful is not a plan.",
+     "My mother's name is on the list. Is she dead, or just counted?"
+    ]
+   },
+   "relationships": [
+    {
+     "with": "warden",
+     "kind": "guilt",
+     "note": "She let the girl stay."
+    },
+    {
+     "with": "moth",
+     "kind": "kinship",
+     "note": "He teaches her the stars."
+    },
+    {
+     "with": "quill",
+     "kind": "trust",
+     "note": "He is the only one who answers her honestly."
+    }
+   ],
+   "arc": [
+    {
+     "mission": "orchard_ring",
+     "beat": "Walks out with the squad carrying a name that is not hers."
+    },
+    {
+     "mission": "tamsins_rest",
+     "beat": "Reads the Roll and finds her mother."
+    }
+   ],
+   "death_line": "Read it right. Her name first.",
+   "hollow_note": "It carries a name it cannot say."
+  }
+ ]
+}

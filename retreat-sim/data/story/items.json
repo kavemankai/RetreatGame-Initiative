@@ -1,0 +1,31 @@
+{
+ "version": 1,
+ "note": "Equipment: three slots (armour, weapon, mod). An empty weapon slot is the issue rifle (range 6, damage 1, 4-tick shots). Stats: armour = hp/morale/speed; weapon = range/damage/shot_ticks/accuracy (percentage points); mod = a trait. 'tier' is the earliest act an item may be found.",
+ "slots": ["armour", "weapon", "mod"],
+ "traits": {
+  "scope": "+2 sight and +1 range",
+  "sprinter": "diagonal steps cost the same as straight ones",
+  "bracing": "+2 on the morale check beside cover (instead of +1) and +5 hit chance for its owner's shots from cover",
+  "opener": "its owner's first shot each round has +15 hit chance"
+ },
+ "starting": {"armour": "compact_vest"},
+ "items": [
+  {"id": "compact_vest", "slot": "armour", "name": "Compact vest", "tier": 1, "note": "Standard issue. Salvage nylon and ceramic; it has stopped worse.", "stats": {"hp": 1}},
+  {"id": "mourning_cloak", "slot": "armour", "name": "Mourning cloak", "tier": 1, "note": "Sewn from the names of the dead. Nobody who wears it breaks easily.", "stats": {"morale": 2}},
+  {"id": "plate_carrier", "slot": "armour", "name": "Plate carrier", "tier": 2, "note": "Heavier, and slower for it.", "stats": {"hp": 1, "morale": 1, "speed": -1}},
+  {"id": "ablative_coat", "slot": "armour", "name": "Ablative coat", "tier": 3, "note": "Hegemony issue, stripped from a depot.", "stats": {"hp": 2, "speed": -1}},
+  {"id": "gavel_plate", "slot": "armour", "name": "Gavel's plate", "tier": 2, "note": "Taken from an officer who never stepped back.", "stats": {"hp": 2, "morale": 1, "speed": -2}},
+
+  {"id": "carbine", "slot": "weapon", "name": "Short carbine", "tier": 1, "note": "Quick and close: shorter range, faster shots.", "stats": {"range": -1, "shot_ticks": -1, "accuracy": -5}},
+  {"id": "scatter_gun", "slot": "weapon", "name": "Scatter gun", "tier": 1, "note": "Doors and corridors. Hits hard, falls off fast.", "stats": {"range": -2, "damage": 1, "accuracy": -5}},
+  {"id": "marksman_rifle", "slot": "weapon", "name": "Marksman rifle", "tier": 2, "note": "Reaches further and lands more often, at the cost of a slower shot.", "stats": {"range": 2, "shot_ticks": 1, "accuracy": 10}},
+  {"id": "heavy_rifle", "slot": "weapon", "name": "Heavy rifle", "tier": 3, "note": "One hit is usually enough.", "stats": {"damage": 1, "shot_ticks": 1}},
+  {"id": "seal_rifle", "slot": "weapon", "name": "Seal's rifle", "tier": 2, "note": "An officer's long gun; still sighted for someone else's eye.", "stats": {"range": 1, "accuracy": 5}},
+
+  {"id": "scope", "slot": "mod", "name": "Salvaged scope", "tier": 1, "note": "See further, shoot a little further.", "trait": "scope"},
+  {"id": "sprint_boots", "slot": "mod", "name": "Sprint boots", "tier": 1, "note": "Corners cost nothing.", "trait": "sprinter"},
+  {"id": "stanchion", "slot": "mod", "name": "Bracing stanchion", "tier": 2, "note": "A folding rest: steadier and truer behind cover.", "trait": "bracing"},
+  {"id": "reflex_rig", "slot": "mod", "name": "Reflex rig", "tier": 3, "note": "The first shot of a round is the best one.", "trait": "opener"}
+ ],
+ "drops": {"gavel": "gavel_plate", "seal": "seal_rifle"}
+}

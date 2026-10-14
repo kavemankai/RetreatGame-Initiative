@@ -1,0 +1,435 @@
+{
+ "theme": "dock_ring",
+ "size": [
+  16,
+  14
+ ],
+ "objective_rule": "Hold the TUG BERTHS for 4 rounds. Each enemy standing on a berth tile at a round's end costs the Procession 50 people.",
+ "goal": {
+  "type": "survive",
+  "rounds": 4,
+  "watch": "TUG BERTHS",
+  "penalty": 50
+ },
+ "player_spawns": [
+  [
+   4,
+   12
+  ],
+  [
+   7,
+   11
+  ],
+  [
+   9,
+   12
+  ],
+  [
+   12,
+   11
+  ]
+ ],
+ "blocked": [
+  [
+   7,
+   6
+  ],
+  [
+   7,
+   7
+  ],
+  [
+   8,
+   6
+  ],
+  [
+   8,
+   7
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   4,
+   4
+  ],
+  [
+   11,
+   3
+  ],
+  [
+   11,
+   4
+  ],
+  [
+   12,
+   3
+  ],
+  [
+   12,
+   4
+  ],
+  [
+   2,
+   7
+  ],
+  [
+   2,
+   8
+  ],
+  [
+   13,
+   7
+  ],
+  [
+   13,
+   8
+  ],
+  [
+   0,
+   13
+  ],
+  [
+   15,
+   13
+  ]
+ ],
+ "v_walls": [
+  [
+   15,
+   0,
+   4,
+   "full"
+  ],
+  [
+   15,
+   7,
+   13,
+   "full"
+  ]
+ ],
+ "h_walls": [
+  [
+   1,
+   0,
+   6,
+   "full"
+  ],
+  [
+   1,
+   9,
+   15,
+   "full"
+  ],
+  [
+   11,
+   3,
+   4,
+   "half"
+  ],
+  [
+   11,
+   6,
+   7,
+   "half"
+  ],
+  [
+   11,
+   9,
+   10,
+   "half"
+  ],
+  [
+   11,
+   12,
+   12,
+   "half"
+  ],
+  [
+   5,
+   5,
+   6,
+   "half"
+  ],
+  [
+   5,
+   9,
+   10,
+   "half"
+  ]
+ ],
+ "doors": [],
+ "labels": [
+  [
+   6,
+   0,
+   "NORTH GATE"
+  ],
+  [
+   14,
+   5,
+   "EAST GATE (round 2)"
+  ],
+  [
+   6,
+   6,
+   "GANTRY CRANE"
+  ],
+  [
+   3,
+   12,
+   "TUG BERTHS"
+  ]
+ ],
+ "enemy_spawns": [
+  [
+   7,
+   0
+  ],
+  [
+   8,
+   0
+  ],
+  [
+   5,
+   4
+  ],
+  [
+   15,
+   5
+  ],
+  [
+   15,
+   6
+  ],
+  [
+   10,
+   2
+  ],
+  [
+   12,
+   0
+  ],
+  [
+   14,
+   2
+  ]
+ ],
+ "objective": [
+  8,
+  12
+ ],
+ "mission": "pellam_dock",
+ "enemy_defs": [
+  {
+   "pos": [
+    7,
+    0
+   ],
+   "tier": "conscript",
+   "role": "patrol",
+   "note": "pushes through the north gate",
+   "facing": [
+    0,
+    0
+   ]
+  },
+  {
+   "pos": [
+    8,
+    0
+   ],
+   "tier": "conscript",
+   "role": "patrol",
+   "note": "pushes through the north gate",
+   "facing": [
+    0,
+    0
+   ]
+  },
+  {
+   "pos": [
+    5,
+    4
+   ],
+   "tier": "conscript",
+   "role": "sentry",
+   "note": "overwatch down the west alley",
+   "facing": [
+    0,
+    1
+   ]
+  }
+ ],
+ "reinforcement_defs": [
+  {
+   "pos": [
+    15,
+    5
+   ],
+   "tier": "conscript",
+   "round": 2
+  },
+  {
+   "pos": [
+    15,
+    6
+   ],
+   "tier": "regular",
+   "round": 2
+  }
+ ],
+ "zone_defs": {
+  "TUG BERTHS": [
+   [
+    3,
+    11
+   ],
+   [
+    3,
+    12
+   ],
+   [
+    3,
+    13
+   ],
+   [
+    4,
+    11
+   ],
+   [
+    4,
+    12
+   ],
+   [
+    4,
+    13
+   ],
+   [
+    5,
+    11
+   ],
+   [
+    5,
+    12
+   ],
+   [
+    5,
+    13
+   ],
+   [
+    6,
+    11
+   ],
+   [
+    6,
+    12
+   ],
+   [
+    6,
+    13
+   ],
+   [
+    7,
+    11
+   ],
+   [
+    7,
+    12
+   ],
+   [
+    7,
+    13
+   ],
+   [
+    8,
+    11
+   ],
+   [
+    8,
+    12
+   ],
+   [
+    8,
+    13
+   ],
+   [
+    9,
+    11
+   ],
+   [
+    9,
+    12
+   ],
+   [
+    9,
+    13
+   ],
+   [
+    10,
+    11
+   ],
+   [
+    10,
+    12
+   ],
+   [
+    10,
+    13
+   ],
+   [
+    11,
+    11
+   ],
+   [
+    11,
+    12
+   ],
+   [
+    11,
+    13
+   ],
+   [
+    12,
+    11
+   ],
+   [
+    12,
+    12
+   ],
+   [
+    12,
+    13
+   ]
+  ],
+  "NORTH GATE": [
+   [
+    7,
+    0
+   ],
+   [
+    8,
+    0
+   ]
+  ],
+  "EAST GATE": [
+   [
+    15,
+    5
+   ],
+   [
+    15,
+    6
+   ]
+  ]
+ }
+}
