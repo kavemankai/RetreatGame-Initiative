@@ -43,6 +43,9 @@ Lint rejects an item rewarded before its tier's act.
 ## UI
 Squad screen: **Loadout** button, then a merc list, then that merc's three slots, then the stash items for a slot (each with its effect line), with Equip and Take off. The mission result page lists the salvage. Phone-first: no drag and drop.
 
+## Stat caps (decided 2026-10-15)
+Levelling caps are hp 6; speed, aim, cqb and morale 10; sight 9 (see MECHANICS_SPEC.md). Gear bonuses may lift hp and morale above a level cap; morale stays clamped to 0..12 in total.
+
 ## Not done
 - Item icons and art; a slot glyph on the slot tag.
 - Loadout is only reachable from the squad screen (not mid-mission).

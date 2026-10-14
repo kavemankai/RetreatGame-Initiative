@@ -31,7 +31,7 @@ beats = im.end_turn()                              # runs the AI turn, refills A
 Queries for a UI: `ap_of(id)`, `can_act(id)`, `reach(id)` (tile to AP cost, on the side's fog view), `path_preview(id, tile)`, **`route_preview(id, tile)`** (cost per step and which visible enemies would interrupt on that step), `shot_preview(id, target)` (result, chance, damage, cost), `is_suppressed/is_broken/is_over`, `winner`.
 
 Rules, in one place:
-- **AP:** `AP_PER_TURN` (14) per merc per turn, minus stress. Step 2, diagonal 3 (sprinter boots make it 2), shot 4 (3 at aim 8+, never below 2).
+- **AP:** `AP_PER_TURN` (14) per merc per turn (stress is dropped; see MECHANICS_SPEC.md decisions of 2026-10-15). Step 2, diagonal 3 (sprinter boots make it 2), shot 4 (3 at aim 8+, never below 2).
 - **Order:** your whole squad acts in any order, then the enemy, then the round ends (goals check, reinforcements arrive).
 - **Initiative:** `speed*10 + aim - 3*hits_taken`.
 - **Interrupt:** a defender who gets a first clear shot at a mover (could not shoot the previous tile), within `min(max_range, sight)`, with initiative at least the mover's, with reaction AP and no earlier interrupt on that mover this turn, fires at once and halts the mover.

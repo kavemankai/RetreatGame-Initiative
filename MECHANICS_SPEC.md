@@ -60,7 +60,7 @@ Rule: the view may only read events; the sim may never import view code.
 - **Overwatch (decided):** from the chosen tick, fires once at the first enemy entering its cone + LOS; speed order within the tick.
 - **Enemy AI (decided):** utility scoring per unit; weights live in data; AI receives a visible-state snapshot only.
 - **Stats (decided):** HP, Speed, Aim, CQB, Morale. Drones have **no morale** (immune to stress; no growth, no abilities, per Hollowing).
-- **Growth (REC):** event counters (shots fired, steps moved, hits taken, etc.) logged by the sim; thresholds grant a stat step at the debrief. Named perks may come later on the same counters.
+- **Growth (decided 2026-10-15): XP, pick 1 of 3.** A surviving merc earns XP after a mission from hits landed, kills, surviving hits and the objective. Five levels. Each level offers three different +1 stat steps, weighted by what the merc did and seeded by campaign seed, slot and level (so reloading cannot reroll); the player picks one. Hollows never level; death freezes stats at 60% of the levelled values. The numbers live in a data file (`data/story/progression.json`, to be built). **Stat caps for levelling:** hp 6; speed, aim, cqb, morale 10; sight 9. Gear can lift hp and morale above these (morale to 12, see EQUIPMENT.md). **Injury is dropped:** permadeath plus hollowing is the consequence system.
 
 ### Open
 - What does CQB do mechanically? (Candidates: bonus in adjacent/close range, faster entry/door ticks, melee/breach options.)
@@ -71,7 +71,7 @@ Rule: the view may only read events; the sim may never import view code.
 ## Round 3 decisions (all accepted)
 - **CQB:** faster entry/breach ticks + close-range damage edge.
 - **Aim:** max effective range and shot tick cost (no hit roll).
-- **Morale:** stress costs ticks (a stressed merc loses 1-2 ticks from their queue).
+- **Morale:** a hit unit rolls an on-hit check: steady (cannot shoot until its next activation) or broken (no AP until then). **Stress is dropped (decided 2026-10-15):** it never shortened anyone's AP; the unused `stress_penalty` field stays inert until a real source is designed.
 - **Drones:** fixed ~60% of the fallen merc's stats, frozen at death; no growth, no abilities, no morale.
 
 ## Overwatch (implemented)

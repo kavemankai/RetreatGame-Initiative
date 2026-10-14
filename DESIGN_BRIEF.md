@@ -18,7 +18,7 @@ A hegemonic military is hunting the squad.
 | Randomness | **Fully deterministic**, no dice |
 | Squad | 3-4 mercs, permadeath, Hollowing replaces the dead |
 | Campaign | Mission deck, retreat/survival arc; total squad loss = campaign over, new run |
-| Progression | Skills improve by use; XP and injury carried from Long Retreat |
+| Progression | XP from battle; a level-up offers three stat steps and you pick one (decided 2026-10-15). No injury system: permadeath plus Hollowing is the consequence. |
 | Cast | Hand-crafted named mercs with portraits |
 | Antagonist | Hegemonic military |
 | AI at runtime | **None**; AI is used at build time (story, art, audio, code) |
@@ -30,7 +30,7 @@ A hegemonic military is hunting the squad.
 | Milestone 1 | Combat + phone UI feel |
 
 ## Reference map
-- **JaggedBuild (The Long Retreat):** Hollowing, plan-then-resolve rhythm, mission deck, pilot XP/injury,
+- **JaggedBuild (The Long Retreat):** Hollowing, plan-then-resolve rhythm, mission deck, pilot XP,
   autoload-per-system structure. Note: it is a *space dogfighter*, not ground tactics.
 - **BattleBlips:** docs-first process (MASTER_PLAN, schemas, patches), check-in vs play-mode UI split,
   data-driven balance sheet, tests/ and tools/ layout.
