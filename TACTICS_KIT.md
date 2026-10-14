@@ -9,13 +9,27 @@ Nothing here has been moved or renamed; this document is the map. Retreat-specif
 | Layer | Folder | Contents | Rule |
 |---|---|---|---|
 | **Sim core** | `sim/` | `SimState`, `SimGrid` (edge cover), `SimUnit`, `SimLos`, `SimVision` (fog), `SimPathing`, `SimResolver` (pure shot evaluation), `SimDice` (seeded d100/d10), `SimConst` (every tuning number), `SimAI` + `SimAIProfile`, `SimGoal` | Integers only, no nodes, no engine time, no floats. Same state and seed give the same result on any device. |
-| **Rulesets** | `sim/sim_turn.gd`, `game/sim_match.gd`, `game/initiative_match.gd` | `SimTurn`/`SimMatch`: simultaneous 20-tick planned turns (legacy). **`InitiativeMatch`: live AP turns with interrupts and overwatch (the direction).** | A ruleset owns turn flow and calls the core. Rulesets never import views. |
+| **Rulesets** | `sim/sim_turn.gd`, `game/sim_match.gd`, `game/initiative_match.gd` | `SimTurn`/`SimMatch`: simultaneous 20-tick planned turns (legacy). `InitiativeMatch`: live AP turns with interrupts and overwatch (legacy, still selectable). **Activation engine (the default): `CombatState`, `ActivationScheduler`, `ActionResolver`, `ActivationMatch`, `ActivationAI`.** | A ruleset owns turn flow and calls the core. Rulesets never import views. |
 | **Game layer** | `game/` | `MapData` (map JSON), `MissionBuilder`, `Campaign` (roster, stash, gear, tiers), `Sandbox`, `Session` (state across scenes) | UI-agnostic. |
 | **Views** | `view/` | `BoardView` (iso renderer), `InitiativeView`, `SandboxView`, `PlayView`, `ThemeArt`, `UnitSprites`, `SoundBoard` | Views read events and state; they never decide rules. |
 | **Data** | `data/` | `maps/*.json`, `ai_profiles.json`, `story/*.json` (tiers, items, route, cast) | Balance changes are data edits. |
-| **Tools** | `tools/`, `tests/` | export script, map generators, screenshot rigs, balance probe, lint, 391 headless tests | Run before every build. |
+| **Tools** | `tools/`, `tests/` | export script, map generators, screenshot rigs, balance probe, lint, 452 headless tests | Run before every build. |
 
-## 2. The AP/initiative ruleset (`InitiativeMatch`)
+## 2. The activation engine (the default)
+
+- **Units act one at a time.** Each round every living unit gets exactly one activation, in initiative order whichever side it is on. Initiative = `speed*10 + aim`, fixed for the round; ties break on a seeded die, then unit id. New units join at the start of a round. Code: `game/activation_scheduler.gd`, `game/combat_state.gd`, `game/action_resolver.gd`.
+- **AP.** The pool per activation is 14, read from `data/combat/ap_costs.json` (the sandbox can override it); it refills when the unit's activation begins and unused AP expires. Step 2, diagonal 3, shot 4 (3 at aim 8+, minimum 2) still come from `SimUnit` and `SimConst`.
+- **Commands.** Move, shoot, arm overwatch, end activation: all through `ActionResolver.submit`. A refused command changes nothing and returns a reason code (`CombatReasons` has the player wording). Every accepted command posts an AP ledger row; `CombatInvariants` is checked after each command in the soak.
+- **Overwatch.** Armed for 4 AP, not refunded. After any step an enemy takes, each armed unit whose cone, weapon range, sight and clear line cover the new tile fires once for free (initiative order, then id) and its charge is spent. A killed mover stops; a survivor carries on. Shaken, broken or dead watchers cannot react, and reactions never chain. It expires when its owner's next activation begins. Sentries start armed.
+- **No automatic interrupts** (they exist only in the legacy mode). Hit chance, cover and the on-hit morale check are unchanged. Stress is dropped.
+- **Enemy AI.** `ActivationAI` asks `SimAI` for a plan from the fog view, then submits one legal action at a time; a stale step is dropped and replanned, with action and replan caps and a guaranteed end of activation. New weight `w_lane` rewards tiles with a clear shot lane (default and aggressor profiles); the objective term uses walking distance.
+- **Save and resume.** One autosave slot (`ResumeStore`, `CombatSave`) offered as "Resume battle" on the main menu; level test and sandbox battles only.
+- **Switch.** `Session.ruleset`: `"activation"` (default), `"initiative"` (legacy live AP) or `"planned"` (legacy simultaneous ticks).
+- **Measured numbers.** `docs/combat/balance-table.md` (AP sweep, 1,000-battle soak).
+
+Pure and headless: a `CombatState` is changed only by `ActionResolver.submit(cs, CombatAction)`; `ActivationMatch` wraps it in the same face as `InitiativeMatch` so a screen can use either. `tools/soak_combat.gd` plays AI-against-AI battles to check it.
+
+## 2b. The legacy live-AP ruleset (`InitiativeMatch`, still selectable)
 
 Build one from any `SimMatch` and play it:
 
@@ -31,7 +45,7 @@ beats = im.end_turn()                              # runs the AI turn, refills A
 Queries for a UI: `ap_of(id)`, `can_act(id)`, `reach(id)` (tile to AP cost, on the side's fog view), `path_preview(id, tile)`, **`route_preview(id, tile)`** (cost per step and which visible enemies would interrupt on that step), `shot_preview(id, target)` (result, chance, damage, cost), `is_suppressed/is_broken/is_over`, `winner`.
 
 Rules, in one place:
-- **AP:** `AP_PER_TURN` (14) per merc per turn (stress is dropped; see MECHANICS_SPEC.md decisions of 2026-10-15). Step 2, diagonal 3 (sprinter boots make it 2), shot 4 (3 at aim 8+, never below 2).
+- **AP:** `AP_PER_TURN` (14) per merc per turn in this legacy mode (the activation engine reads its pool from `data/combat/ap_costs.json`). Stress is dropped (see MECHANICS_SPEC.md decisions of 2026-10-15). Step 2, diagonal 3 (sprinter boots make it 2), shot 4 (3 at aim 8+, never below 2).
 - **Order:** your whole squad acts in any order, then the enemy, then the round ends (goals check, reinforcements arrive).
 - **Initiative:** `speed*10 + aim - 3*hits_taken`.
 - **Interrupt:** a defender who gets a first clear shot at a mover (could not shoot the previous tile), within `min(max_range, sight)`, with initiative at least the mover's, with reaction AP and no earlier interrupt on that mover this turn, fires at once and halts the mover.
@@ -42,11 +56,11 @@ Rules, in one place:
 
 ## 3. Making a new game on the kit
 
-1. **Rules numbers:** edit `sim/sim_const.gd` (AP per turn, costs, hit chance, morale, sight). Run the tests; they show what you broke.
+1. **Rules numbers:** edit `sim/sim_const.gd` (AP costs, hit chance, morale, sight) and `data/combat/ap_costs.json` (AP pool, overwatch cost). Run the tests; they show what you broke.
 2. **Maps:** a JSON file in `data/maps/` (see section 4). Validate with `MapData.problem()`; `tests/test_maps.gd` shows how. Use `tools/make_sandbox_map.py` as a template for a generator script.
 3. **Units:** tier stats in `data/story/enemy_tiers.json`, gear in `data/story/items.json`, AI personalities in `data/ai_profiles.json` (integer weights only).
 4. **Goals:** add a `goal` block to a map (`hold`, `collect`, `survive`, `reach_return`; none = last side standing). New goal types go in `sim/sim_goal.gd`.
-5. **Screens:** `InitiativeView` plays any `SimMatch`; `SandboxView` is a setup screen you can copy. Both talk to the core only through `InitiativeMatch` and `Session`.
+5. **Screens:** `InitiativeView` plays any `SimMatch` in either engine (chosen by `Session.ruleset`); `SandboxView` is a setup screen you can copy. Both talk to the core only through `InitiativeMatch` and `Session`.
 6. **Art:** tilesets and sprite sets are folders under `assets/` (`themes/<theme>/`, `mercs/<key>_<frame>.png`); the pipeline scripts live in `art/`. Themes are listed in `MapData.THEMES`.
 7. **Build:** `powershell -File tools/export_android.ps1 [-LevelTest] [-Install]`.
 

@@ -4,6 +4,8 @@ Source: `retreat-sim/` on branch `feature/initiative-combat`, tag `legacy-live-a
 
 ## 1. What exists today (the plan was written from the APK; this is the source truth)
 
+> Sections 1 to 3 describe the code as of Phase 0 (2026-10-14). A third engine, the activation engine, was added afterwards; see `docs/handover.md`.
+
 | Area | Reality in source | Plan assumed |
 |---|---|---|
 | Engines | **Two.** `sim/sim_turn.gd` + `game/sim_match.gd` (simultaneous 20-tick planned turns, the legacy mode) and `game/initiative_match.gd` (live AP, side-alternating turns, interrupts, overwatch). | One tick loop to convert. |
@@ -31,21 +33,21 @@ Source: `retreat-sim/` on branch `feature/initiative-combat`, tag `legacy-live-a
 ## 3. Tick-model coupling to isolate (legacy only)
 `sim/sim_turn.gd`, `sim/sim_plan.gd`, `sim/sim_action.gd` (tick costs), `game/sim_match.gd`, `game/plan_builder.gd`, `game/play_controller.gd`, `game/play_overlay.gd`, `view/play_view.gd`, `view/timeline_bar.gd`, `view/replay_*`. These keep working behind `Session.ruleset == "planned"` until the plan's rollback gate is met.
 
-## 4. Gaps against the plan (to schedule)
+## 4. Gaps against the plan (status 2026-10-15)
 | Plan requirement | State | Phase |
 |---|---|---|
-| Round/activation scheduler, one activation per unit per round, interleaved by initiative | Missing (turns alternate by side) | 1 |
-| Seeded tie-break value then unit id | Missing (ties break by id only) | 1 |
-| Typed action request/result plus AP ledger | Missing | 1 |
-| Phases/state enum and invariants checker | Missing | 1 |
-| Initiative strip UI with upcoming queue | Missing | 2 |
-| Reload, stance, aimed fire | Missing (no ammo or stance model) | 2 (defer reload) |
-| Distinct failure reasons in UI | Partial (invalid-shot reasons exist; move reasons do not) | 2 |
-| Bounded AI activation with decision cap, repeat detector, guaranteed END_TURN | Partial (`MAX_REPLANS`) | 3 |
-| Illegal-action counter, AI decision log | Missing | 3 |
-| One-shot overwatch armed for 4 AP | Differs (ours costs all AP; plus automatic interrupts not in the plan) | 4 (decisions D3/D4) |
-| 1,000-seed headless soak | Missing for initiative (`tools/soak_campaign.gd` and `balance_probe.gd` target the planned engine) | 5 |
-| Mid-combat save/versioning | Missing | 5 |
+| Round/activation scheduler, one activation per unit per round, interleaved by initiative | Done | 1 |
+| Seeded tie-break value then unit id | Done | 1 |
+| Typed action request/result plus AP ledger | Done | 1 |
+| Phases/state enum and invariants checker | Done (SETUP, AWAIT_COMMAND, ENDED; `CombatInvariants`) | 1 |
+| Initiative strip UI with upcoming queue | Done | 2 |
+| Reload, stance, aimed fire | Deferred (no ammo or stance model) | - |
+| Distinct failure reasons in UI | Done (`CombatReasons`) | 2 |
+| Bounded AI activation with decision cap, repeat detector, guaranteed END_TURN | Done (`ActivationAI`) | 3 |
+| Illegal-action counter, AI decision log | Done | 3 |
+| One-shot overwatch armed for 4 AP | Done | 4 |
+| 1,000-seed headless soak | Done (`tools/soak_combat.gd`) | 5 |
+| Mid-combat save/versioning | Done (engine, autosave and Resume button; level test and sandbox only) | 5 |
 
 ## 5. Reusable as is
 `SimGrid`, `SimLos`, `SimVision`, `SimPathing`, `SimResolver`, `SimDice`, `SimAIProfile` + `data/ai_profiles.json`, `MapData` + `data/maps/*.json`, `Campaign` (roster, gear), `MissionBuilder`, `Sandbox`, `BoardView` (touch pan/zoom, tracers), `ThemeArt`, `UnitSprites`, `SoundBoard`, and the tests of those.

@@ -12,7 +12,7 @@ Result: **392 tests, 1910 checks, 0 failed.** A few "String formatting error" li
 | test_campaign / test_missions / test_levels / test_maps / test_tiers / test_equipment / test_story | 33 / 12 / 13 / 11 / 10 / 18 / 20 | Campaign, mission building, Act 1 maps, tiers, gear, data lint |
 | test_iso / test_replay / test_sound | 21 / 6 / 10 | Board projection and rendering helpers, replay model, sound |
 
-## Gaps to fill for the redesign (not yet tests)
+## Gaps to fill for the redesign (the Phase 0 list; Phases 1 to 5 below cover all of them except a campaign-mission smoke through the real campaign flow)
 - Activation queue order, tie-break, one activation per round, mid-round spawns.
 - Typed action validation and the AP ledger (AP before, cost, AP after); no partial side effects on rejection.
 - Invariant checker; 1,000-seed headless 4v4 soak with zero illegal states or stuck turns.

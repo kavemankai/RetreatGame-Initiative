@@ -1,6 +1,8 @@
 # RetreatSim — Initiative Combat Redesign
 **Implementation plan and engineering handover · 14 October 2026 · Version 1.0**
 
+> **Status 2026-10-15:** phases 0 to 5 are built. This is the original brief; where it differs, the built values win: AP is 14 (not 12), step 2 and diagonal 3 (not 1 and 2), shot 4; aimed fire, reload and stance are deferred (no ammo or stance model). See `initiative-combat-spec.md`, `docs/handover.md` and `docs/combat/balance-table.md`.
+
 ## Executive decision
 Convert the existing continuous/live-AP combat model into a **discrete, individual-initiative, action-point tactical system**. Retain current touch controls, grid/pathfinding, line-of-sight, cover, shooting, damage, visibility and unit art where feasible. The aim is a stable, enjoyable, readable **mobile combat foundation** before changing the wider game.
 

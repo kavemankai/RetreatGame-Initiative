@@ -46,7 +46,9 @@ Squad screen: **Loadout** button, then a merc list, then that merc's three slots
 ## Stat caps (decided 2026-10-15)
 Levelling caps are hp 6; speed, aim, cqb and morale 10; sight 9 (see MECHANICS_SPEC.md). Gear bonuses may lift hp and morale above a level cap; morale stays clamped to 0..12 in total.
 
+Note: the item stat `shot_ticks` is the shot's AP cost in the AP rulesets (the name is a leftover from the tick mode).
+
 ## Not done
-- Item icons and art; a slot glyph on the slot tag.
+- Item icons and art; a slot glyph on the slot tag. (Planned screens and 10 draft items: `docs/ui/ui-and-progression-plan.md`.)
 - Loadout is only reachable from the squad screen (not mid-mission).
 - Enemies carry no gear; their strength is their tier (see `ENEMY_TIERS.md`).

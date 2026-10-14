@@ -2,8 +2,10 @@
 
 Status: decisions from the workshop; items marked (REC) are my recommendations, not yet confirmed.
 
+> **Read this as a decision log (updated 2026-10-15).** Early sections are history and some are superseded: the original principles below ("no RNG", "plan all, resolve together") were replaced by seeded dice and live play, and the tick-era sections apply to the legacy planned mode only. **The current rules are the last section, "Current ruleset: activation engine".**
+
 ## Principles
-- Fully deterministic. No RNG in combat. Same state + same plan = same event log, on any device.
+- Fully deterministic. No RNG in combat. Same state + same plan = same event log, on any device. *(Original wording: combat now rolls seeded dice, which are just as repeatable; see Hit chances.)*
 - Integer-only math in the sim. No floats, no physics, no engine time.
 - Plan all → resolve together. The player sees exact outcomes in the preview ("hits for 2" / "blocked").
 
@@ -46,7 +48,7 @@ Rule: the view may only read events; the sim may never import view code.
 ## Visibility and fog (REC)
 - Squad-shared vision. Visible enemies show planned orders; unseen enemies are hidden until revealed.
 
-## Open mechanics questions
+## Open mechanics questions (all answered below; kept as history)
 1. Does overwatch fire at the first unit entering the cone, or choose a target? How does it interact with simultaneous moves?
 2. Suppression: does a hit-or-miss binary game still need it, and what does it do to a unit's queue?
 3. Enemy AI: scripted per mission, utility scoring, or search over plans?
@@ -57,24 +59,24 @@ Rule: the view may only read events; the sim may never import view code.
 ---
 
 ## Round 2 decisions
-- **Overwatch (decided):** from the chosen tick, fires once at the first enemy entering its cone + LOS; speed order within the tick.
+- **Overwatch (decided; SUPERSEDED):** from the chosen tick, fires once at the first enemy entering its cone + LOS; speed order within the tick. *Now: armed for 4 AP, one free shot, until the owner's next activation, in initiative order (see the last section).*
 - **Enemy AI (decided):** utility scoring per unit; weights live in data; AI receives a visible-state snapshot only.
 - **Stats (decided):** HP, Speed, Aim, CQB, Morale. Drones have **no morale** (immune to stress; no growth, no abilities, per Hollowing).
 - **Growth (decided 2026-10-15): XP, pick 1 of 3.** A surviving merc earns XP after a mission from hits landed, kills, surviving hits and the objective. Five levels. Each level offers three different +1 stat steps, weighted by what the merc did and seeded by campaign seed, slot and level (so reloading cannot reroll); the player picks one. Hollows never level; death freezes stats at 60% of the levelled values. The numbers live in a data file (`data/story/progression.json`, to be built). **Stat caps for levelling:** hp 6; speed, aim, cqb, morale 10; sight 9. Gear can lift hp and morale above these (morale to 12, see EQUIPMENT.md). **Injury is dropped:** permadeath plus hollowing is the consequence system.
 
-### Open
+### Open (answered in Round 3 and the sections below)
 - What does CQB do mechanically? (Candidates: bonus in adjacent/close range, faster entry/door ticks, melee/breach options.)
 - What does Aim do with a binary hit rule? (Candidates: max range, shot tick cost, suppression strength.)
 - What does Morale do to a plan? (Candidates: lose ticks, refuse orders, break from cover.)
 - How are drones' stat blocks scaled (fixed fraction of the fallen merc's, or flat)?
 
 ## Round 3 decisions (all accepted)
-- **CQB:** faster entry/breach ticks + close-range damage edge.
-- **Aim:** max effective range and shot tick cost (no hit roll).
+- **CQB:** a close-range damage edge only: +1 damage at CQB 6 or more within 2 tiles. (The "faster entry/breach ticks" idea was never built.)
+- **Aim:** drives hit chance (35 + 7 per point, minus 4 per tile beyond 2, clamped 10..95, rolled on a seeded d100), range (`aim / 3` extra tiles) and a cheaper shot at aim 8 or more. (The original "no hit roll" was replaced; see Hit chances.)
 - **Morale:** a hit unit rolls an on-hit check: steady (cannot shoot until its next activation) or broken (no AP until then). **Stress is dropped (decided 2026-10-15):** it never shortened anyone's AP; the unused `stress_penalty` field stays inert until a real source is designed.
 - **Drones:** fixed ~60% of the fallen merc's stats, frozen at death; no growth, no abilities, no morale.
 
-## Overwatch (implemented)
+## Overwatch (planned mode, implemented; the default activation engine differs: see the last section)
 - `SimAction.overwatch(facing, hold_ticks)`: 8 facings, 90-degree cone (integer test, boundary included), costs `hold_ticks`.
 - Active on every tick from the action's start through its finish.
 - Reacts to the first enemy (in move-resolution order) that **finishes a move** in the cone, within range, with LOS. Fires once, then the watch is spent.
@@ -201,7 +203,7 @@ Direction from the user: pick a point to move to; the unit takes a shot if it ge
 ### Decision: AI and Move+Fire
 The AI does not use Move+Fire by default. It is reserved as a **late-game elite-unit ability** (e.g. Hegemony proxies/officers in act III, or an "elite" AI profile), so facing it signals a step up in threat. Not implemented yet: needs an elite profile and a place in `SimAI` candidate generation.
 
-## Combat rework: no pauses, ordered fire, morale on hit (implemented; SUPERSEDES checkpoints, Alerts, mid-round replan and simultaneous shot groups above)
+## Combat rework: no pauses, ordered fire, morale on hit (planned mode, implemented; SUPERSEDES checkpoints, Alerts, mid-round replan and simultaneous shot groups above)
 - **No pauses.** Once Go is pressed, orders are locked and the round plays all 20 ticks. Checkpoints, Alerts/interrupts and manual pause are retired. `SimMatch.step()` sets `pause` only when the round or match ends. (`SimMatch.pause`/`apply_orders` and `SimTurn.replace_orders` remain for tools/tests.)
 - **Ordered fire.** Shots due on the same tick resolve one at a time: higher speed, then higher aim, then lower id (`SimTurn._fires_before`). Each shot sees the board left by the shots before it, so a hit can pre-empt the reply and **mutual kills in one tick no longer happen** (a draw by mutual wipe is now effectively impossible). Moves still resolve by speed, then id. If the faster shot is blocked by cover, the slower unit's shot goes ahead.
 - **Morale check on a non-lethal hit.** `need = morale + 3 - wounds` (+1 when the unit stands beside a wall edge or crate; wounds = hits taken this mission, including this one); `roll = SimDice.d10(seed, turn, tick, unit, wounds)`; pass when `roll <= need`. A base unit (morale 5) therefore passes its first hit on 7 or less: **70% steady / 30% broken**. The roll and target number are never shown to the player (the log only says steady or broken).
@@ -239,15 +241,29 @@ Three slots (armour, weapon, mod), a stash, mission rewards and officer drops. A
 
 ---
 
-## Current ruleset: AP / initiative (2026-10-14)
+## Legacy ruleset: live AP / initiative (2026-10-14; the default is now the activation engine below)
 
-The game now plays on `InitiativeMatch` (see `TACTICS_KIT.md` for the API and `retreat-sim/game/initiative_match.gd` for the rules). The simultaneous planned turns above remain in the code as a legacy mode.
+Until 2026-10-15 the game played on `InitiativeMatch` (see `TACTICS_KIT.md` for the API and `retreat-sim/game/initiative_match.gd` for the rules). The simultaneous planned turns above remain in the code as a legacy mode.
 
 - **Live, one merc at a time.** The player's squad acts in any order, each action resolving immediately; then the enemy's turn; then the round ends.
-- **AP.** 14 per merc per turn (`SimConst.AP_PER_TURN`, minus stress). Step 2, diagonal 3, shot 4 (3 at aim 8+, minimum 2).
+- **AP.** 14 per merc per turn (`SimConst.AP_PER_TURN`). Step 2, diagonal 3, shot 4 (3 at aim 8+, minimum 2).
 - **Interrupts.** A defender's first clear shot at a mover fires at once if its initiative (`speed*10 + aim - 3*hits_taken`) is at least the mover's; each defender gets one reaction shot per turn and one interrupt per mover; the mover stops.
 - **Overwatch.** Costs all AP; fires once at the first enemy to move inside the cone with line of sight, whatever the initiative.
 - **Hit chance.** `35 + 7*aim + gear - 4*(distance-2)`, clamped 10..95, on seeded dice; cover still blocks outright.
 - **Route preview.** Tapping a destination shows the AP cost and marks each step where a visible enemy would shoot first.
 - **Reaction gate.** A unit that ends its turn with less than one shot of AP left has no reaction shot on the enemy turn; Overwatch (all AP) is the exception.
 - **Open numbers.** 14 AP is the first retune of the generous 20; tune further with play (roadmap B1).
+
+---
+
+## Current ruleset: activation engine (2026-10-15, the default)
+
+- **Units act one at a time.** Each round every living unit gets exactly one activation, in initiative order whichever side it is on. Initiative = `speed*10 + aim`, fixed for the round; ties break on a seeded die, then unit id. New units join at the start of a round. Code: `game/activation_scheduler.gd`, `game/combat_state.gd`, `game/action_resolver.gd`.
+- **AP.** The pool per activation is 14, read from `data/combat/ap_costs.json` (the sandbox can override it); it refills when the unit's activation begins and unused AP expires. Step 2, diagonal 3, shot 4 (3 at aim 8+, minimum 2) still come from `SimUnit` and `SimConst`.
+- **Commands.** Move, shoot, arm overwatch, end activation: all through `ActionResolver.submit`. A refused command changes nothing and returns a reason code (`CombatReasons` has the player wording). Every accepted command posts an AP ledger row; `CombatInvariants` is checked after each command in the soak.
+- **Overwatch.** Armed for 4 AP, not refunded. After any step an enemy takes, each armed unit whose cone, weapon range, sight and clear line cover the new tile fires once for free (initiative order, then id) and its charge is spent. A killed mover stops; a survivor carries on. Shaken, broken or dead watchers cannot react, and reactions never chain. It expires when its owner's next activation begins. Sentries start armed.
+- **No automatic interrupts** (they exist only in the legacy mode). Hit chance, cover and the on-hit morale check are unchanged. Stress is dropped.
+- **Enemy AI.** `ActivationAI` asks `SimAI` for a plan from the fog view, then submits one legal action at a time; a stale step is dropped and replanned, with action and replan caps and a guaranteed end of activation. New weight `w_lane` rewards tiles with a clear shot lane (default and aggressor profiles); the objective term uses walking distance.
+- **Save and resume.** One autosave slot (`ResumeStore`, `CombatSave`) offered as "Resume battle" on the main menu; level test and sandbox battles only.
+- **Switch.** `Session.ruleset`: `"activation"` (default), `"initiative"` (legacy live AP) or `"planned"` (legacy simultaneous ticks).
+- **Measured numbers.** `docs/combat/balance-table.md` (AP sweep, 1,000-battle soak).
