@@ -205,13 +205,12 @@ func _level_test_menu() -> void:
 	var buttons: Array = []
 	for id: String in LEVEL_TEST_PITCH:
 		buttons.append({"text": LEVEL_TEST_PITCH[id], "call": _start_level_test.bind(id)})
-	var initiative := Session.ruleset == "initiative"
-	buttons.append({"text": "Ruleset: %s (tap to switch)" % ("Initiative, live AP" if initiative else "Planned, simultaneous"), "call": _toggle_ruleset})
+	buttons.append({"text": "Ruleset: %s (tap to switch)" % Session.RULESET_LABEL[Session.ruleset], "call": _toggle_ruleset})
 	_show("Act 1 level test", "Pick a map. Each uses the new layout, enemy roles and goal. Nothing here is saved.", buttons, "", 1, [{"text": "Back", "call": _menu}])
 
 
 func _toggle_ruleset() -> void:
-	Session.ruleset = "planned" if Session.ruleset == "initiative" else "initiative"
+	Session.ruleset = Session.next_ruleset(Session.ruleset)
 	_level_test_menu()
 
 
@@ -230,7 +229,7 @@ func _start_level_test(id: String) -> void:
 	Session.mission_id = id
 	Session.level_test = true
 	Session.current_match = MissionBuilder.build(c, id, slots)
-	get_tree().change_scene_to_file(INITIATIVE_SCENE if ruleset == "initiative" else PLAY_SCENE)
+	get_tree().change_scene_to_file(PLAY_SCENE if Session.scene_ruleset_is_planned(ruleset) else INITIATIVE_SCENE)
 
 
 func _toggle_sound() -> void:

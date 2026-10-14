@@ -4,7 +4,7 @@ extends RefCounted
 ## list you place yourself. A config is a plain Dictionary (never mutated; the edit helpers
 ## return a changed copy):
 ##   {"mercs": [{"slot", "stats": {hp,speed,aim,cqb,morale,sight}, "gear": {armour,weapon,mod}, "pos": Vector2i} x4],
-##    "enemies": [{"kind", "hollow", "role", "pos": Vector2i}], "ruleset": "initiative" | "planned"}
+##    "enemies": [{"kind", "hollow", "role", "pos": Vector2i}], "ruleset": "activation" | "initiative" | "planned"}
 
 const MAP := "proving_ground"
 const SQUAD := 4
@@ -30,7 +30,7 @@ static func default_config(story: Dictionary) -> Dictionary:
 		{"kind": "regular", "hollow": false, "role": "sentry", "pos": Vector2i(18, 7)},
 		{"kind": "regular", "hollow": false, "role": "guard", "pos": Vector2i(14, 7)},
 	]
-	return {"mercs": mercs, "enemies": enemies, "ruleset": "initiative"}
+	return {"mercs": mercs, "enemies": enemies, "ruleset": Session.RULESETS[0]}
 
 
 ## Every enemy you can place: [{key, label, stats, id_base, single}] (tiers, then the Writ, then the Provost).

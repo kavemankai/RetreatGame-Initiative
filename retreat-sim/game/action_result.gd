@@ -9,6 +9,8 @@ var ap_before := 0
 var cost := 0
 var ap_after := 0
 var events: Array = []
+## One {"events", "state"} per step or shot, for playback; filled only when CombatState.capture_beats is on.
+var beats: Array[Dictionary] = []
 ## True when this action ended the unit's activation (END_TURN, or its unit died).
 var activation_ended := false
 ## Who is active after the action (-1 once the encounter is over).

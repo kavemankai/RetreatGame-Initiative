@@ -9,13 +9,29 @@ static var mission_id := ""
 static var withdrawn := false
 ## A throwaway campaign started from the menu's level test: finishing returns to the menu.
 static var level_test := false
-## "planned" (simultaneous ticks) or "initiative" (action points, interrupts); chosen in the level test menu.
-static var ruleset := "initiative"
+## "activation" (one unit at a time by initiative), "initiative" (live AP turns with interrupts)
+## or "planned" (simultaneous ticks); chosen in the level test menu and the sandbox.
+const RULESETS: Array[String] = ["activation", "initiative", "planned"]
+const RULESET_LABEL := {
+	"activation": "Activation (one unit at a time, AP)",
+	"initiative": "Initiative (live AP turns, interrupts)",
+	"planned": "Planned (simultaneous ticks)",
+}
+static var ruleset := "activation"
 ## Playing the sandbox: leaving returns to its setup screen. The config outlives reset() so edits stick.
 static var sandbox := false
 static var sandbox_cfg: Dictionary = {}
 ## Set when a campaign match ends; the campaign screen applies it once.
 static var pending_outcome: Dictionary = {}
+
+
+static func next_ruleset(current: String) -> String:
+	return RULESETS[(RULESETS.find(current) + 1) % RULESETS.size()]
+
+
+## The "planned" ruleset has its own screen; the other two share the initiative screen.
+static func scene_ruleset_is_planned(r: String) -> bool:
+	return r == "planned"
 
 
 static func in_campaign() -> bool:
@@ -28,6 +44,6 @@ static func reset() -> void:
 	mission_id = ""
 	withdrawn = false
 	level_test = false
-	ruleset = "initiative"
+	ruleset = "activation"
 	sandbox = false
 	pending_outcome = {}

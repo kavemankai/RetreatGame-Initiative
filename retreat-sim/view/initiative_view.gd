@@ -30,6 +30,8 @@ var _route_note := ""
 var _queue: Array[Dictionary] = []  # beats still to play back
 var _busy := false
 var _overview := false
+var _activation := false      # the activation engine (ActivationMatch) rather than live-AP turns
+var _last_round := 0
 var _portrait := false
 
 var _board: BoardView
@@ -39,6 +41,7 @@ var _title: Label
 var _goal_label: Label
 var _banner: Label
 var _squad: BoxContainer
+var _strip: InitiativeStrip
 var _hint: Label
 var _msg: Label
 var _log: RichTextLabel
@@ -57,19 +60,33 @@ func _ready() -> void:
 		_demo_sandbox()
 	elif args.has("campaign") and Session.current_match == null:
 		_demo_campaign(String(args["campaign"]))
+	if args.has("ruleset"):
+		Session.ruleset = String(args["ruleset"])
 	if Session.current_match == null:
 		get_tree().change_scene_to_file("res://view/campaign.tscn")
 		return
-	_im = InitiativeMatch.from_match(Session.current_match)
-	_im.start()
+	_activation = Session.ruleset == "activation"
+	var opening: Array[Dictionary] = []
+	if _activation:
+		var am := ActivationMatch.make(Session.current_match)
+		_im = am
+		_im.start()
+		opening = am.opening_beats
+	else:
+		_im = InitiativeMatch.from_match(Session.current_match)
+		_im.start()
 	_build_ui()
 	resized.connect(_apply_layout)
 	_apply_layout()
 	_board.set_level_theme(_im.theme)
 	_sound.set_ambient(_im.theme)
 	_sound.set_music(_act())
-	_log_line("[color=#ffd479]Turn 1: your move.[/color]")
+	_log_line("[color=#ffd479]%s[/color]" % ("Round 1." if _activation else "Turn 1: your move."))
+	_last_round = _im.turn
+	_select_active()
 	_refresh()
+	if not opening.is_empty():
+		_play(opening, true)
 	if args.has("do"):
 		_run_script(String(args["do"]))
 	if args.has("shot"):
@@ -158,6 +175,9 @@ func _build_ui() -> void:
 	_banner.visible = false
 	_panel.add_child(_banner)
 
+	_strip = InitiativeStrip.new()
+	_strip.visible = false
+	_panel.add_child(_strip)
 	_squad = BoxContainer.new()
 	_panel.add_child(_squad)
 	var tools := HBoxContainer.new()
@@ -167,6 +187,7 @@ func _build_ui() -> void:
 	_watch_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_watch_btn.focus_mode = Control.FOCUS_NONE
 	_watch_btn.pressed.connect(_on_watch)
+	_watch_btn.visible = not _activation  # overwatch has no reaction yet in the activation engine
 	tools.add_child(_watch_btn)
 
 	_hint = Label.new()
@@ -183,7 +204,7 @@ func _build_ui() -> void:
 	_log.custom_minimum_size = Vector2(0, 60)
 	_panel.add_child(_log)
 	_end_btn = Button.new()
-	_end_btn.text = "End Turn"
+	_end_btn.text = "End Activation" if _activation else "End Turn"
 	_end_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_end_btn.focus_mode = Control.FOCUS_NONE
 	_end_btn.pressed.connect(_on_end_turn)
@@ -284,6 +305,11 @@ func _say(text: String, ok: bool = true, neutral: bool = false) -> void:
 	_msg.add_theme_color_override("font_color", COL_NEUTRAL if neutral else (COL_OK if ok else COL_BAD))
 
 
+## A short label for the initiative strip.
+func _short_name(id: int) -> String:
+	return _name_of(id).left(5)
+
+
 func _describe(ev: Dictionary, fog: Dictionary) -> String:
 	return ReplayModel.describe(ev, fog, _name_of).replace("[", "[lb]")
 
@@ -305,7 +331,7 @@ func _on_tile_clicked(tile: Vector2i, button: int) -> void:
 		_refresh()
 		return
 	if _sel < 0 or not _im.can_act(_sel):
-		_say("Select one of your mercs first.", false)
+		_say(_not_acting_text(), false)
 		return
 	if u != null and u.team != _im.player_team and visible.has(u.id):
 		_tap_target(u)
@@ -316,7 +342,7 @@ func _on_tile_clicked(tile: Vector2i, button: int) -> void:
 func _tap_target(enemy: SimUnit) -> void:
 	var pv := _im.shot_preview(_sel, enemy.id)
 	if pv["result"] == "invalid":
-		_say("No shot: %s." % String(pv["reason"]).replace("_", " "), false)
+		_say("No shot: " + CombatReasons.text(String(pv["reason"])), false)
 		return
 	if _pending == enemy.pos and _pending_is_shot:
 		_clear_pending()
@@ -341,7 +367,7 @@ func _tap_target(enemy: SimUnit) -> void:
 func _tap_tile(tile: Vector2i) -> void:
 	var reach := _im.reach(_sel)
 	if not reach.has(tile) or tile == _im.state.units[_sel].pos:
-		_say("Tile is unreachable.", false)
+		_say(CombatReasons.text("unreachable"), false)
 		_clear_pending()
 		_refresh(false)
 		return
@@ -354,6 +380,26 @@ func _tap_tile(tile: Vector2i) -> void:
 	_route_note = ""
 	_refresh(false)
 	_say("Move: %d AP (of %d).%s Tap again to go." % [reach[tile], _im.ap_of(_sel), _route_note], false, _route_note == "")
+
+
+## Why the selected merc cannot be commanded right now.
+func _not_acting_text() -> String:
+	if _activation and _sel >= 0 and _im.state.units.has(_sel) and _im.state.units[_sel].alive:
+		var acting: int = (_im as ActivationMatch).active_unit()
+		var who := " %s acts now." % _name_of(acting) if acting >= 0 else ""
+		return CombatReasons.text("not_your_activation") + who
+	return "Select one of your mercs first."
+
+
+## In the activation engine the merc whose activation it is is selected for you.
+func _select_active() -> void:
+	if not _activation or _im.is_over():
+		return
+	var acting: int = (_im as ActivationMatch).active_unit()
+	var u: SimUnit = _im.state.units.get(acting)
+	if u != null and u.team == _im.player_team:
+		_sel = acting
+		_clear_pending()
 
 
 func _clear_pending() -> void:
@@ -387,8 +433,12 @@ func _on_end_turn() -> void:
 	if _busy or _im.is_over():
 		return
 	_clear_pending()
-	_log_line("[color=#8a93a0]-- enemy turn --[/color]")
-	_say("Enemy turn...", true, true)
+	if _activation:
+		_log_line("[color=#8a93a0]-- %s ends its activation --[/color]" % _name_of((_im as ActivationMatch).active_unit()))
+		_say("", true, true)
+	else:
+		_log_line("[color=#8a93a0]-- enemy turn --[/color]")
+		_say("Enemy turn...", true, true)
 	_play(_im.end_turn(), true)
 
 
@@ -441,10 +491,17 @@ func _finish_playback() -> void:
 	_set_controls(true)
 	if _ends_turn and not _im.is_over():
 		var extra := " ".join(_im.notices)
-		_log_line("[color=#ffd479]Turn %d: your move.[/color] %s" % [_im.turn, extra])
-		_say(("Your move. " + extra).strip_edges(), true, true)
+		if _activation:
+			if _im.turn != _last_round:
+				_log_line("[color=#ffd479]Round %d.[/color] %s" % [_im.turn, extra])
+			_say(("%s acts. %s" % [_name_of((_im as ActivationMatch).active_unit()), extra]).strip_edges(), true, true)
+		else:
+			_log_line("[color=#ffd479]Turn %d: your move.[/color] %s" % [_im.turn, extra])
+			_say(("Your move. " + extra).strip_edges(), true, true)
 		_board.clear_tracers()
 	_ends_turn = false
+	_last_round = _im.turn
+	_select_active()
 	if _sel >= 0 and (not _im.state.units.has(_sel) or not _im.state.units[_sel].alive):
 		_sel = -1
 	_refresh()
@@ -478,7 +535,15 @@ func _refresh(redraw_board: bool = true) -> void:
 	else:
 		_goal_label.text = ""
 	_goal_label.visible = _goal_label.text != ""
-	_title.text = "Turn %d  %s" % [_im.turn, "your move" if _im.active_team == _im.player_team else "enemy"]
+	if _activation:
+		var am := _im as ActivationMatch
+		var acting := am.active_unit()
+		_title.text = "Round %d" % _im.turn if acting < 0 else "Round %d  %s" % [_im.turn, _name_of(acting)]
+		_strip.visible = not _im.is_over()
+		if _strip.visible:
+			_strip.show_order(_im.turn, am.strip(), _im.player_team, _short_name)
+	else:
+		_title.text = "Turn %d  %s" % [_im.turn, "your move" if _im.active_team == _im.player_team else "enemy"]
 	_banner.visible = _im.is_over()
 	if _im.is_over():
 		_banner.text = "VICTORY" if _im.winner == _im.player_team else ("DRAW" if _im.winner == SimMatch.DRAW else "DEFEAT")
@@ -536,6 +601,8 @@ func _rebuild_squad() -> void:
 			tag = " (down)"
 		elif _im.is_suppressed(id):
 			tag = " (no fire)"
+		if _activation and tag == "" and id != (_im as ActivationMatch).active_unit():
+			tag = " (waits)"
 		b.text = "%s\n%d AP%s" % [_name_of(id), _im.ap_of(id), tag]
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.focus_mode = Control.FOCUS_NONE
@@ -557,6 +624,10 @@ func _select(id: int) -> void:
 func _hint_text() -> String:
 	if _im.is_over():
 		return ""
+	if _activation:
+		if _sel < 0 or not _im.can_act(_sel):
+			return "Units act one at a time in the order shown above. Tap a tile to move or an enemy to shoot, then End Activation."
+		return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4. End Activation to pass to the next unit." % [_name_of(_sel), _im.ap_of(_sel)]
 	if _sel < 0:
 		return "Tap a merc, then a tile to move or an enemy to shoot. Waiting units get one interrupt shot at anyone who steps into their sights first."
 	return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4." % [_name_of(_sel), _im.ap_of(_sel)]

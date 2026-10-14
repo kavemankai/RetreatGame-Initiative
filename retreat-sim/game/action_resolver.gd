@@ -2,7 +2,8 @@ class_name ActionResolver
 extends RefCounted
 ## The one place a CombatState changes. submit() validates a typed CombatAction against the
 ## active unit's AP, sight and the board, and only then resolves it, so a rejection leaves no
-## trace. Every accepted action posts a ledger row (AP before, cost, AP after).
+## trace. Every accepted action posts a ledger row (AP before, cost, AP after). problem() runs
+## the same validation without changing anything, for previews and for the AI.
 ##
 ## Reasons a command is refused: encounter_over, not_ready, not_your_activation, dead_actor,
 ## broken, suppressed, no_target, not_visible, out_of_range, no_los, not_enough_ap,
@@ -10,7 +11,7 @@ extends RefCounted
 
 
 static func submit(cs: CombatState, a: CombatAction) -> ActionResult:
-	var why := _common_problem(cs, a)
+	var why := problem(cs, a)
 	if why != "":
 		return ActionResult.rejected(why)
 	var u: SimUnit = cs.sim.units[a.actor_id]
@@ -21,9 +22,30 @@ static func submit(cs: CombatState, a: CombatAction) -> ActionResult:
 			return _shoot(cs, u, a)
 		CombatAction.OVERWATCH:
 			return _overwatch(cs, u, a)
+	return _end_turn(cs, u)
+
+
+## Why `a` would be refused right now ("" if it would be accepted). Changes nothing.
+static func problem(cs: CombatState, a: CombatAction) -> String:
+	if cs.is_over():
+		return "encounter_over"
+	if cs.phase != CombatState.Phase.AWAIT_COMMAND:
+		return "not_ready"
+	if a.actor_id != cs.active_id:
+		return "not_your_activation"
+	var u: SimUnit = cs.sim.units.get(a.actor_id)
+	if u == null or not u.alive:
+		return "dead_actor"
+	match a.type:
+		CombatAction.MOVE:
+			return _move_problem(cs, u, a)
+		CombatAction.SHOOT:
+			return _shoot_problem(cs, u, a)
+		CombatAction.OVERWATCH:
+			return _overwatch_problem(cs, u, a)
 		CombatAction.END_TURN:
-			return _end_turn(cs, u)
-	return ActionResult.rejected("unknown_action")
+			return ""
+	return "unknown_action"
 
 
 ## What shooting `target_id` would do for `id`: {"result", "chance", "damage", "cost"} or
@@ -50,19 +72,6 @@ static func reach(cs: CombatState, id: int) -> Dictionary:
 
 # --- validation ---------------------------------------------------------------------------
 
-static func _common_problem(cs: CombatState, a: CombatAction) -> String:
-	if cs.is_over():
-		return "encounter_over"
-	if cs.phase != CombatState.Phase.AWAIT_COMMAND:
-		return "not_ready"
-	if a.actor_id != cs.active_id:
-		return "not_your_activation"
-	var u: SimUnit = cs.sim.units.get(a.actor_id)
-	if u == null or not u.alive:
-		return "dead_actor"
-	return ""
-
-
 static func _status_problem(cs: CombatState, id: int, can_be_suppressed: bool) -> String:
 	if cs.broken.has(id):
 		return "broken"
@@ -71,19 +80,43 @@ static func _status_problem(cs: CombatState, id: int, can_be_suppressed: bool) -
 	return ""
 
 
-# --- actions ------------------------------------------------------------------------------
-
-static func _move(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
+static func _move_problem(cs: CombatState, u: SimUnit, a: CombatAction) -> String:
 	var bad := _status_problem(cs, u.id, false)
 	if bad != "":
-		return ActionResult.rejected(bad)
+		return bad
+	if a.target_cell == u.pos:
+		return "unreachable"
 	var view := SimVision.view_for(cs.sim, u.team)
 	var r := SimPathing.reach(view, u.pos, u.id, cs.ap_of(u.id))
-	if a.target_cell == u.pos:
-		return ActionResult.rejected("unreachable")
-	if not (r["dist"] as Dictionary).has(a.target_cell):
-		var full := SimPathing.reach(view, u.pos, u.id, cs.config.max_ap)
-		return ActionResult.rejected("not_enough_ap" if (full["dist"] as Dictionary).has(a.target_cell) else "unreachable")
+	if (r["dist"] as Dictionary).has(a.target_cell):
+		return ""
+	var full := SimPathing.reach(view, u.pos, u.id, cs.config.max_ap)
+	return "not_enough_ap" if (full["dist"] as Dictionary).has(a.target_cell) else "unreachable"
+
+
+static func _shoot_problem(cs: CombatState, u: SimUnit, a: CombatAction) -> String:
+	var bad := _status_problem(cs, u.id, true)
+	if bad != "":
+		return bad
+	var pv := preview_shot(cs, u.id, a.target_id)
+	if pv["result"] == "invalid":
+		return String(pv["reason"])
+	return "not_enough_ap" if cs.ap_of(u.id) < int(pv["cost"]) else ""
+
+
+static func _overwatch_problem(cs: CombatState, u: SimUnit, a: CombatAction) -> String:
+	if a.dir == Vector2i.ZERO:
+		return "invalid_direction"
+	var bad := _status_problem(cs, u.id, true)
+	if bad != "":
+		return bad
+	return "not_enough_ap" if cs.ap_of(u.id) < cs.config.overwatch_cost else ""
+
+
+# --- actions (each assumes problem() returned "") ----------------------------------------------
+
+static func _move(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
+	var r := SimPathing.reach(SimVision.view_for(cs.sim, u.team), u.pos, u.id, cs.ap_of(u.id))
 	var res := _begin(cs, u)
 	# Revalidate every step against the live board, not just the preview.
 	var path := SimPathing.path_to(r, a.target_cell)
@@ -93,47 +126,33 @@ static func _move(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
 		if cost > cs.ap_of(u.id):
 			break
 		if not cs.sim.grid.can_step(u.pos, dest) or cs.sim.unit_at(dest) != null:
-			res.events.append({"type": "move_blocked", "tick": cs.next_tick(), "unit": u.id, "at": u.pos, "to": dest, "reason": "occupied"})
+			_emit(cs, res, [{"type": "move_blocked", "tick": cs.next_tick(), "unit": u.id, "at": u.pos, "to": dest, "reason": "occupied"}])
 			break
 		var old := u.pos
 		u.pos = dest
 		cs.ap[u.id] = cs.ap_of(u.id) - cost
 		u.bump("steps_moved")
-		res.events.append({"type": "move", "tick": cs.next_tick(), "unit": u.id, "from": old, "to": dest})
+		_emit(cs, res, [{"type": "move", "tick": cs.next_tick(), "unit": u.id, "from": old, "to": dest}])
 	return _finish(cs, u, a, res)
 
 
 static func _shoot(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
-	var bad := _status_problem(cs, u.id, true)
-	if bad != "":
-		return ActionResult.rejected(bad)
 	var pv := preview_shot(cs, u.id, a.target_id)
-	if pv["result"] == "invalid":
-		return ActionResult.rejected(String(pv["reason"]))
-	if cs.ap_of(u.id) < int(pv["cost"]):
-		return ActionResult.rejected("not_enough_ap")
 	var res := _begin(cs, u)
 	cs.ap[u.id] = cs.ap_of(u.id) - int(pv["cost"])
 	var events := ShotResolver.fire(cs.sim, u, a.target_id, cs.round_no, cs.next_tick(), not cs.fired.has(u.id))
 	cs.fired[u.id] = true
 	for e: Dictionary in events:
 		_apply_outcome(cs, e)
-	res.events.append_array(events)
+	_emit(cs, res, events)
 	return _finish(cs, u, a, res)
 
 
 static func _overwatch(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
-	if a.dir == Vector2i.ZERO:
-		return ActionResult.rejected("invalid_direction")
-	var bad := _status_problem(cs, u.id, true)
-	if bad != "":
-		return ActionResult.rejected(bad)
-	if cs.ap_of(u.id) < cs.config.overwatch_cost:
-		return ActionResult.rejected("not_enough_ap")
 	var res := _begin(cs, u)
 	cs.ap[u.id] = cs.ap_of(u.id) - cs.config.overwatch_cost
 	cs.overwatch[u.id] = a.dir
-	res.events.append({"type": "watch", "tick": cs.next_tick(), "unit": u.id, "dir": a.dir})
+	_emit(cs, res, [{"type": "watch", "tick": cs.next_tick(), "unit": u.id, "dir": a.dir}])
 	return _finish(cs, u, a, res)
 
 
@@ -156,6 +175,16 @@ static func _begin(cs: CombatState, u: SimUnit) -> ActionResult:
 	res.success = true
 	res.ap_before = cs.ap_of(u.id)
 	return res
+
+
+## Adds events to the result and, for views, a playback beat with the board as it now stands.
+static func _emit(cs: CombatState, res: ActionResult, events: Array) -> void:
+	res.events.append_array(events)
+	if cs.capture_beats:
+		var typed: Array[Dictionary] = []
+		for e: Dictionary in events:
+			typed.append(e)
+		res.beats.append({"events": typed, "state": cs.sim.clone()})
 
 
 static func _post(cs: CombatState, u: SimUnit, type: String, res: ActionResult) -> void:

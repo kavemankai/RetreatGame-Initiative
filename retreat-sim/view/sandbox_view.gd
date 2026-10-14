@@ -15,7 +15,11 @@ const COL_NEUTRAL := Color("d8dee9")
 const INITIATIVE_SCENE := "res://view/initiative.tscn"
 const PLAY_SCENE := "res://view/play.tscn"
 const MENU_SCENE := "res://view/campaign.tscn"
-const RULESET_LABEL := {"initiative": "Ruleset: Initiative (live, AP)", "planned": "Ruleset: Planned (simultaneous)"}
+const RULESET_LABEL := {
+	"activation": "Ruleset: Activation (one unit at a time)",
+	"initiative": "Ruleset: Initiative (live, AP)",
+	"planned": "Ruleset: Planned (simultaneous)",
+}
 const GEAR_LABEL := {"armour": "Armour", "weapon": "Weapon", "mod": "Mod"}
 
 var _story: Dictionary
@@ -415,7 +419,7 @@ func _click_enemies(tile: Vector2i) -> void:
 # --- start / leave ----------------------------------------------------------------------------------
 
 func _toggle_ruleset() -> void:
-	_cfg = Sandbox.with_ruleset(_cfg, "planned" if _cfg["ruleset"] == "initiative" else "initiative")
+	_cfg = Sandbox.with_ruleset(_cfg, Session.next_ruleset(_cfg["ruleset"]))
 	_ruleset_btn.text = RULESET_LABEL[_cfg["ruleset"]]
 
 
@@ -433,7 +437,7 @@ func _start() -> void:
 	Session.campaign = Campaign.new_game(_story)
 	Session.mission_id = Sandbox.MAP
 	Session.current_match = Sandbox.build(_story, cfg)
-	get_tree().change_scene_to_file(INITIATIVE_SCENE if cfg["ruleset"] == "initiative" else PLAY_SCENE)
+	get_tree().change_scene_to_file(PLAY_SCENE if Session.scene_ruleset_is_planned(cfg["ruleset"]) else INITIATIVE_SCENE)
 
 
 func _back() -> void:

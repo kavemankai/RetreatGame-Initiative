@@ -41,6 +41,8 @@ var ledger: Array[Dictionary] = []  # one row per accepted action: AP before, co
 var log: Array[Dictionary] = []     # every event, in order
 var notices: Array[String] = []
 var clock := 0
+## Views set this so each ActionResult carries a board snapshot per step; headless runs leave it off.
+var capture_beats := false
 
 
 static func create(p_sim: SimState, p_config: CombatConfig = null) -> CombatState:
