@@ -184,3 +184,10 @@ func test_a_small_ai_vs_ai_soak_is_clean() -> void:
 			bad.append("seed %d: %s" % [sd, {"frozen": r["frozen"], "rej": r["rejected"], "inv": (r["invariant_problems"] as Array).slice(0, 2), "osc": r["oscillations"]}])
 	check(bad.is_empty(), "no illegal action, invariant break, freeze or loop: %s" % [bad])
 	check(finished == 6, "all six battles reach a result (%d)" % finished)
+
+
+func test_every_act1_mission_plays_through_the_activation_engine() -> void:
+	for mission in ["karsa_breakout", "the_weir", "pellam_dock", "orchard_ring"]:
+		var r := CombatSoak.run_mission(story, mission, 0)
+		check(r["finished"] and not r["frozen"], "%s reaches a result in %d rounds" % [mission, r["rounds"]])
+		check(r["rejected"] == 0 and (r["invariant_problems"] as Array).is_empty(), "%s: no illegal action or broken invariant" % mission)

@@ -30,6 +30,21 @@ func _init(goal: Dictionary, zones: Dictionary) -> void:
 
 
 ## Call once when a round ends. Returns notes for the log. Does nothing once won.
+## The goal's changing state, JSON-safe; the goal itself (type, zones) is rebuilt from the map.
+func progress() -> Dictionary:
+	return {"won": won, "rounds_done": rounds_done, "penalty_total": penalty_total, "collected": collected.duplicate(), "step": step}
+
+
+func restore_progress(d: Dictionary) -> void:
+	won = bool(d.get("won", false))
+	rounds_done = int(d.get("rounds_done", 0))
+	penalty_total = int(d.get("penalty_total", 0))
+	collected.clear()
+	for c in d.get("collected", []):
+		collected.append(String(c))
+	step = int(d.get("step", 0))
+
+
 func round_end(state: SimState, player_team: int) -> Array[String]:
 	var notes: Array[String] = []
 	if goal_type == "" or won:

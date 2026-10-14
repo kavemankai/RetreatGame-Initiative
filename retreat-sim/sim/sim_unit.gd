@@ -34,6 +34,35 @@ static func make(p_id: int, p_team: int, p_pos: Vector2i, p_hp: int, p_speed: in
 	return u
 
 
+## A JSON-safe copy of every field (positions as [x, y]).
+func to_dict() -> Dictionary:
+	return {"id": id, "team": team, "pos": [pos.x, pos.y], "hp": hp, "speed": speed, "aim": aim, "cqb": cqb, "morale": morale,
+		"stress_penalty": stress_penalty, "is_drone": is_drone, "alive": alive, "damage": damage, "weapon_range": weapon_range,
+		"weapon_shot_ticks": weapon_shot_ticks, "sight_range": sight_range, "hit_bonus": hit_bonus,
+		"watch_dir": [watch_dir.x, watch_dir.y], "gear_trait": gear_trait, "counters": counters.duplicate()}
+
+
+## The unit from to_dict, tolerating JSON's floats for integers.
+static func from_dict(d: Dictionary) -> SimUnit:
+	var pos_a: Array = d["pos"]
+	var u := SimUnit.make(int(d["id"]), int(d["team"]), Vector2i(int(pos_a[0]), int(pos_a[1])), int(d["hp"]), int(d["speed"]), int(d["aim"]), int(d["cqb"]))
+	u.morale = int(d["morale"])
+	u.stress_penalty = int(d["stress_penalty"])
+	u.is_drone = bool(d["is_drone"])
+	u.alive = bool(d["alive"])
+	u.damage = int(d["damage"])
+	u.weapon_range = int(d["weapon_range"])
+	u.weapon_shot_ticks = int(d["weapon_shot_ticks"])
+	u.sight_range = int(d["sight_range"])
+	u.hit_bonus = int(d["hit_bonus"])
+	var watch_a: Array = d["watch_dir"]
+	u.watch_dir = Vector2i(int(watch_a[0]), int(watch_a[1]))
+	u.gear_trait = String(d["gear_trait"])
+	for k in d["counters"]:
+		u.counters[k] = int(d["counters"][k])
+	return u
+
+
 func clone() -> SimUnit:
 	var u := SimUnit.make(id, team, pos, hp, speed, aim, cqb)
 	u.morale = morale
