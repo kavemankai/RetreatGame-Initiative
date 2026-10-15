@@ -70,7 +70,7 @@ func _start_count() -> void:
 	_tween = create_tween().set_parallel(true)
 	for i in _delta_labels.size():
 		var d: Dictionary = _info["deltas"][i]
-		_tween.tween_method(_set_delta.bind(i), int(d["before"]), int(d["after"]), COUNT_SECONDS)
+		_tween.tween_method(func(shown: int) -> void: _set_delta(i, shown), int(d["before"]), int(d["after"]), COUNT_SECONDS)
 
 
 ## Skips the animation to the final figures (a tap, and the tests).

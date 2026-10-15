@@ -211,3 +211,4 @@ func test_the_result_figures_count_from_before_to_after() -> void:
 	screen.finish_animation()
 	check(screen.delta_texts()[1].contains("%d  to  %d" % [before_reserves, c.reserves]) and screen.delta_texts()[1].contains("(%s)" % UiTheme.delta_text(c.reserves - before_reserves)), "skipping lands on the final figure and its change (%s)" % [screen.delta_texts()[1]])
 	screen.queue_free()
+
