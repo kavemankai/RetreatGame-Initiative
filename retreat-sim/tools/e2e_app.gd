@@ -37,6 +37,15 @@ func press(text: String) -> bool:
 	return true
 
 
+## Presses the first enabled button whose text starts with `prefix` (the menu's label carries the difficulty).
+func press_prefix(prefix: String) -> bool:
+	for b in current_scene.find_children("*", "Button", true, false):
+		if (b as Button).text.begins_with(prefix) and (b as Button).is_visible_in_tree() and not (b as Button).disabled:
+			(b as Button).pressed.emit()
+			return true
+	return false
+
+
 func _initialize() -> void:
 	run.call_deferred()
 
@@ -47,7 +56,7 @@ func run() -> void:
 	current_scene = scene
 	await frames()
 	Session.reset()
-	check(press("New campaign") or press("Replace the save"), "the menu offers a new campaign")
+	check(press_prefix("New campaign") or press("Replace the save"), "the menu offers a new campaign")
 	await frames()
 	if button("Replace the save") != null:
 		press("Replace the save")

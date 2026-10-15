@@ -1,5 +1,26 @@
-# Handover log
+﻿# Handover log
 
+## 2026-10-16: "complete the game" pass (branch `agent/complete-game`)
+**Current working state.** The game builds, launches (dev project and packaged Windows exe) and plays end to end in the dev project: new campaign, 12 missions in three acts, four endings, saves, resume. Full suite 576 tests / 2,990 checks, 0 failed; real-scene driver 16/16; story lint clean. Details and every number: `docs/TEST_RESULTS.md`.
+
+**Completed this pass.** Full-campaign Android and Windows builds (the shipping preset was Act 1 only); Story / Standard difficulty (menu default Story); first-mission coach; menu wrap fix; activation-engine campaign soak tool; the docs set (`PROJECT_AUDIT`, `FEATURE_COMPARISON`, `GAME_DESIGN`, `TECHNICAL_ARCHITECTURE`, `LICENSE_AUDIT`, `DECISION_LOG`, `IMPLEMENTATION_LOG`, `TEST_RESULTS`, `REMAINING_ISSUES`, `PLAYING`, root `README` and `CHANGELOG`). This file is also `HANDOVER.md` (same file on Windows).
+
+**Not completed.** The APK has not been run on a phone (no device here). Acts 2-3 maps are still the old 12x10 layouts and no human has played them. Doors, patrols, hostages, stances, aimed shots, ammo, wounds, volume sliders, pinch zoom: see `docs/REMAINING_ISSUES.md`. Not cleared for public or commercial release (`docs/LICENSE_AUDIT.md`).
+
+**Latest verified build commands** (from `retreat-sim/`):
+```
+powershell -File tools/export_windows.ps1        # ../dist/windows/TheLongRetreat.exe (105.1 MB)
+powershell -File tools/export_android.ps1 -Full  # build/TheLongRetreat-1.0.0.apk (31.7 MB), copied to ../dist/android/
+```
+**Test commands:** `godot --headless --path . -s tests/run_tests.gd`, `-s tools/e2e_app.gd` (overwrites `user://campaign.json`: back it up), `-s tools/soak_combat.gd -- --battles=100`, `-s tools/soak_activation_campaign.gd -- --runs=8 --difficulty=story`.
+
+**Active blockers.** None for the code. Human steps needed: sideload the APK and play (see `docs/PLAYING.md`).
+
+**Next implementation priority.** (1) Play Karsa Breakout and one Act 2 mission on a phone and fix what the touch screen shows. (2) Playtest Acts 2-3 as a person; tune Standard and Story from that (the finale was won 1 of 40 on Standard and 32 of 40 on Story by the stand-in AI squad). (3) Redesign the eight Act 2-3 maps (roadmap A6) once Act 1 is approved.
+
+**Release artifacts.** `dist/android/TheLongRetreat-1.0.0.apk` (SHA-256 C274362A8436352986C48C11B03C6A27E2D76520F2AF7835756AA50CF2E4B5D8), `dist/windows/TheLongRetreat.exe` (SHA-256 780A10E28F56C85565C4F7A043D682F98DE3BAAE2C35A4746DFFBD1D1DAE2A65). `dist/` and `build/` are git-ignored; rebuild with the commands above.
+
+**Resuming.** `git checkout agent/complete-game`, read this section and `docs/REMAINING_ISSUES.md`, run `godot --headless --path retreat-sim --import` then the suite, then start at the priorities above. `feature/initiative-combat` is untouched; nothing was force-pushed or pushed.
 ## 2026-10-15: dug in and exposed cover (owner request)
 - Holding fire builds cover (+10 per activation, to +20), shooting from it wears it down (-10, to -20), a step resets it, the first activation changes nothing; cover is worth 10 to 50 hit-chance points. `SimUnit.cover_shift()`, `ActivationScheduler._settle_cover`, `ActionResolver` (reset on move, `shot_since` on shots and reaction fire), `SimResolver.evaluate_shot` adds `cover_penalty`, `SimAI._best_shot` uses it, `UiModel.dug_in_text` and `shot_notes` show it. Activation engine only (the legacy planned mode does not track it).
 - Tests: `tests/test_dug_in.gd` (6), 559 tests, 0 failed; 3 mutations caught; soak 100 battles and 40 Pellam Dock missions clean.
