@@ -402,61 +402,14 @@ func _squad_choice() -> void:
 
 # --- loadout ---------------------------------------------------------------------------------
 
-func _gear_name(c: Campaign, id: String) -> String:
-	return c.item(id).get("name", "-") if id != "" else "-"
-
-
-## Everyone who can carry kit, with what they wear. Tap one to change it.
-func _loadout() -> void:
-	var c := Session.campaign
-	var grid: Array = []
-	for slot in c.available_slots():
-		if c.slot_status(slot) != "named":
-			continue
-		var g := c.gear_of(slot)
-		grid.append({"text": "%s\n%s | %s | %s" % [_slot_label(c, slot), _gear_name(c, g["armour"]), _gear_name(c, g["weapon"]), _gear_name(c, g["mod"])], "call": _loadout_merc.bind(slot)})
-	var body := "[b]Loadout[/b]\n\nThree slots each: armour, weapon, mod. Anything you find goes in the stash. When a soldier dies, their kit comes back to it; a hollow takes nothing."
-	_show("Loadout", body, grid, _resources(c), 1, [{"text": "Back to the squad", "call": _squad_choice}])
-
-
-func _loadout_merc(slot: int) -> void:
-	var c := Session.campaign
-	var g := c.gear_of(slot)
-	var lines: Array[String] = ["[b]%s[/b]" % _slot_label(c, slot), ""]
-	var buttons: Array = []
-	for kind in Campaign.GEAR_SLOTS:
-		var id: String = g[kind]
-		lines.append("%s: %s%s" % [kind.capitalize(), _gear_name(c, id), ("  (%s)" % c.item_summary(id)) if id != "" else ""])
-		buttons.append({"text": "%s: %s" % [kind.capitalize(), _gear_name(c, id)], "call": _loadout_kind.bind(slot, kind)})
-	_show("Loadout", "\n".join(lines), buttons, _resources(c), 1, [{"text": "Back", "call": _loadout}])
-
-
-func _loadout_kind(slot: int, kind: String) -> void:
-	var c := Session.campaign
-	var worn: String = c.gear_of(slot)[kind]
-	var buttons: Array = []
-	for id in c.stash_for(kind, slot):
-		buttons.append({"text": "%s   %s" % [_gear_name(c, id), c.item_summary(id)], "call": _loadout_equip.bind(slot, id)})
-	if worn != "":
-		buttons.append({"text": "Take off %s" % _gear_name(c, worn), "call": _loadout_unequip.bind(slot, kind)})
-	var body := "[b]%s: %s[/b]\n\n" % [kind.capitalize(), _slot_label(c, slot)]
-	body += "Worn: %s\n" % (("%s  (%s)\n[i]%s[/i]" % [_gear_name(c, worn), c.item_summary(worn), c.item(worn).get("note", "")]) if worn != "" else "nothing")
-	if buttons.is_empty():
-		body += "\nNothing in the stash for this slot."
-	_show("Loadout", body, buttons, _resources(c), 1, [{"text": "Back", "call": _loadout_merc.bind(slot)}])
-
-
-func _loadout_equip(slot: int, id: String) -> void:
-	Session.campaign.equip(slot, id)
-	_sound.play("sfx_equip")
-	_save()
-	_loadout_merc(slot)
-
-
-func _loadout_unequip(slot: int, kind: String) -> void:
-	Session.campaign.unequip(slot, kind)
-	_save()
-	_loadout_merc(slot)
+## The loadout screens (view/screens/loadout_screen.gd), shown in place of the text page. Gear changes
+## are saved at once and sound the equip click; Back returns to `return_to` (the squad page by default).
+func _loadout(return_to: Callable = Callable()) -> void:
+	var screen := LoadoutScreen.new().setup(Session.campaign)
+	screen.changed.connect(func() -> void:
+		_sound.play("sfx_equip")
+		_save())
+	_host(screen, return_to if return_to.is_valid() else Callable(self, "_squad_choice"))
 
 
 func _toggle_slot(slot: int) -> void:
@@ -712,8 +665,9 @@ func _run_demo(name: String) -> void:
 			_host(KitGallery.new().setup(Session.campaign, false), _menu)
 		"loadout":
 			_start_new()
-			Session.campaign.stash.append_array(["carbine", "scope", "mourning_cloak"])
-			_loadout_merc(1)
+			Session.campaign.stash.append_array(["assault_rifle", "scope", "mourning_cloak", "padded_jacket"])
+			_loadout()
+			(_hosted as LoadoutScreen).open_merc(1)
 		"debrief":
 			_start_new()
 			_fake_outcome("karsa_breakout", {"success": true, "dead_slots": [5], "writ_dead": [], "squad_wiped": false})

@@ -1,5 +1,10 @@
 # Handover log
 
+## 2026-10-15: R4 Phase C done (equipment screens)
+- `LoadoutScreen` (`view/screens/loadout_screen.gd`) replaces the text loadout pages: roster hub (a `MercCard` per merc, tap to open; a hollow explains it carries no kit), a merc's gear (card with class chip and glyphs, six stat rows with gear shown against base, three slot cards, empty slots invite a tap), the item picker (stash items for the slot, weapons only of the merc's class, grouped with xN, each with its before/after changes, Equip disabled until one is chosen, Take off, wrong-class refusals shown), and the stash view (grouped items and who wears what). It changes only the campaign and emits `changed` (the host saves and plays `sfx_equip`) and `back`.
+- `campaign_view._loadout(return_to)` hosts it; the old `_loadout_*` text pages are gone. `--demo=loadout` shows a merc screen.
+- **Tests:** 513 tests, 2714 checks, 0 failed (`tests/test_loadout_screen.gd` adds 9, driven by emitting taps and presses). Mutation-checked: class filter, changed signal, Equip enabled state, hollow guard. Verified on screen (540x960).
+
 ## 2026-10-15: R3 done (weapon class presentation)
 - **Shot events** carry the shooter's weapon `class`; burst bullets carry `bullet`; area blasts emit `splash` events.
 - **Tracers and flashes** (`BoardView`): per-class flash size and colour (`FLASH`), a beam is a glowing cyan line, a sniper's is thin and long, a shotgun fans three short pellets, a heavy gun's is thick, a grenade flies in an arc and lands with a blast ring, burst bullets start staggered. All drawn in code, nothing downloaded.
