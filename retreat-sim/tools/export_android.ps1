@@ -11,6 +11,7 @@
 #>
 param(
     [switch]$Install,
+    [switch]$Campaign,   # the campaign-only build: no skirmish, level test or sandbox, own package
     [switch]$LevelTest,  # the slimmed Act 1 level-test build (own package, so it installs beside the full one)
     [string]$Godot = "C:\Users\kyler\Downloads\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe",
     [string]$Adb = "C:\Users\kyler\android-tools\sdk\platform-tools\adb.exe"
@@ -18,8 +19,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $project = Split-Path -Parent $PSScriptRoot
-$preset = if ($LevelTest) { "Android Level Test" } else { "Android" }
-$apk = Join-Path $project ($(if ($LevelTest) { "build\RetreatSim-leveltest.apk" } else { "build\RetreatSim-debug.apk" }))
+$preset = if ($Campaign) { "Android Campaign" } elseif ($LevelTest) { "Android Level Test" } else { "Android" }
+$apk = Join-Path $project ($(if ($Campaign) { "build\RetreatSim-campaign.apk" } elseif ($LevelTest) { "build\RetreatSim-leveltest.apk" } else { "build\RetreatSim-debug.apk" }))
 
 if (-not (Test-Path $Godot)) { throw "Godot not found at $Godot (pass -Godot <path>)" }
 New-Item -ItemType Directory -Force (Join-Path $project "build") | Out-Null
@@ -36,7 +37,7 @@ if ($Install) {
     if (-not $devices) { throw "No authorised device. Enable USB debugging, plug in, accept the prompt, then retry." }
     & $Adb install -r $apk
     if ($LASTEXITCODE -ne 0) { throw "adb install failed" }
-    $pkg = if ($LevelTest) { "com.kyler.retreatsim.leveltest" } else { "com.kyler.retreatsim" }
+    $pkg = if ($Campaign) { "com.kyler.retreatsim.campaign" } elseif ($LevelTest) { "com.kyler.retreatsim.leveltest" } else { "com.kyler.retreatsim" }
     & $Adb shell monkey -p $pkg -c android.intent.category.LAUNCHER 1 | Out-Null
     Write-Host "Installed and launched."
 }

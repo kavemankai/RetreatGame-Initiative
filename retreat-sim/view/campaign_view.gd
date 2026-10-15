@@ -245,9 +245,10 @@ func _menu(status: String = "") -> void:
 	buttons.append({"text": "New campaign", "call": _new_pressed})
 	if FileAccess.file_exists(SAVE_PATH):
 		buttons.append({"text": "Continue campaign", "call": _load_campaign})
-	buttons.append({"text": "Quick skirmish", "call": _quick_skirmish})
-	buttons.append({"text": "Act 1 level test", "call": _level_test_menu})
-	buttons.append({"text": "Sandbox (set stats, gear, enemies)", "call": _open_sandbox})
+	if not OS.has_feature("campaign_only"):  # the campaign build ships without the older test modes
+		buttons.append({"text": "Quick skirmish", "call": _quick_skirmish})
+		buttons.append({"text": "Act 1 level test", "call": _level_test_menu})
+		buttons.append({"text": "Sandbox (set stats, gear, enemies)", "call": _open_sandbox})
 	buttons.append({"text": "Sound: %s" % ("off" if _sound.settings.muted else "on"), "call": _toggle_sound})
 	_show(_story["world"]["title"], "[i]%s[/i]\n\nYou command the 9th Rearguard, the last real people in a ghost army, escorting 6,200 civilians along the Reliquary Lanes toward a refuge that may not let you in.\n\nBehind you comes a courteous man who only wants you to be counted." % tagline, buttons, status)
 
