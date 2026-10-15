@@ -404,6 +404,11 @@ func _briefing(keep_squad := false) -> void:
 		return
 	_mission_id = _mission_to_brief(c)
 	var m := c.mission_or_card(_mission_id)
+	if OS.has_feature("act1_only") and int(m.get("act", 1)) > 1:  # this build ships without the later acts' maps and sounds
+		_show("End of the Act 1 build", "The convoy reaches %s. The maps for the later acts are not in this build.
+
+Your campaign is saved." % m["place"], [{"text": "Back to the map", "call": _map_screen}, {"text": "Menu", "call": _menu}], _resources(c))
+		return
 	var is_card := c.card(_mission_id).size() > 0
 	var scene_id: String = ("card_" + _mission_id) if is_card else m["scenes"]["briefing"]
 	var screen := MissionPrepScreen.new().setup(c, _mission_id, "[i]%s[/i]
