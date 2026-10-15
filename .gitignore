@@ -4,3 +4,5 @@ shots/
 *.apk
 *.aab
 __pycache__/
+
+dist/
