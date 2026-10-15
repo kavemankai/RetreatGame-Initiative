@@ -410,6 +410,9 @@ func _tap_target(enemy: SimUnit) -> void:
 	var cost := int(pv["cost"])
 	var left := _im.ap_of(_sel) - cost
 	var range_ := SimLos.chebyshev(_im.state.units[_sel].pos, enemy.pos)
+	var notes := UiModel.shot_notes(pv)
+	if notes != "":
+		notes = " (" + notes + ")"
 	if pv["result"] == "blocked":
 		_say("%s: blocked by cover, range %d, %d AP (%d left). Tap again to fire anyway." % [_name_of(enemy.id), range_, cost, left], true, true)
 	elif _im.ap_of(_sel) < cost:
@@ -419,7 +422,7 @@ func _tap_target(enemy: SimUnit) -> void:
 		_say("Shaken: it cannot shoot this turn.", false)
 		_clear_pending()
 	else:
-		_say("%s: %d%% to hit, %d damage, range %d, %d AP (%d left). Tap again to fire." % [_name_of(enemy.id), pv["chance"], pv["damage"], range_, cost, left], true, true)
+		_say("%s: %d%% to hit, %d damage%s, range %d, %d AP (%d left). Tap again to fire." % [_name_of(enemy.id), pv["chance"], pv["damage"], notes, range_, cost, left], true, true)
 	_refresh(false)
 
 
@@ -649,7 +652,8 @@ func _shot_mark(state: SimState) -> String:
 		return ""
 	var pv := _im.shot_preview(_sel, target.id)
 	if pv["result"] == "hit":
-		return "%d%% | %d dmg | %d AP" % [pv["chance"], pv["damage"], pv["cost"]]
+		var tag := ("x%d " % int(pv["burst"])) if pv.has("burst") else ("blast " if pv.get("area", false) else "")
+		return "%s%d%% | %d dmg | %d AP" % [tag, pv["chance"], pv["damage"], pv["cost"]]
 	return "COVER | %d AP" % int(pv.get("cost", 0))
 
 

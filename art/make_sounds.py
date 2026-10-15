@@ -6,6 +6,7 @@ sfx_*      one-shot effects          amb_*     ambient loops (one per level fami
 music_*    act music loops           ui_*      interface sounds
 """
 import os
+import sys
 import wave
 
 import numpy as np
@@ -287,7 +288,73 @@ def music(roots, bright, melody_scale, density, seed, bpm_sec=6.0):
 PENTATONIC = [1.0, 1.2, 1.333, 1.5, 1.8, 2.0]
 
 
+# --- weapon classes: one shot sound per class, plus the grenade's blast ------------------------
+
+def shot_carbine(seed):
+    sec = 0.32
+    n = noise(sec, seed)
+    crack = lowpass(n, 5200) * env(sec, 0.001, 30)
+    thump = sine(np.linspace(130, 70, int(SR * sec)), sec) * env(sec, 0.002, 22)
+    return norm(reverb(crack * 0.85 + thump * 0.45, 0.08, 0.15), 0.8)
+
+
+def shot_sniper(seed):
+    sec = 1.1
+    n = noise(sec, seed)
+    crack = highpass(lowpass(n, 6500), 900) * env(sec, 0.0007, 40)
+    thump = sine(np.linspace(110, 32, int(SR * sec)), sec) * env(sec, 0.003, 7)
+    tail = lowpass(n, 600) * env(sec, 0.05, 3.2) * 0.3
+    return norm(reverb(crack * 0.9 + thump * 0.9 + tail, 0.22, 0.4), 0.9)
+
+
+def shot_shotgun(seed):
+    sec = 0.8
+    n = noise(sec, seed)
+    boom = lowpass(n, 3200) * env(sec, 0.001, 11)
+    thump = sine(np.linspace(95, 30, int(SR * sec)), sec) * env(sec, 0.002, 8)
+    tail = lowpass(n, 700) * env(sec, 0.03, 4.0) * 0.5
+    return norm(reverb(boom * 0.9 + thump * 1.1 + tail, 0.15, 0.3), 0.92)
+
+
+def shot_grenade(seed):
+    sec = 0.55
+    n = noise(sec, seed)
+    puff = lowpass(n, 1400) * env(sec, 0.004, 14)
+    thoomp = sine(np.linspace(120, 38, int(SR * sec)), sec) * env(sec, 0.003, 9)
+    return norm(reverb(puff * 0.55 + thoomp * 1.0, 0.1, 0.2), 0.85)
+
+
+def blast(seed):
+    sec = 1.4
+    n = noise(sec, seed)
+    rumble = lowpass(n, 380) * env(sec, 0.004, 3.2)
+    burst = lowpass(n, 2600) * env(sec, 0.001, 12)
+    boom = sine(np.linspace(80, 26, int(SR * sec)), sec) * env(sec, 0.003, 3.6)
+    return norm(reverb(rumble * 0.8 + burst * 0.6 + boom * 1.1, 0.25, 0.35), 0.95)
+
+
+def shot_beam(seed):
+    sec = 0.45
+    sweep = np.linspace(2400, 420, int(SR * sec))
+    zap = (sine(sweep, sec) + 0.7 * sine(sweep * 1.012, sec)) * env(sec, 0.002, 9)
+    fizz = highpass(noise(sec, seed), 3000) * env(sec, 0.001, 18) * 0.35
+    return norm(reverb(zap * 0.7 + fizz, 0.06, 0.15), 0.8)
+
+
+def weapons():
+    save("sfx_shot_carbine", shot_carbine(71))
+    save("sfx_shot_sniper", shot_sniper(72))
+    save("sfx_shot_shotgun", shot_shotgun(73))
+    save("sfx_shot_grenade", shot_grenade(74))
+    save("sfx_blast", blast(75))
+    save("sfx_shot_beam", shot_beam(76))
+
+
+
 def main():
+    if "--weapons" in sys.argv:  # only the weapon-class sounds; leaves every other file untouched
+        weapons()
+        return
     for i in range(3):
         save(f"sfx_shot_{i}", shot(40 + i))
     save("sfx_shot_heavy", shot(50, True))
@@ -313,6 +380,7 @@ def main():
     save("music_act1", music([110.0, 87.3, 98.0, 82.4], 1.0, PENTATONIC, 2.2, 1), True)
     save("music_act2", music([98.0, 77.8, 87.3, 73.4], 0.7, PENTATONIC, 1.6, 2), True)
     save("music_act3", music([82.4, 65.4, 73.4, 61.7], 0.4, PENTATONIC, 1.0, 3), True)
+    weapons()
 
 
 if __name__ == "__main__":

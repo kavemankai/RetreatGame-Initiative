@@ -57,6 +57,8 @@ func setup(info: Dictionary) -> MercCard:
 	for child in _chips.get_children():
 		_chips.remove_child(child)
 		child.queue_free()
+	if info.has("class_name"):
+		_chips.add_child(UiTheme.chip(String(info["class_name"]), UiTheme.COL_AMBER))
 	if info["status"] != "named":
 		_chips.add_child(UiTheme.chip(String(info["status"]).to_upper(), UiTheme.COL_HOLLOW))
 	if info.has("level"):
@@ -77,7 +79,7 @@ func setup(info: Dictionary) -> MercCard:
 		child.queue_free()
 	for kind in Campaign.GEAR_SLOTS:
 		var id := String(info["gear"].get(kind, ""))
-		var glyph := SlotGlyph.new().setup(kind, id != "", UiModel.ICON_DIR + id + ".png" if id != "" else "")
+		var glyph := SlotGlyph.new().setup(kind, id != "", UiModel.ICON_DIR + id + ".png" if id != "" else "", String(info.get("class", "")) if kind == "weapon" else "")
 		glyph.tooltip_text = String(info["gear_names"].get(kind, "empty"))
 		_glyphs.add_child(glyph)
 	_xp.visible = info.has("xp") and info.has("xp_next")

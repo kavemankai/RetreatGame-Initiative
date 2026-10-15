@@ -25,7 +25,7 @@ static func fire(state: SimState, shooter: SimUnit, target_id: int, turn: int, t
 	for i in bullets:
 		if not target.alive:
 			break
-		var ev := {"type": "shot", "tick": tick, "unit": shooter.id, "target": target_id}
+		var ev := {"type": "shot", "tick": tick, "unit": shooter.id, "target": target_id, "class": shooter.weapon_class}
 		ev.merge(base)
 		if bullets > 1:
 			ev["bullet"] = i

@@ -40,6 +40,16 @@ func setup(c: Campaign, show_mercs := true) -> KitGallery:
 		for key in UiModel.STAT_ORDER:
 			var d := int(eff[key]) - int(base[key])
 			list.add_card(StatRow.new().setup(UiModel.STAT_LABEL[key], int(eff[key]), int(UiModel.STAT_CAP[key]), d, d > 0))
+	list.add_card(UiTheme.label("Weapon classes (glyph, then name)", UiTheme.FONT_BODY, UiTheme.COL_AMBER))
+	var classes := HFlowContainer.new()
+	classes.add_theme_constant_override("h_separation", 14)
+	classes.add_theme_constant_override("v_separation", 8)
+	for cid in c.story["classes"]["classes"]:
+		var cell := VBoxContainer.new()
+		cell.add_child(SlotGlyph.new(48).setup("weapon", true, "", String(cid)))
+		cell.add_child(UiTheme.label(c.class_name_of(String(cid)), UiTheme.FONT_SMALL, UiTheme.COL_MUTED))
+		classes.add_child(cell)
+	list.add_card(classes)
 	var back_button := Button.new()
 	back_button.text = "Back"
 	back_button.focus_mode = Control.FOCUS_NONE

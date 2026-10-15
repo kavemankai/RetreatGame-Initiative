@@ -18,7 +18,8 @@ static func merc_info(c: Campaign, slot: int, selected := false) -> Dictionary:
 	var names := {}
 	for kind in Campaign.GEAR_SLOTS:
 		names[kind] = String(c.item(String(gear[kind])).get("name", ""))
-	return {"slot": slot, "name": merc_name(c, slot), "status": status, "base": c.slot_stats(slot), "stats": c.effective_stats(slot),
+	return {"slot": slot, "name": merc_name(c, slot), "status": status, "class": c.class_of(slot), "class_name": c.class_name_of(c.class_of(slot)),
+		"base": c.slot_stats(slot), "stats": c.effective_stats(slot),
 		"gear": gear, "gear_names": names, "sprite_key": UnitSprites.key_for(slot, 0, status == "hollow"), "selected": selected}
 
 
@@ -38,13 +39,24 @@ static func item_info(c: Campaign, item_id: String, count := 1, slot := -1, kind
 	var deltas: Array[Dictionary] = []
 	if slot >= 0 and kind != "":
 		deltas = c.equip_deltas(slot, kind, item_id)
-	return {"id": item_id, "name": String(def.get("name", item_id)), "slot": String(def.get("slot", "")), "tier": int(def.get("tier", 1)),
+	return {"id": item_id, "name": String(def.get("name", item_id)), "slot": String(def.get("slot", "")), "class": String(def.get("class", "")), "tier": int(def.get("tier", 1)),
 		"summary": c.item_summary(item_id), "note": String(def.get("note", "")), "count": count, "deltas": deltas,
 		"icon_path": ICON_DIR + item_id + ".png", "selected": selected}
 
 
 static func resources_info(c: Campaign) -> Dictionary:
 	return {"procession": c.procession, "reserves": c.reserves, "remembrance": c.remembrance, "writ": c.writ_stage()}
+
+
+## What a shot preview adds to the plain numbers: "burst x3", "blast: also hits the 8 tiles around",
+## "beam: ignores half cover". Empty for an ordinary shot.
+static func shot_notes(preview: Dictionary) -> String:
+	var parts: Array[String] = []
+	if preview.has("burst"):
+		parts.append("burst x%d" % int(preview["burst"]))
+	if preview.get("area", false):
+		parts.append("blast: also hits the 8 tiles around")
+	return ", ".join(parts)
 
 
 ## "range +2" / "AP per shot +1" / "trait: scope" for one delta row.

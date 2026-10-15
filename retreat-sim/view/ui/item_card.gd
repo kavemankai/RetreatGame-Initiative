@@ -39,7 +39,7 @@ func _init() -> void:
 
 
 func setup(info: Dictionary) -> ItemCard:
-	_glyph.setup(String(info["slot"]), true, String(info.get("icon_path", "")))
+	_glyph.setup(String(info["slot"]), true, String(info.get("icon_path", "")), String(info.get("class", "")))
 	_name.text = String(info["name"])
 	_count.text = "x%d" % int(info["count"]) if int(info["count"]) > 1 else ""
 	_tier.text = "I".repeat(clampi(int(info["tier"]), 1, 3))

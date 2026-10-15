@@ -58,7 +58,7 @@ static func event_visible(ev: Dictionary, fog: Dictionary) -> bool:
 			return tiles.has(ev["from"]) or tiles.has(ev["to"])
 		"move_blocked":
 			return tiles.has(ev["at"]) or tiles.has(ev["to"])
-		"shot":
+		"shot", "splash":
 			return units.has(ev["unit"]) or units.has(ev["target"])
 	return units.has(ev["unit"])
 
@@ -133,7 +133,11 @@ static func describe(ev: Dictionary, fog: Dictionary = {}, namer: Callable = Cal
 				tail = " for %d" % ev["damage"]
 			elif ev["result"] == "invalid":
 				tail = " (%s)" % ev["reason"]
+			if ev.has("bullet"):
+				tag += " [burst %d of %d]" % [int(ev["bullet"]) + 1, int(ev.get("burst", 3))]
 			return "%s shoots %s: %s%s%s" % [_who(ev["unit"], fog, namer), _who(ev["target"], fog, namer), ev["result"], tail, tag]
+		"splash":
+			return "The blast catches %s for %d" % [_who(ev["target"], fog, namer), int(ev["damage"])]
 		"death":
 			return "%s dies (killed by %s)" % [_who(ev["unit"], fog, namer), _who(ev["killer"], fog, namer)]
 		"cancelled":
