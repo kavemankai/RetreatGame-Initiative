@@ -38,7 +38,7 @@ static func for_event(ev: Dictionary) -> Array[Dictionary]:
 			var variant := (int(ev["tick"]) + int(ev["unit"])) % SHOT_VARIANTS
 			var shot_name: String = CLASS_SOUND[klass] if CLASS_SOUND.has(klass) else ("sfx_shot_heavy" if heavy else "sfx_shot_%d" % variant)
 			out.append({"name": shot_name, "delay": lag})
-			var follow: String = {"hit": "sfx_hit", "miss": "sfx_miss", "blocked": "sfx_blocked"}.get(result, "")
+			var follow: String = {"hit": "sfx_hit", "miss": "sfx_blocked" if ev.get("cover", false) else "sfx_miss", "blocked": "sfx_blocked"}.get(result, "")
 			if follow != "":
 				out.append({"name": follow, "delay": IMPACT_DELAY + lag})
 			if klass == "grenade" and result == "hit":

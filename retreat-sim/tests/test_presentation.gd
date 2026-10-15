@@ -129,3 +129,10 @@ func test_shot_notes_explain_special_weapons() -> void:
 	check(UiModel.shot_notes({"result": "hit", "burst": 3}) == "burst x3", "a burst says x3")
 	check(UiModel.shot_notes({"result": "hit", "area": true}).begins_with("blast"), "an area shot says it blasts")
 	check(CombatReasons.text("too_close") == "Too close for that weapon.", "too close has its own wording")
+
+
+func test_a_miss_into_cover_sounds_like_cover_not_open_air() -> void:
+	var open_miss := {"type": "shot", "tick": 4, "unit": 1, "target": 2, "result": "miss", "class": "rifle"}
+	var cover_miss := {"type": "shot", "tick": 4, "unit": 1, "target": 2, "result": "miss", "class": "rifle", "cover": true}
+	check(names_of(SoundMap.for_event(open_miss)).has("sfx_miss") and not names_of(SoundMap.for_event(open_miss)).has("sfx_blocked"), "an open miss whistles past")
+	check(names_of(SoundMap.for_event(cover_miss)).has("sfx_blocked") and not names_of(SoundMap.for_event(cover_miss)).has("sfx_miss"), "a miss into cover hits the cover")

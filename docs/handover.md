@@ -3,6 +3,7 @@
 ## 2026-10-15: dug in and exposed cover (owner request)
 - Holding fire builds cover (+10 per activation, to +20), shooting from it wears it down (-10, to -20), a step resets it, the first activation changes nothing; cover is worth 10 to 50 hit-chance points. `SimUnit.cover_shift()`, `ActivationScheduler._settle_cover`, `ActionResolver` (reset on move, `shot_since` on shots and reaction fire), `SimResolver.evaluate_shot` adds `cover_penalty`, `SimAI._best_shot` uses it, `UiModel.dug_in_text` and `shot_notes` show it. Activation engine only (the legacy planned mode does not track it).
 - Tests: `tests/test_dug_in.gd` (6), 559 tests, 0 failed; 3 mutations caught; soak 100 battles and 40 Pellam Dock missions clean.
+- Presentation: a shot that misses a target in cover now stops at the cover with the dashed tracer and plays `sfx_blocked` (events carry `cover`); an open miss still whistles past.
 - Open question for tuning: the AI does not yet choose to hold fire to keep its cover.
 
 ## 2026-10-15: cover lowers the chance instead of blocking (playtest feedback)

@@ -130,12 +130,12 @@ func record_tracers(events: Array[Dictionary], state: SimState, fog: Dictionary 
 			b = a + (b - a).normalized() * minf((b - a).length(), TRACER_STUB)
 		elif not fog.is_empty() and not seen.has(ev["unit"]):
 			a = b + (a - b).normalized() * minf((a - b).length(), TRACER_STUB)
-		elif ev["result"] == "blocked":
-			b -= (b - a).normalized() * COVER_SHORT
+		elif ev["result"] == "blocked" or (ev["result"] == "miss" and ev.get("cover", false)):
+			b -= (b - a).normalized() * COVER_SHORT  # stopped by the cover
 		elif ev["result"] == "miss":
 			b += (b - a).normalized() * MISS_OVERSHOOT  # sails past the target
 		var started := TRACER_GROW if settled else -BURST_STAGGER * float(int(ev.get("bullet", 0)))
-		_tracers.append({"a": a, "b": b, "result": ev["result"], "team": shooter.team, "overwatch": ev.get("overwatch", false), "age": started, "klass": shooter.weapon_class})
+		_tracers.append({"a": a, "b": b, "result": ev["result"], "team": shooter.team, "overwatch": ev.get("overwatch", false), "age": started, "klass": shooter.weapon_class, "cover": ev.get("cover", false)})
 	queue_redraw()
 
 
@@ -577,6 +577,10 @@ func _draw_tracers() -> void:
 				if klass == "grenade":
 					draw_circle(b, _scale() * BLAST_RADIUS, Color(COL_HIT, 0.16))
 					draw_arc(b, _scale() * BLAST_RADIUS, 0.0, TAU, 24, Color(COL_HIT, 0.8), 2.0)
+		elif t["result"] == "miss" and t.get("cover", false):
+			draw_dashed_line(a, b, Color(col, 0.55), 1.5, 5.0)  # the cover took it
+			if b == full:
+				draw_circle(b, _scale() * 0.05, COL_BLOCK)
 		elif t["result"] == "miss":
 			draw_line(a, b, Color(COL_MISS, 0.5), 1.2)
 			if b == full:
