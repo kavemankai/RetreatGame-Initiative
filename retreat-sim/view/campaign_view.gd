@@ -377,6 +377,10 @@ func _map_screen() -> void:
 	screen.open_loadout.connect(func() -> void:
 		_unhost()
 		_loadout(_map_screen))
+	screen.open_stash.connect(func() -> void:
+		_unhost()
+		_loadout(_map_screen)
+		(_hosted as LoadoutScreen).open_stash())
 	screen.open_menu.connect(func() -> void:
 		_unhost()
 		_menu())

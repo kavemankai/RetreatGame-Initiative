@@ -35,6 +35,11 @@ func open_merc(slot: int) -> void:
 	_show_merc()
 
 
+## Jump straight to the stash view (the map's Stash button).
+func open_stash() -> void:
+	_show_stash()
+
+
 func open_picker(slot: int, kind: String) -> void:
 	_slot = slot
 	_kind = kind

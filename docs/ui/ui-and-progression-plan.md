@@ -127,6 +127,9 @@ Goal: weapon type (pistol, carbine, rifle, shotgun, sniper) and armour class vis
 
 **Order:** R1 data and class lock, R2 sim rules (beam, area, burst) with tests and soak, R3 presentation, then Phases C to F built once for class-locked weapons.
 
+## Status (2026-10-15): R1 to R4 complete
+Phases A to F and R1 to R3 are built, tested and committed (see `docs/handover.md` for each). Final checks: 549 tests, 0 failed; a 150-battle soak with 0 frozen, 0 invariant problems, 0 illegal actions; every new screen checked at 540x960, 360x800 and 960x540. Differences from the plan: the overworld's bottom nav is Roster / Loadout / Stash / Menu (sound is on the main menu); the result screen counts the resource figures up rather than animating bars; the optional `spare_battery` mod and item icon art were not built. Not done by instruction: no APK, no asset downloads, no SpriteCook/PixelLab trials.
+
 ## Out of scope
 New art, music, story text, shops and currency, branching routes, mid-mission loadout, enemy gear, and the optional `spare_battery` trait until you approve the engine hook.
 

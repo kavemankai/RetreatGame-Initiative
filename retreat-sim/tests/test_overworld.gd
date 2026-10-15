@@ -134,13 +134,14 @@ func test_brief_and_the_nav_buttons_ask_the_host() -> void:
 	screen.brief.connect(func() -> void: got.append("brief"))
 	screen.open_roster.connect(func() -> void: got.append("roster"))
 	screen.open_loadout.connect(func() -> void: got.append("loadout"))
+	screen.open_stash.connect(func() -> void: got.append("stash"))
 	screen.open_menu.connect(func() -> void: got.append("menu"))
-	for text in ["Brief", "Roster", "Loadout", "Menu"]:
+	for text in ["Brief", "Roster", "Loadout", "Stash", "Menu"]:
 		var b := button(screen, text)
 		check(b != null and b.custom_minimum_size.y >= UiTheme.MIN_TAP, "%s is there and big enough to tap" % text)
 		if b != null:
 			b.pressed.emit()
-	check(got == ["brief", "roster", "loadout", "menu"], "each asks the host (%s)" % [got])
+	check(got == ["brief", "roster", "loadout", "stash", "menu"], "each asks the host (%s)" % [got])
 	screen.queue_free()
 
 

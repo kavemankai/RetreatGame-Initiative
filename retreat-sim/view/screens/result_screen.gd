@@ -6,7 +6,11 @@ extends VBoxContainer
 
 signal done
 
+const COUNT_SECONDS := 0.8
+
 var _info: Dictionary
+var _delta_labels: Array[Label] = []
+var _tween: Tween
 
 
 func _init() -> void:
@@ -27,11 +31,14 @@ func setup(c: Campaign, step: Dictionary) -> ResultScreen:
 		list.add_card(UiTheme.label("Squad report", UiTheme.FONT_BODY, UiTheme.COL_AMBER))
 	for row: Dictionary in _info["squad"]:
 		list.add_card(_report_card(row))
+	_start_count()
 	var next := Button.new()
 	next.text = "Continue"
 	next.focus_mode = Control.FOCUS_NONE
 	next.custom_minimum_size = Vector2(0, UiTheme.MIN_TAP)
-	next.pressed.connect(func() -> void: done.emit())
+	next.pressed.connect(func() -> void:
+		finish_animation()
+		done.emit())
 	add_child(next)
 	return self
 
@@ -42,10 +49,43 @@ func _deltas_panel() -> PanelContainer:
 	var col := VBoxContainer.new()
 	panel.add_child(col)
 	for d: Dictionary in _info["deltas"]:
-		var change := int(d["after"]) - int(d["before"])
-		var color := UiTheme.COL_TEXT if change == 0 else UiTheme.delta_color(change > 0)
-		col.add_child(UiTheme.label("%s   %d  to  %d   (%s)" % [d["label"], int(d["before"]), int(d["after"]), UiTheme.delta_text(change)], UiTheme.FONT_BODY, color))
+		var l := UiTheme.label("", UiTheme.FONT_BODY)
+		_delta_labels.append(l)
+		col.add_child(l)
+		_set_delta(_delta_labels.size() - 1, int(d["before"]))
 	return panel
+
+
+## One resource line with the "after" figure at `shown` (the count-up passes through the values between).
+func _set_delta(index: int, shown: int) -> void:
+	var d: Dictionary = _info["deltas"][index]
+	var change := int(d["after"]) - int(d["before"])
+	var l := _delta_labels[index]
+	l.text = "%s   %d  to  %d   (%s)" % [d["label"], int(d["before"]), shown, UiTheme.delta_text(change)]
+	l.add_theme_color_override("font_color", UiTheme.COL_TEXT if change == 0 else UiTheme.delta_color(change > 0))
+
+
+## The figures count from before to after over a moment, so a loss is seen as it lands.
+func _start_count() -> void:
+	_tween = create_tween().set_parallel(true)
+	for i in _delta_labels.size():
+		var d: Dictionary = _info["deltas"][i]
+		_tween.tween_method(_set_delta.bind(i), int(d["before"]), int(d["after"]), COUNT_SECONDS)
+
+
+## Skips the animation to the final figures (a tap, and the tests).
+func finish_animation() -> void:
+	if _tween != null:
+		_tween.kill()
+	for i in _delta_labels.size():
+		_set_delta(i, int((_info["deltas"][i] as Dictionary)["after"]))
+
+
+func delta_texts() -> Array[String]:
+	var out: Array[String] = []
+	for l in _delta_labels:
+		out.append(l.text)
+	return out
 
 
 func _report_card(row: Dictionary) -> PanelContainer:

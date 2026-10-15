@@ -2,11 +2,12 @@ class_name OverworldScreen
 extends VBoxContainer
 ## The hub between missions: the route drawn as a map (MapCanvas) in a scroll, a header with the standing
 ## resources, and a bottom sheet for the stop or card you tap. Brief is offered only at the stop the convoy
-## is at. It changes nothing: it asks the host to open the briefing, roster, loadout or menu.
+## is at. It changes nothing: it asks the host to open the briefing, roster, loadout, stash or menu.
 
 signal brief
 signal open_roster
 signal open_loadout
+signal open_stash
 signal open_menu
 signal back
 
@@ -42,7 +43,7 @@ func setup(c: Campaign) -> OverworldScreen:
 	var nav := HBoxContainer.new()
 	nav.add_theme_constant_override("separation", 6)
 	add_child(nav)
-	for entry: Array in [["Roster", open_roster], ["Loadout", open_loadout], ["Menu", open_menu]]:
+	for entry: Array in [["Roster", open_roster], ["Loadout", open_loadout], ["Stash", open_stash], ["Menu", open_menu]]:
 		nav.add_child(_button(entry[0], entry[1].emit, true))
 	if _c.current != "" and not _c.finished and not _c.over:
 		select({"kind": "node", "id": _c.current})

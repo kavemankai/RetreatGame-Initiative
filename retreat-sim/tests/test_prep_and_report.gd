@@ -199,3 +199,15 @@ func test_the_chain_has_a_salvage_step_only_when_something_was_brought_back() ->
 	var failed := step_for(lost, "karsa_breakout", false, [], [row(1)])
 	var kinds: Array = lost.debrief_chain("karsa_breakout", failed["o"], failed["report"], failed["before"], false).map(func(s: Dictionary) -> String: return s["t"])
 	check(not kinds.has("salvage"), "a failure brings nothing back and has no salvage step (%s)" % [kinds])
+
+
+func test_the_result_figures_count_from_before_to_after() -> void:
+	var c := fresh()
+	var step := step_for(c, "karsa_breakout", true, [], [row(1)])
+	var screen := ResultScreen.new().setup(c, step)
+	TestBase.tree.root.add_child(screen)
+	var before_reserves := int(step["before"]["reserves"])
+	check(screen.delta_texts()[1].contains("%d  to  %d" % [before_reserves, before_reserves]), "the count starts at the old figure (%s)" % [screen.delta_texts()[1]])
+	screen.finish_animation()
+	check(screen.delta_texts()[1].contains("%d  to  %d" % [before_reserves, c.reserves]) and screen.delta_texts()[1].contains("(%s)" % UiTheme.delta_text(c.reserves - before_reserves)), "skipping lands on the final figure and its change (%s)" % [screen.delta_texts()[1]])
+	screen.queue_free()
