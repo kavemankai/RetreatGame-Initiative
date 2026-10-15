@@ -50,12 +50,13 @@ func test_chance_rises_with_aim_and_falls_with_range() -> void:
 	check(falls, "monotonic in distance")
 
 
-func test_evaluate_shot_reports_the_chance_and_cover_still_blocks() -> void:
+func test_evaluate_shot_reports_the_chance_and_cover_lowers_it() -> void:
 	var s := duel_at(3)
 	var r := SimResolver.evaluate_shot(s.grid, s.units[1], s.units[1].pos, s.units[2])
 	check(r["result"] == "hit" and r["chance"] == 66, "a clear line returns the chance")
 	s.grid.set_edge(Vector2i(4, 5), Vector2i(5, 5), SimConst.EDGE_HALF)
-	check(SimResolver.evaluate_shot(s.grid, s.units[1], s.units[1].pos, s.units[2])["result"] == "blocked", "cover still blocks outright")
+	var covered := SimResolver.evaluate_shot(s.grid, s.units[1], s.units[1].pos, s.units[2])
+	check(covered["result"] == "hit" and covered["cover"] == true and covered["chance"] == 66 - SimConst.COVER_HIT_PENALTY, "cover takes %d%% off the chance, it does not block (%s)" % [SimConst.COVER_HIT_PENALTY, covered])
 
 
 func test_d100_is_stateless_in_range_and_covers_the_faces() -> void:

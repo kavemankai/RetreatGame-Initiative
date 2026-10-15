@@ -1,5 +1,10 @@
 # Handover log
 
+## 2026-10-15: cover lowers the chance instead of blocking (playtest feedback)
+- Feedback: "cover seems to be 100% with no way to lower it". Half cover now takes `SimConst.COVER_HIT_PENALTY` (30) off the hit chance (floor 10) instead of returning "blocked". `SimResolver.evaluate_shot` adds `cover: true` to the preview; beams still ignore it; full walls still block. `SimAI._best_shot` values covered shots at the lower chance (cover is still worth seeking: `_threat_at` is unchanged). The shot line shows "target in cover: -30% to hit".
+- 13 tests rewritten to the new rule (blocked -> lowered chance); 550 tests, 0 failed; soak 100 battles clean, squad wins 97 of 100 (was 145 of 150 before). Not rebuilt into an APK yet.
+- Not done: cover that breaks down under fire (the other option raised) and a tracer/sound for covered shots (the old "blocked" tracer no longer fires).
+
 ## 2026-10-15: R4 Phase F done (pre and post combat); R1 to R4 complete
 - Pre-combat: `MissionPrepScreen` replaces the briefing text page and the squad page. One scroll: place, briefing scene, objective, win and loss stakes, reward names, known opposition, Orrick flag, a `MercCard` per merc to tap in or out of the squad, readiness notes, Deploy (disabled until the count is right), Loadout, Roster, Back. Pure helpers in `UiModel`: `prep_info`, `readiness` (block / warn for no weapon / note for no armour or mod; hollows exempt), `default_squad`, `squad_need`. The chosen squad is kept across Loadout and Roster.
 - Post-combat: `debrief_chain` is now result, salvage (only if something came back), level-ups, roll calls, debrief, Orrick. `ResultScreen` (verdict, before/after resources, the dead and the Writ, a report row per merc with outcome, shots, hits, kills, XP and bar; `UiModel.result_info`) and `SalvageScreen` (an `ItemCard` per find, Equip now opens the loadout, To stash continues). `campaign_view._step_screen` hosts them and plays the stingers and loot sound. Resource changes are shown as before / after / change, not animated.

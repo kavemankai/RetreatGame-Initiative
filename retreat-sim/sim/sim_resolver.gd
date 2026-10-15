@@ -14,7 +14,7 @@ static func resolve(start: SimState, plan: SimPlan) -> SimResult:
 
 ## What a shot from tile `from` at `target` would do right now. Public so
 ## the order-entry preview and the resolver can never disagree.
-## Returns {"result": "hit"|"blocked"|"invalid", "damage"?, "chance"?, "burst"?, "area"?, "reason"?}.
+## Returns {"result": "hit"|"invalid", "damage"?, "chance"?, "cover"? (the target is behind half cover: the chance already has the penalty), "burst"?, "area"?, "reason"?}.
 ## `opener_ready`: the shooter has not yet taken a shot this round (the opener trait's bonus).
 ## `single`: fire one ordinary shot even with a burst weapon (a reaction shot).
 ## Weapon traits: a beam ignores half cover and range falloff, an area weapon cannot fire at a
@@ -27,14 +27,17 @@ static func evaluate_shot(grid: SimGrid, shooter: SimUnit, from: Vector2i, targe
 		return {"result": "invalid", "reason": "too_close"}
 	if not SimLos.can_shoot(grid, from, target.pos):
 		return {"result": "invalid", "reason": "no_los"}
-	if not shooter.ignores_half_cover() and SimLos.is_covered(grid, from, target.pos):
-		return {"result": "blocked"}
+	var in_cover := not shooter.ignores_half_cover() and SimLos.is_covered(grid, from, target.pos)
 	var chance := shooter.hit_chance_at(dist)
+	if in_cover:
+		chance = maxi(SimConst.HIT_MIN, chance - SimConst.COVER_HIT_PENALTY)
 	if shooter.gear_trait == "bracing" and grid.has_cover_nearby(from):
 		chance = mini(SimConst.HIT_MAX, chance + SimConst.BRACING_HIT_BONUS)
 	if opener_ready and shooter.gear_trait == "opener":
 		chance = mini(SimConst.HIT_MAX, chance + SimConst.OPENER_HIT_BONUS)
 	var out := {"result": "hit", "damage": shooter.damage_at(dist), "chance": chance}
+	if in_cover:
+		out["cover"] = true
 	if shooter.burst_count() > 1 and not single:
 		out["burst"] = shooter.burst_count()
 		out["chance"] = maxi(SimConst.HIT_MIN, chance - SimConst.BURST_ACCURACY_PENALTY)

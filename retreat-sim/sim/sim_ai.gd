@@ -219,8 +219,6 @@ static func _best_shot(ctx: Dictionary, u: SimUnit, tile: Vector2i, prof: SimAIP
 		var d := SimLos.chebyshev(tile, e.pos)
 		if d > u.max_range() or not SimLos.can_shoot(view.grid, tile, e.pos):
 			continue
-		if not u.ignores_half_cover() and SimLos.is_covered(view.grid, tile, e.pos):
-			continue
 		if u.is_area() and d < SimConst.AREA_MIN_RANGE:
 			continue
 		var hp_left: int = e.hp - int(planned.get(e.id, 0))
@@ -229,6 +227,8 @@ static func _best_shot(ctx: Dictionary, u: SimUnit, tile: Vector2i, prof: SimAIP
 		var dmg := u.damage_at(d)
 		var shots := u.burst_count()
 		var chance := u.hit_chance_at(d)
+		if not u.ignores_half_cover() and SimLos.is_covered(view.grid, tile, e.pos):
+			chance = maxi(SimConst.HIT_MIN, chance - SimConst.COVER_HIT_PENALTY)
 		if shots > 1:
 			chance = maxi(SimConst.HIT_MIN, chance - SimConst.BURST_ACCURACY_PENALTY)
 		var eff := mini(dmg * shots, hp_left)

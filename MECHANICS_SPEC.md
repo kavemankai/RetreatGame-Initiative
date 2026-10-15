@@ -249,7 +249,7 @@ Until 2026-10-15 the game played on `InitiativeMatch` (see `TACTICS_KIT.md` for 
 - **AP.** 14 per merc per turn (`SimConst.AP_PER_TURN`). Step 2, diagonal 3, shot 4 (3 at aim 8+, minimum 2).
 - **Interrupts.** A defender's first clear shot at a mover fires at once if its initiative (`speed*10 + aim - 3*hits_taken`) is at least the mover's; each defender gets one reaction shot per turn and one interrupt per mover; the mover stops.
 - **Overwatch.** Costs all AP; fires once at the first enemy to move inside the cone with line of sight, whatever the initiative.
-- **Hit chance.** `35 + 7*aim + gear - 4*(distance-2)`, clamped 10..95, on seeded dice; cover still blocks outright.
+- **Hit chance.** `35 + 7*aim + gear - 4*(distance-2)`, clamped 10..95, on seeded dice. **Half cover no longer blocks (changed 2026-10-15 after a playtest: "cover seems to be 100%"):** a target behind half cover is hit at 30 percentage points lower (`SimConst.COVER_HIT_PENALTY`, floor 10); the preview shows the lower chance and "target in cover". Beams ignore it, full walls still stop everything. The AI values covered shots at the lower chance.
 - **Route preview.** Tapping a destination shows the AP cost and marks each step where a visible enemy would shoot first.
 - **Reaction gate.** A unit that ends its turn with less than one shot of AP left has no reaction shot on the enemy turn; Overwatch (all AP) is the exception.
 - **Open numbers.** 14 AP is the first retune of the generous 20; tune further with play (roadmap B1).

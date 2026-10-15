@@ -84,6 +84,8 @@ static func shot_notes(preview: Dictionary) -> String:
 	var parts: Array[String] = []
 	if preview.has("burst"):
 		parts.append("burst x%d" % int(preview["burst"]))
+	if preview.get("cover", false):
+		parts.append("target in cover: -%d%% to hit" % SimConst.COVER_HIT_PENALTY)
 	if preview.get("area", false):
 		parts.append("blast: also hits the 8 tiles around")
 	return ", ".join(parts)

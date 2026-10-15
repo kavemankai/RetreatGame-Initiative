@@ -23,10 +23,12 @@ func events_of_type(events: Array, type: String) -> Array:
 func test_a_beam_ignores_half_cover_but_a_full_wall_still_stops_it() -> void:
 	var rifle := arena()
 	rifle.grid.set_edge(Vector2i(5, 5), Vector2i(6, 5), SimConst.EDGE_HALF)
-	check(SimResolver.evaluate_shot(rifle.grid, rifle.units[1], rifle.units[1].pos, rifle.units[10])["result"] == "blocked", "a plain rifle is stopped by the half wall")
+	var plain_shot := SimResolver.evaluate_shot(rifle.grid, rifle.units[1], rifle.units[1].pos, rifle.units[10])
+	check(plain_shot["result"] == "hit" and plain_shot["cover"] == true, "a plain rifle is slowed by the half wall")
 	var beam := arena("beam")
 	beam.grid.set_edge(Vector2i(5, 5), Vector2i(6, 5), SimConst.EDGE_HALF)
-	check(SimResolver.evaluate_shot(beam.grid, beam.units[1], beam.units[1].pos, beam.units[10])["result"] == "hit", "a beam goes through half cover")
+	var beam_shot := SimResolver.evaluate_shot(beam.grid, beam.units[1], beam.units[1].pos, beam.units[10])
+	check(beam_shot["result"] == "hit" and not beam_shot.has("cover") and int(beam_shot["chance"]) > int(plain_shot["chance"]), "a beam goes through half cover with no penalty")
 	var walled := arena("beam")
 	walled.grid.set_edge(Vector2i(4, 5), Vector2i(5, 5), SimConst.EDGE_FULL)
 	var r := SimResolver.evaluate_shot(walled.grid, walled.units[1], walled.units[1].pos, walled.units[10])
@@ -78,7 +80,7 @@ func test_an_area_weapon_cannot_fire_at_something_too_close() -> void:
 	check(SimResolver.evaluate_shot(ok.grid, ok.units[1], ok.units[1].pos, ok.units[10])["result"] == "hit" and SimResolver.evaluate_shot(ok.grid, ok.units[1], ok.units[1].pos, ok.units[10])["area"], "two tiles is fine and the preview says it is an area shot")
 
 
-func test_a_missed_or_blocked_area_shot_has_no_blast() -> void:
+func test_a_missed_area_shot_has_no_blast() -> void:
 	var miss := arena("area")
 	add_unit(miss, 11, 1, Vector2i(7, 5), 5)
 	miss.fixed_roll = 100
@@ -87,8 +89,9 @@ func test_a_missed_or_blocked_area_shot_has_no_blast() -> void:
 	var cover := arena("area")
 	cover.grid.set_edge(Vector2i(5, 5), Vector2i(6, 5), SimConst.EDGE_HALF)
 	add_unit(cover, 11, 1, Vector2i(7, 5), 5)
-	var blocked := ShotResolver.fire(cover, cover.units[1], 10, 1, 1, false)
-	check(blocked[0]["result"] == "blocked" and events_of_type(blocked, "splash").is_empty() and cover.units[11].hp == 5, "a shell that hits cover does not blast")
+	cover.fixed_roll = 1
+	var landed := ShotResolver.fire(cover, cover.units[1], 10, 1, 1, false)
+	check(landed[0]["result"] == "hit" and not events_of_type(landed, "splash").is_empty(), "a shell into cover that lands still blasts")
 
 
 # --- burst -------------------------------------------------------------------------------------
@@ -205,7 +208,9 @@ func test_the_planner_values_a_burst_above_a_single_shot() -> void:
 func test_the_planner_sees_through_half_cover_for_a_beam_only() -> void:
 	var plain := arena("")
 	plain.grid.set_edge(Vector2i(5, 5), Vector2i(6, 5), SimConst.EDGE_HALF)
-	check(best_shot(plain.units[1], plain, plain.units[10]).is_empty(), "no shot through half cover with a rifle")
+	var open_shot := best_shot(arena("").units[1], arena(""), arena("").units[10])
+	var covered_shot := best_shot(plain.units[1], plain, plain.units[10])
+	check(not covered_shot.is_empty() and int(covered_shot["value"]) < int(open_shot["value"]), "a rifle still shoots through half cover but values it lower")
 	var beam := arena("beam")
 	beam.grid.set_edge(Vector2i(5, 5), Vector2i(6, 5), SimConst.EDGE_HALF)
 	check(not best_shot(beam.units[1], beam, beam.units[10]).is_empty(), "a beam takes the shot")

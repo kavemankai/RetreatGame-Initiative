@@ -16,6 +16,8 @@ const HIT_MAX := 95
 ## Hit rolls use dice index HIT_DIE_OFFSET + shots fired, so they never share a roll with morale.
 const HIT_DIE_OFFSET := 1000
 ## Gear traits.
+## A target behind half cover is harder to hit, not untouchable: its shooters lose this many percent.
+const COVER_HIT_PENALTY := 30
 const BRACING_HIT_BONUS := 5
 const BRACING_MORALE_BONUS := 1  # on top of MORALE_COVER_BONUS
 const OPENER_HIT_BONUS := 15
