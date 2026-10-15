@@ -1,4 +1,6 @@
-﻿# Handover log
+# Handover log
+
+> New engineer or agent? Start with `docs/TAKEOVER.md`, then `docs/JA2_COMBAT_PLAN.md`.
 
 ## 2026-10-16: "complete the game" pass (branch `agent/complete-game`)
 **Current working state.** The game builds, launches (dev project and packaged Windows exe) and plays end to end in the dev project: new campaign, 12 missions in three acts, four endings, saves, resume. Full suite 576 tests / 2,990 checks, 0 failed; real-scene driver 16/16; story lint clean. Details and every number: `docs/TEST_RESULTS.md`.
