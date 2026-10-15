@@ -21,6 +21,7 @@ const NO_TILE := Vector2i(-1, -1)
 const COL_NEUTRAL := Color("d8dee9")
 const COL_OK := Color("9be39b")
 const COL_BAD := Color("ff9a8a")
+const COL_COACH := Color("8fd0ff")
 const PATH_COLOR := Color("8fd0ff")
 const EXPOSED_COLOR := Color("ff7a6a")
 
@@ -56,6 +57,8 @@ var _leave_btn: Button
 var _withdraw_armed := false   # a first tap on Withdraw, waiting for the confirming second tap
 var _sound: SoundBoard
 var _timer: Timer
+var _coach: Label                  # the first-mission tip (CoachModel); null when this fight is not coached
+var _coach_facts := {"moved": false, "enemy_in_sight": false, "previewed_shot": false, "shot": false, "ended": false, "watched": false, "over": false}
 
 
 func _ready() -> void:
@@ -211,6 +214,11 @@ func _build_ui() -> void:
 	_watch_btn.pressed.connect(_on_watch)
 	tools.add_child(_watch_btn)
 
+	if _activation and not _resumed and CoachModel.applies(Session.campaign, Session.mission_id, Session.level_test):
+		_coach = Label.new()
+		_coach.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_coach.add_theme_color_override("font_color", COL_COACH)
+		_panel.add_child(_coach)
 	_hint = Label.new()
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint.add_theme_color_override("font_color", COL_NEUTRAL)
@@ -412,10 +420,12 @@ func _tap_target(enemy: SimUnit) -> void:
 		return
 	if _pending == enemy.pos and _pending_is_shot:
 		_clear_pending()
+		_coach_facts["shot"] = true
 		_play(_im.shoot(_sel, enemy.id))
 		return
 	_pending = enemy.pos
 	_pending_is_shot = true
+	_coach_facts["previewed_shot"] = true
 	var cost := int(pv["cost"])
 	var left := _im.ap_of(_sel) - cost
 	var range_ := SimLos.chebyshev(_im.state.units[_sel].pos, enemy.pos)
@@ -444,6 +454,7 @@ func _tap_tile(tile: Vector2i) -> void:
 		return
 	if _pending == tile and not _pending_is_shot:
 		_clear_pending()
+		_coach_facts["moved"] = true
 		_play(_im.move(_sel, tile))
 		return
 	_pending = tile
@@ -496,6 +507,7 @@ func _on_watch() -> void:
 	if beats.is_empty():
 		_say(CombatReasons.text((_im as ActivationMatch).last_reason) if _activation else "It cannot hold a watch now.", false)
 		return
+	_coach_facts["watched"] = true
 	_say("%s holds overwatch." % _name_of(_sel), true, true)
 	_play(beats)
 
@@ -504,6 +516,7 @@ func _on_end_turn() -> void:
 	if _busy or _im.is_over():
 		return
 	_clear_pending()
+	_coach_facts["ended"] = true
 	if _activation:
 		_log_line("[color=#8a93a0]-- %s ends its activation --[/color]" % _name_of((_im as ActivationMatch).active_unit()))
 		_say("", true, true)
@@ -652,6 +665,25 @@ func _refresh(redraw_board: bool = true) -> void:
 		_sound.play("stinger_win" if _im.winner == _im.player_team else "stinger_loss")
 	_rebuild_squad()
 	_hint.text = _hint_text()
+	_refresh_coach(state)
+
+
+## Shows the first-mission tip (see CoachModel) for what the player has done so far.
+func _refresh_coach(state: SimState) -> void:
+	if _coach == null:
+		return
+	_coach_facts["over"] = _im.is_over()
+	var sees_enemy := false
+	for id in SimVision.visible_unit_ids(state, _im.player_team):
+		var u: SimUnit = state.units[id]
+		if u.alive and u.team != _im.player_team:
+			sees_enemy = true
+			break
+	_coach_facts["enemy_in_sight"] = sees_enemy
+	_coach_facts["ap"] = CombatConfig.load_file().max_ap
+	_coach.text = CoachModel.tip(_coach_facts)
+	_coach.visible = _coach.text != ""
+	_hint.visible = not _coach.visible  # the tip replaces the rules line so the End button stays on screen
 
 
 ## The shot summary drawn on the targeted tile: chance, damage and AP (or cover).
