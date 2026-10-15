@@ -33,7 +33,7 @@ var _buttons: GridContainer
 var _footer: VBoxContainer
 var _sound: SoundBoard
 var _portrait := false
-var _new_difficulty := "standard"  # applied by "New campaign"; a loaded campaign keeps the level it was saved with
+var _new_difficulty := "story"  # applied by "New campaign" (this private build defaults to Story, see DECISION_LOG D-5); a loaded campaign keeps the level it was saved with
 
 
 func _ready() -> void:
