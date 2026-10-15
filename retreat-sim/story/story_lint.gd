@@ -38,6 +38,8 @@ static func lint(d: Dictionary) -> Array[String]:
 	_lint_world(d, errs, officers)
 	_lint_tiers(errs, d["enemy_tiers"])
 	_lint_items(errs, d)
+	if d.has("progression"):
+		_lint_progression(errs, d)
 	return errs
 
 
@@ -210,6 +212,42 @@ static func _lint_items(errs: Array[String], d: Dictionary) -> void:
 				errs.append("mission %s rewards unknown item '%s'" % [m["id"], reward])
 			elif int(by_id[reward]["tier"]) > int(m["act"]):
 				errs.append("mission %s (act %d) rewards '%s', which is not found before act %d" % [m["id"], int(m["act"]), reward, int(by_id[reward]["tier"])])
+
+
+static func _lint_progression(errs: Array[String], d: Dictionary) -> void:
+	var p: Dictionary = d["progression"]
+	var stats := ["hp", "speed", "aim", "cqb", "morale", "sight"]
+	var levels: Array = p.get("levels", [])
+	if levels.is_empty():
+		errs.append("progression: levels must list the XP for level 2 onward")
+	for i in levels.size():
+		if int(levels[i]) <= 0 or (i > 0 and int(levels[i]) <= int(levels[i - 1])):
+			errs.append("progression: levels must be positive and rising (%s)" % [levels])
+			break
+	for key in ["deploy", "objective", "per_hit", "hit_cap", "per_kill", "survived_hit", "survived_hit_cap"]:
+		if int((p.get("xp", {}) as Dictionary).get(key, -1)) < 0:
+			errs.append("progression: xp.%s must be zero or more" % key)
+	for stat in stats:
+		var cap := int((p.get("caps", {}) as Dictionary).get(stat, 0))
+		if cap < int(STAT_RANGES[stat][1]) and stat != "sight" and stat != "hp":
+			errs.append("progression: the %s cap %d is below the highest starting %s" % [stat, cap, stat])
+		if cap < 1:
+			errs.append("progression: missing cap for %s" % stat)
+	if int(p.get("offers", 0)) < 1 or int(p.get("offers", 0)) > stats.size():
+		errs.append("progression: offers must be between 1 and %d" % stats.size())
+	for cid in (d["classes"]["classes"] as Dictionary):
+		var weights: Dictionary = (p.get("class_weights", {}) as Dictionary).get(cid, {})
+		var total := 0
+		for stat in stats:
+			if not weights.has(stat) or int(weights[stat]) < 0:
+				errs.append("progression: class %s needs a weight of zero or more for %s" % [cid, stat])
+			total += int(weights.get(stat, 0))
+		if total <= 0:
+			errs.append("progression: class %s has no positive weight" % cid)
+	for m: Dictionary in d["cast"]["mercs"]:
+		for stat in stats:
+			if int(m["stats"][stat]) > int((p.get("caps", {}) as Dictionary).get(stat, 0)):
+				errs.append("progression: %s starts above the %s cap" % [m["id"], stat])
 
 
 static func _lint_tiers(errs: Array[String], tiers: Dictionary) -> void:

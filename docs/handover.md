@@ -1,5 +1,11 @@
 # Handover log
 
+## 2026-10-15: R4 Phase D done (levelling)
+- Data: `data/story/progression.json` (XP table, levels 6/14/24/36, caps hp 6 / speed, aim, cqb, morale 10 / sight 9, three offers, class weights, use divisors), linted in `StoryLint._lint_progression`. Stress and injury are dropped.
+- `Campaign`: roster entries carry xp, level, picks, pending, hits, steps, hits_taken, kills, missions; `award_xp`/`apply_xp`, `levelup_offer` (class weight plus use bonus, seeded by campaign seed, picks and slot so a reload cannot reroll; capped stats and CQB past its threshold never offered), `choose_levelup`, `debrief_chain` (result, level-ups, roll calls, debrief, Orrick). Only living named mercs earn XP; hollows never level. Saves carry the seed and levelling fields.
+- Screens: `LevelUpScreen` (pick one of three, Confirm disabled until chosen) and `RosterScreen` (cards, detail with caps, Level up button). The briefing page has a Roster button; `campaign_view._step_screen` shows pending level-ups.
+- **Tests:** 528 tests, 2795 checks, 0 failed (`tests/test_levelling.gd`). Mutation-checked, all caught: hit cap, cap/CQB exclusion, offer seed (slot and picks), alive gate, pending decrement, saved seed, Confirm enabled state.
+
 ## 2026-10-15: R4 Phase C done (equipment screens)
 - `LoadoutScreen` (`view/screens/loadout_screen.gd`) replaces the text loadout pages: roster hub (a `MercCard` per merc, tap to open; a hollow explains it carries no kit), a merc's gear (card with class chip and glyphs, six stat rows with gear shown against base, three slot cards, empty slots invite a tap), the item picker (stash items for the slot, weapons only of the merc's class, grouped with xN, each with its before/after changes, Equip disabled until one is chosen, Take off, wrong-class refusals shown), and the stash view (grouped items and who wears what). It changes only the campaign and emits `changed` (the host saves and plays `sfx_equip`) and `back`.
 - `campaign_view._loadout(return_to)` hosts it; the old `_loadout_*` text pages are gone. `--demo=loadout` shows a merc screen.

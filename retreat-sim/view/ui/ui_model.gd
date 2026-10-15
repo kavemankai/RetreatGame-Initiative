@@ -18,9 +18,15 @@ static func merc_info(c: Campaign, slot: int, selected := false) -> Dictionary:
 	var names := {}
 	for kind in Campaign.GEAR_SLOTS:
 		names[kind] = String(c.item(String(gear[kind])).get("name", ""))
-	return {"slot": slot, "name": merc_name(c, slot), "status": status, "class": c.class_of(slot), "class_name": c.class_name_of(c.class_of(slot)),
+	var info := {"slot": slot, "name": merc_name(c, slot), "status": status, "class": c.class_of(slot), "class_name": c.class_name_of(c.class_of(slot)),
 		"base": c.slot_stats(slot), "stats": c.effective_stats(slot),
 		"gear": gear, "gear_names": names, "sprite_key": UnitSprites.key_for(slot, 0, status == "hollow"), "selected": selected}
+	if status == "named":
+		info["level"] = c.level_of(slot)
+		info["xp"] = c.xp_of(slot)
+		info["xp_next"] = c.xp_next(slot)
+		info["pending"] = c.levelup_pending(slot)
+	return info
 
 
 static func merc_name(c: Campaign, slot: int) -> String:
@@ -46,6 +52,30 @@ static func item_info(c: Campaign, item_id: String, count := 1, slot := -1, kind
 
 static func resources_info(c: Campaign) -> Dictionary:
 	return {"procession": c.procession, "reserves": c.reserves, "remembrance": c.remembrance, "writ": c.writ_stage()}
+
+
+## In plain words what one more point of a stat does in combat, from the real rules (SimConst, SimUnit):
+## "+7% to hit", "acts earlier", "+1 damage within 2 tiles" ...
+static func stat_effect_text(stat: String, from: int, to: int) -> String:
+	match stat:
+		"hp":
+			return "+1 hit point"
+		"speed":
+			return "Acts earlier in the round (+%d initiative)" % [10 * (to - from)]
+		"aim":
+			var parts: Array[String] = ["+%d%% to hit" % [SimConst.HIT_PER_AIM * (to - from)]]
+			if to / SimConst.AIM_RANGE_DIVISOR > from / SimConst.AIM_RANGE_DIVISOR:
+				parts.append("+1 range")
+			if to >= SimConst.AIM_FAST_SHOT and from < SimConst.AIM_FAST_SHOT:
+				parts.append("shots cost 1 AP less")
+			return ", ".join(parts)
+		"cqb":
+			return "+1 damage within %d tiles" % SimConst.CQB_BONUS_DISTANCE if to >= SimConst.CQB_BONUS_MIN and from < SimConst.CQB_BONUS_MIN else "One step closer to +1 close-range damage (at %d)" % SimConst.CQB_BONUS_MIN
+		"morale":
+			return "+1 to the check after being hit"
+		"sight":
+			return "Sees 1 tile further"
+	return ""
 
 
 ## What a shot preview adds to the plain numbers: "burst x3", "blast: also hits the 8 tiles around",

@@ -169,12 +169,29 @@ func _next() -> void:
 		_menu()
 		return
 	while not c.pending.is_empty():
+		if _step_screen(c, c.pending[0]):
+			return
 		var p := _page_for(c, c.pending[0])
 		if not p.is_empty():
 			_show(p["title"], p["bbcode"], p["buttons"], p.get("status", ""))
 			return
 		c.pending.pop_front()  # a step with nothing to show
 	_briefing()
+
+
+## A pending step that is a built screen rather than a text page. Returns true if it was shown. A level-up
+## step with nothing left to spend (already chosen before a quit) is skipped.
+func _step_screen(c: Campaign, step: Dictionary) -> bool:
+	match step["t"]:
+		"levelup":
+			var slot := int(step["slot"])
+			if c.levelup_pending(slot) <= 0:
+				return false
+			var screen := LevelUpScreen.new().setup(c, slot)
+			screen.chosen.connect(_save)
+			_host(screen, _advance)
+			return true
+	return false
 
 
 ## Finish the current step, save, and move on.
@@ -347,7 +364,7 @@ func _briefing() -> void:
 	var body := "[i]%s[/i]\n\n[b]Objective[/b]: %s\n\n%s" % [m.get("summary", ""), m["objective"]["text"], _scene_bbcode(scene_id)]
 	_default_squad(c, m)
 	_brief = {"title": title, "mission": m}
-	_show(title, body, [{"text": "Choose squad", "call": _squad_choice}], _resources(c))
+	_show(title, body, [{"text": "Choose squad", "call": _squad_choice}, {"text": "Roster", "call": _roster_screen}], _resources(c))
 
 
 ## A contingency card is offered once per act, after its second story mission;
@@ -398,6 +415,20 @@ func _squad_choice() -> void:
 		{"text": "Loadout (%d in the stash)" % c.stash.size(), "call": _loadout},
 		{"text": "Back to briefing", "call": _briefing},
 	])
+
+
+# --- roster ----------------------------------------------------------------------------------
+
+## Everyone, with levels. Spending a waiting level-up opens the level-up screen and returns here.
+func _roster_screen(return_to: Callable = Callable()) -> void:
+	var c := Session.campaign
+	var leave := return_to if return_to.is_valid() else Callable(self, "_briefing")
+	var screen := RosterScreen.new().setup(c)
+	screen.open_levelup.connect(func(slot: int) -> void:
+		var up := LevelUpScreen.new().setup(c, slot)
+		up.chosen.connect(_save)
+		_host(up, _roster_screen.bind(return_to)))
+	_host(screen, leave)
 
 
 # --- loadout ---------------------------------------------------------------------------------
@@ -456,14 +487,8 @@ func _apply_outcome() -> void:
 		_next()  # already applied, or out of order: never apply twice
 		return
 	var before := {"procession": c.procession, "reserves": c.reserves}
-	var report := c.complete_mission(id, o["success"], o["dead_slots"], o["writ_dead"], [], o["squad_wiped"], int(o.get("procession_loss", 0)))
-	c.pending = [{"t": "result", "id": id, "o": o, "report": report, "before": before, "withdrawn": withdrawn}]
-	if not c.over:
-		for slot in report["fallen"]:
-			c.pending.append({"t": "roll", "slot": slot, "vacant": (report["vacant"] as Array).has(slot)})
-		if c.card(id).is_empty():
-			c.pending.append({"t": "debrief", "mission": id, "deaths": (report["fallen"] as Array).size()})
-			c.pending.append({"t": "orrick", "mission": id})
+	var report := c.complete_mission(id, o["success"], o["dead_slots"], o["writ_dead"], [], o["squad_wiped"], int(o.get("procession_loss", 0)), o.get("units", []))
+	c.pending = c.debrief_chain(id, o, report, before, withdrawn)
 	_save()
 	_next()
 
