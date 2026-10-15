@@ -6,6 +6,7 @@
 - Removed: the text squad page, `_toggle_slot`, `_default_squad`, `_result_page` in `campaign_view`.
 - **Tests:** 548 tests, 2871 checks, 0 failed (`tests/test_prep_and_report.gd`). 8 mutations all caught. Soak: 60 battles, 0 frozen, 0 invariant problems, 0 illegal actions. Prep and result screens checked on screen at 540x960 (`--demo=briefing`, `--demo=result`).
 - Follow-up: the map has a Stash button (opens the loadout on the stash view); the result figures count up from before to after (`ResultScreen.finish_animation` skips it); screens checked at 360x800 and 960x540; final soak 150 battles clean; `MECHANICS_SPEC.md` growth and stress lines already reflect the decisions.
+- End to end: `tests/test_end_to_end.gd` runs map -> prep -> AI fight saved mid-battle and resumed (exact state) -> outcome applied once -> result, salvage, level-up screens -> save round trip -> map at the next stop. All new screens (map, prep, result, level-up, roster, loadout) were screenshotted and read at 540x960, 360x800 and 960x540 after the Stash button was added.
 - **Left for the owner:** no APK was built (instructed); CC0 muzzle-flash packs and the SpriteCook/PixelLab trials were not downloaded or used (need approval).
 
 ## 2026-10-15: R4 Phase E done (overworld map)

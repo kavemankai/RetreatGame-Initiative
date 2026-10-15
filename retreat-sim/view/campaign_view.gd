@@ -669,6 +669,15 @@ func _run_demo(name: String) -> void:
 			Session.campaign.stash.append_array(["assault_rifle", "scope", "mourning_cloak", "padded_jacket"])
 			_loadout()
 			(_hosted as LoadoutScreen).open_merc(1)
+		"levelup":
+			_start_new()
+			Session.campaign.apply_xp(3, 14)
+			_step_screen(Session.campaign, {"t": "levelup", "slot": 3})
+		"roster":
+			_start_new()
+			Session.campaign.apply_xp(3, 14)
+			_roster_screen()
+			(_hosted as RosterScreen).open_detail(3)
 		"result":
 			_start_new()
 			_fake_outcome("karsa_breakout", {"success": true, "dead_slots": [5], "writ_dead": [], "squad_wiped": false, "units": [
