@@ -11,6 +11,7 @@
 #>
 param(
     [switch]$Install,
+    [switch]$Ja2Test,    # Act 1 only, JA2 placeholder art, own package (com.kyler.retreatsim.ja2test) so it installs beside the others
     [switch]$Full,       # the release build: whole 12-mission campaign, campaign-only menu (build/TheLongRetreat-1.0.0.apk)
     [switch]$Campaign,   # the campaign-only build: no skirmish, level test or sandbox, own package
     [switch]$LevelTest,  # the slimmed Act 1 level-test build (own package, so it installs beside the full one)
@@ -20,8 +21,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $project = Split-Path -Parent $PSScriptRoot
-$preset = if ($Full) { "Android Full Campaign" } elseif ($Campaign) { "Android Campaign" } elseif ($LevelTest) { "Android Level Test" } else { "Android" }
-$apk = Join-Path $project ($(if ($Full) { "build\TheLongRetreat-1.0.0.apk" } elseif ($Campaign) { "build\RetreatSim-campaign.apk" } elseif ($LevelTest) { "build\RetreatSim-leveltest.apk" } else { "build\RetreatSim-debug.apk" }))
+$preset = if ($Ja2Test) { "Android JA2 Test" } elseif ($Full) { "Android Full Campaign" } elseif ($Campaign) { "Android Campaign" } elseif ($LevelTest) { "Android Level Test" } else { "Android" }
+$apk = Join-Path $project ($(if ($Ja2Test) { "build\RetreatSim-ja2test.apk" } elseif ($Full) { "build\TheLongRetreat-1.0.0.apk" } elseif ($Campaign) { "build\RetreatSim-campaign.apk" } elseif ($LevelTest) { "build\RetreatSim-leveltest.apk" } else { "build\RetreatSim-debug.apk" }))
 
 if (-not (Test-Path $Godot)) { throw "Godot not found at $Godot (pass -Godot <path>)" }
 New-Item -ItemType Directory -Force (Join-Path $project "build") | Out-Null
@@ -38,7 +39,7 @@ if ($Install) {
     if (-not $devices) { throw "No authorised device. Enable USB debugging, plug in, accept the prompt, then retry." }
     & $Adb install -r $apk
     if ($LASTEXITCODE -ne 0) { throw "adb install failed" }
-    $pkg = if ($Full -or $Campaign) { "com.kyler.retreatsim.campaign" } elseif ($LevelTest) { "com.kyler.retreatsim.leveltest" } else { "com.kyler.retreatsim" }
+    $pkg = if ($Ja2Test) { "com.kyler.retreatsim.ja2test" } elseif ($Full -or $Campaign) { "com.kyler.retreatsim.campaign" } elseif ($LevelTest) { "com.kyler.retreatsim.leveltest" } else { "com.kyler.retreatsim" }
     & $Adb shell monkey -p $pkg -c android.intent.category.LAUNCHER 1 | Out-Null
     Write-Host "Installed and launched."
 }
