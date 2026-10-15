@@ -75,6 +75,7 @@ static func _activate_next(cs: CombatState) -> void:
 static func _activate(cs: CombatState, u: SimUnit) -> void:
 	cs.active_id = u.id
 	cs.activations[u.id] = int(cs.activations.get(u.id, 0)) + 1
+	_settle_cover(u)
 	cs.ap[u.id] = cs.config.pool_for(u)
 	cs.suppressed.erase(u.id)
 	cs.broken.erase(u.id)
@@ -82,6 +83,16 @@ static func _activate(cs: CombatState, u: SimUnit) -> void:
 	cs.fired.erase(u.id)
 	cs.phase = CombatState.Phase.AWAIT_COMMAND
 	cs.record([{"type": "activate", "tick": cs.next_tick(), "unit": u.id, "round": cs.round_no, "ap": cs.ap[u.id]}])
+
+
+## Dug in or exposed: at the start of an activation after the first, a unit that shot since its last one loses
+## some cover and one that held its fire gains some (within SimConst.COVER_SHIFT_MAX). Moving already reset it.
+static func _settle_cover(u: SimUnit) -> void:
+	if u.counters.has("turns_taken"):
+		var step := -SimConst.COVER_SHIFT_STEP if int(u.counters.get("shot_since", 0)) > 0 else SimConst.COVER_SHIFT_STEP
+		u.counters["cover_shift"] = clampi(u.cover_shift() + step, -SimConst.COVER_SHIFT_MAX, SimConst.COVER_SHIFT_MAX)
+	u.counters["shot_since"] = 0
+	u.counters["turns_taken"] = 1
 
 
 ## Round-end bookkeeping. Returns true if that ended the encounter.

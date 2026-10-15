@@ -18,6 +18,11 @@ const HIT_DIE_OFFSET := 1000
 ## Gear traits.
 ## A target behind half cover is harder to hit, not untouchable: its shooters lose this many percent.
 const COVER_HIT_PENALTY := 30
+## Dug in / exposed (activation engine): a unit that did not shoot since its last activation gains this much
+## cover at the start of its next one, one that shot loses it, and stepping to a new tile resets it. The shift
+## is kept within +/- COVER_SHIFT_MAX, so cover is worth 10 to 50 points of hit chance.
+const COVER_SHIFT_STEP := 10
+const COVER_SHIFT_MAX := 20
 const BRACING_HIT_BONUS := 5
 const BRACING_MORALE_BONUS := 1  # on top of MORALE_COVER_BONUS
 const OPENER_HIT_BONUS := 15

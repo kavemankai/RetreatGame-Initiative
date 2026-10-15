@@ -29,8 +29,10 @@ static func evaluate_shot(grid: SimGrid, shooter: SimUnit, from: Vector2i, targe
 		return {"result": "invalid", "reason": "no_los"}
 	var in_cover := not shooter.ignores_half_cover() and SimLos.is_covered(grid, from, target.pos)
 	var chance := shooter.hit_chance_at(dist)
+	var cover_penalty := 0
 	if in_cover:
-		chance = maxi(SimConst.HIT_MIN, chance - SimConst.COVER_HIT_PENALTY)
+		cover_penalty = maxi(0, SimConst.COVER_HIT_PENALTY + target.cover_shift())
+		chance = maxi(SimConst.HIT_MIN, chance - cover_penalty)
 	if shooter.gear_trait == "bracing" and grid.has_cover_nearby(from):
 		chance = mini(SimConst.HIT_MAX, chance + SimConst.BRACING_HIT_BONUS)
 	if opener_ready and shooter.gear_trait == "opener":
@@ -38,6 +40,7 @@ static func evaluate_shot(grid: SimGrid, shooter: SimUnit, from: Vector2i, targe
 	var out := {"result": "hit", "damage": shooter.damage_at(dist), "chance": chance}
 	if in_cover:
 		out["cover"] = true
+		out["cover_penalty"] = cover_penalty
 	if shooter.burst_count() > 1 and not single:
 		out["burst"] = shooter.burst_count()
 		out["chance"] = maxi(SimConst.HIT_MIN, chance - SimConst.BURST_ACCURACY_PENALTY)

@@ -130,6 +130,8 @@ static func _move(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult:
 			break
 		var old := u.pos
 		u.pos = dest
+		u.counters["cover_shift"] = 0  # a new tile: nothing dug in yet
+		u.counters["shot_since"] = 0
 		_spend(cs, u, res, cost)
 		u.bump("steps_moved")
 		_emit(cs, res, [{"type": "move", "tick": cs.next_tick(), "unit": u.id, "from": old, "to": dest}])
@@ -145,6 +147,7 @@ static func _shoot(cs: CombatState, u: SimUnit, a: CombatAction) -> ActionResult
 	_spend(cs, u, res, int(pv["cost"]))
 	var events := ShotResolver.fire(cs.sim, u, a.target_id, cs.round_no, cs.next_tick(), not cs.fired.has(u.id))
 	cs.fired[u.id] = true
+	u.counters["shot_since"] = 1
 	for e: Dictionary in events:
 		_apply_outcome(cs, e)
 	_emit(cs, res, events)
@@ -204,6 +207,7 @@ static func _react(cs: CombatState, mover: SimUnit, res: ActionResult) -> void:
 		var events := ShotResolver.fire(cs.sim, d, mover.id, cs.round_no, cs.next_tick(), not cs.fired.has(d.id), true)
 		(events[0] as Dictionary)["reaction"] = true
 		cs.fired[d.id] = true
+		d.counters["shot_since"] = 1
 		for e: Dictionary in events:
 			_apply_outcome(cs, e)
 		_emit(cs, res, events)

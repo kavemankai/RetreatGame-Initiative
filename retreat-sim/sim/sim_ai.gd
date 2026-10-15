@@ -228,7 +228,7 @@ static func _best_shot(ctx: Dictionary, u: SimUnit, tile: Vector2i, prof: SimAIP
 		var shots := u.burst_count()
 		var chance := u.hit_chance_at(d)
 		if not u.ignores_half_cover() and SimLos.is_covered(view.grid, tile, e.pos):
-			chance = maxi(SimConst.HIT_MIN, chance - SimConst.COVER_HIT_PENALTY)
+			chance = maxi(SimConst.HIT_MIN, chance - maxi(0, SimConst.COVER_HIT_PENALTY + e.cover_shift()))
 		if shots > 1:
 			chance = maxi(SimConst.HIT_MIN, chance - SimConst.BURST_ACCURACY_PENALTY)
 		var eff := mini(dmg * shots, hp_left)

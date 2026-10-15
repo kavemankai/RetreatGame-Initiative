@@ -734,7 +734,7 @@ func _hint_text() -> String:
 	if _activation:
 		if _sel < 0 or not _im.can_act(_sel):
 			return "Units act one at a time in the order shown above. Tap a tile to move or an enemy to shoot, then End Activation."
-		return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4, overwatch 4 (one free shot at the first enemy to move in its cone). End Activation to pass." % [_name_of(_sel), _im.ap_of(_sel)]
+		return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4, overwatch 4 (one free shot at the first enemy to move in its cone). End Activation to pass.%s" % [_name_of(_sel), _im.ap_of(_sel), UiModel.dug_in_text(_im.state.units[_sel])]
 	if _sel < 0:
 		return "Tap a merc, then a tile to move or an enemy to shoot. Waiting units get one interrupt shot at anyone who steps into their sights first."
 	return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4." % [_name_of(_sel), _im.ap_of(_sel)]

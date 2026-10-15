@@ -1,5 +1,10 @@
 # Handover log
 
+## 2026-10-15: dug in and exposed cover (owner request)
+- Holding fire builds cover (+10 per activation, to +20), shooting from it wears it down (-10, to -20), a step resets it, the first activation changes nothing; cover is worth 10 to 50 hit-chance points. `SimUnit.cover_shift()`, `ActivationScheduler._settle_cover`, `ActionResolver` (reset on move, `shot_since` on shots and reaction fire), `SimResolver.evaluate_shot` adds `cover_penalty`, `SimAI._best_shot` uses it, `UiModel.dug_in_text` and `shot_notes` show it. Activation engine only (the legacy planned mode does not track it).
+- Tests: `tests/test_dug_in.gd` (6), 559 tests, 0 failed; 3 mutations caught; soak 100 battles and 40 Pellam Dock missions clean.
+- Open question for tuning: the AI does not yet choose to hold fire to keep its cover.
+
 ## 2026-10-15: cover lowers the chance instead of blocking (playtest feedback)
 - Feedback: "cover seems to be 100% with no way to lower it". Half cover now takes `SimConst.COVER_HIT_PENALTY` (30) off the hit chance (floor 10) instead of returning "blocked". `SimResolver.evaluate_shot` adds `cover: true` to the preview; beams still ignore it; full walls still block. `SimAI._best_shot` values covered shots at the lower chance (cover is still worth seeking: `_threat_at` is unchanged). The shot line shows "target in cover: -30% to hit".
 - 13 tests rewritten to the new rule (blocked -> lowered chance); 550 tests, 0 failed; soak 100 battles clean, squad wins 97 of 100 (was 145 of 150 before). Not rebuilt into an APK yet.

@@ -85,7 +85,7 @@ static func shot_notes(preview: Dictionary) -> String:
 	if preview.has("burst"):
 		parts.append("burst x%d" % int(preview["burst"]))
 	if preview.get("cover", false):
-		parts.append("target in cover: -%d%% to hit" % SimConst.COVER_HIT_PENALTY)
+		parts.append("target in cover: -%d%% to hit" % int(preview.get("cover_penalty", SimConst.COVER_HIT_PENALTY)))
 	if preview.get("area", false):
 		parts.append("blast: also hits the 8 tiles around")
 	return ", ".join(parts)
@@ -257,3 +257,14 @@ static func shot_mark(pv: Dictionary) -> String:
 	var tag := ("x%d " % int(pv["burst"])) if pv.has("burst") else ("blast " if pv.get("area", false) else "")
 	var cover := " COVER" if pv.get("cover", false) else ""
 	return "%s%d%%%s | %d dmg | %d AP" % [tag, pv["chance"], cover, pv["damage"], pv["cost"]]
+
+
+## How dug in a unit is, for its hint line: "" when neutral. Holding fire builds cover, shooting wears it down,
+## and a step to a new tile starts over.
+static func dug_in_text(u: SimUnit) -> String:
+	var shift := u.cover_shift()
+	if shift > 0:
+		return " Dug in: cover is worth +%d%% here. Shooting wears it down." % shift
+	if shift < 0:
+		return " Exposed: cover is worth %d%% less. Hold fire to rebuild it." % -shift
+	return " Hold fire to dig in; shooting from cover wears it down."

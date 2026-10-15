@@ -113,6 +113,11 @@ func step_cost(d: Vector2i) -> int:
 	return SimConst.COST_ORTHO
 
 
+## How dug in the unit is (see SimConst.COVER_SHIFT_STEP): added to the cover penalty on shots at it.
+func cover_shift() -> int:
+	return int(counters.get("cover_shift", 0))
+
+
 ## A beam ignores half cover (a full wall still blocks it).
 func ignores_half_cover() -> bool:
 	return weapon_trait == "beam"
