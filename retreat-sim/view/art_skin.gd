@@ -17,7 +17,13 @@ static func ja2_available() -> bool:
 	return ResourceLoader.exists(PROBE)
 
 
+## Tests set this to false so they check the original art whatever is installed locally (-1 = no override).
+static var forced := -1
+
+
 static func ja2_active() -> bool:
+	if forced >= 0:
+		return forced == 1 and ja2_available()
 	_load_once()
 	return _ja2_wanted and ja2_available()
 
@@ -40,6 +46,34 @@ static func icon_path(item_id: String) -> String:
 	if ja2_active() and ResourceLoader.exists(ja2):
 		return ja2
 	return "res://assets/items/%s.png" % item_id
+
+
+## The JA2 theme's copy of a theme file (floor_0.png, wall_z0_full.png, ...), or "" when the skin is off or lacks it.
+## Every level theme draws with the one JA2 set while the skin is on.
+static func ja2_theme_file(file: String) -> String:
+	if not ja2_active():
+		return ""
+	var path := "res://assets/ja2/themes/ja2_snow/" + file
+	return path if ResourceLoader.exists(path) else ""
+
+
+const VOICE_VARIANTS := 4  # clips per voice kind in assets/ja2/audio (tools/ja2_skin.py sounds)
+
+
+## The path of a JA2 voice clip ("voice_hit_2"), or "" when the skin is off or the clip is missing.
+static func voice_path(name: String) -> String:
+	if not ja2_active():
+		return ""
+	var path := "res://assets/ja2/audio/%s.wav" % name
+	return path if ResourceLoader.exists(path) else ""
+
+
+## A JA2 portrait for a named merc's sprite key, or "" (hollows and enemies have none).
+static func face_path(sprite_key: String) -> String:
+	if not ja2_active():
+		return ""
+	var path := "res://assets/ja2/faces/%s.png" % sprite_key
+	return path if ResourceLoader.exists(path) else ""
 
 
 static func label() -> String:

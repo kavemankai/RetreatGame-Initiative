@@ -43,8 +43,12 @@ static func for_event(ev: Dictionary) -> Array[Dictionary]:
 				out.append({"name": follow, "delay": IMPACT_DELAY + lag})
 			if klass == "grenade" and result == "hit":
 				out.append({"name": "sfx_blast", "delay": BLAST_DELAY})
+			if result == "hit" and ArtSkin.ja2_active():
+				out.append({"name": "voice_hit_%d" % ((int(ev["tick"]) + int(ev["target"])) % ArtSkin.VOICE_VARIANTS), "delay": IMPACT_DELAY + lag + 0.05})
 		"death":
 			out.append({"name": "sfx_death", "delay": DEATH_DELAY})
+			if ArtSkin.ja2_active():
+				out.append({"name": "voice_dying_%d" % (int(ev.get("unit", 0)) % ArtSkin.VOICE_VARIANTS), "delay": DEATH_DELAY + 0.05})
 		"morale":
 			out.append({"name": "sfx_steady" if ev["result"] == "steady" else "sfx_broken", "delay": MORALE_DELAY})
 		"move":

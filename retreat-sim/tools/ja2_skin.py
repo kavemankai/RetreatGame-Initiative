@@ -166,13 +166,88 @@ def build_items(data):
     print("wrote %d item icons to %s" % (len(ITEM_ART), os.path.abspath(out)))
 
 
+FACES = {"warden": "170", "gran": "183", "sable": "196", "needle": "175", "bulwark": "177", "moth": "224", "wren": "218", "ghost": "178"}
+
+
+def build_faces(data):
+    out = os.path.join(HERE, "..", "assets", "ja2", "faces")
+    os.makedirs(out, exist_ok=True)
+    for key, number in FACES.items():
+        path = os.path.join(data, "faces", number + ".sti")
+        if not os.path.exists(path):
+            path = os.path.join(data, "faces", number + ".STI")
+        Sti(path).image(0).save(os.path.join(out, key + ".png"))
+    print("wrote %d portraits to %s" % (len(FACES), os.path.abspath(out)))
+
+
+VOICE_SETS = ("169", "170", "171", "172")  # four merc voices from BattleSNDS; each has OK1, HIT1 and DYING
+VOICES = {"voice_ok": "OK1", "voice_hit": "HIT1", "voice_dying": "DYING"}
+
+
+def build_sounds(data):
+    import shutil
+    out = os.path.join(HERE, "..", "assets", "ja2", "audio")
+    os.makedirs(out, exist_ok=True)
+    src = os.path.join(data, "BattleSNDS")
+    n = 0
+    for name, suffix in VOICES.items():
+        for i, who in enumerate(VOICE_SETS):
+            shutil.copyfile(os.path.join(src, "%s_%s.wav" % (who, suffix)), os.path.join(out, "%s_%d.wav" % (name, i)))
+            n += 1
+    print("copied %d voice clips to %s" % (n, os.path.abspath(out)))
+
+
+def _scaled(img, factor):
+    return img.resize((round(img.width * factor), round(img.height * factor)), Image.NEAREST)
+
+
+def build_theme(data):
+    """One JA2 'snow' theme from tilesets/50: dirt floors, crates and brick walls, named like a game theme."""
+    out = os.path.join(HERE, "..", "assets", "ja2", "themes", "ja2_snow")
+    os.makedirs(out, exist_ok=True)
+    src = os.path.join(data, "tilesets", "50")
+
+    def open_(name):
+        return Sti(os.path.join(src, name + ".STI"))
+
+    dirt = open_("2_DRT1")
+    for i in range(9):
+        im = dirt.image(i)
+        im.crop(im.getbbox()).resize((64, 32), Image.NEAREST).save(os.path.join(out, "floor_%d.png" % i))
+    crates = open_("2CRATE")
+    for i in range(4):
+        im = crates.image(i + 1)
+        _scaled(im.crop(im.getbbox()), 2.6).save(os.path.join(out, "crate_%d.png" % i))
+    walls = open_("E_WALL2")
+    base = walls.image(0)
+    base = base.crop(base.getbbox())
+    # the board's wall is about a tile wide; JA2 walls are tall, so squash them a little to keep units visible behind them
+    base = base.resize((round(base.width * 3.2), round(base.height * 2.3)), Image.NEAREST)
+    for z, full in ((0, base), (1, base.transpose(Image.FLIP_LEFT_RIGHT))):
+        full.save(os.path.join(out, "wall_z%d_full.png" % z))
+        full.crop((0, full.height // 2, full.width, full.height)).save(os.path.join(out, "wall_z%d_half.png" % z))
+    print("wrote the ja2_snow theme to %s" % os.path.abspath(out))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["mercs", "items"])
+    ap.add_argument("what", choices=["mercs", "items", "theme", "sounds", "faces", "all"])
     ap.add_argument("--src", default=r"C:\Users\kyler\JA2Assets\anims\RGM")
     ap.add_argument("--data", default=r"C:\Users\kyler\JA2Assets\gamedir\Data-1.13")
     a = ap.parse_args()
     if a.what == "mercs":
         build_mercs(a.src)
-    else:
+    elif a.what == "items":
         build_items(a.data)
+    elif a.what == "theme":
+        build_theme(a.data)
+    elif a.what == "sounds":
+        build_sounds(a.data)
+    elif a.what == "faces":
+        build_faces(a.data)
+    else:
+        build_mercs(a.src)
+        build_items(a.data)
+        build_theme(a.data)
+        build_sounds(a.data)
+        build_faces(a.data)

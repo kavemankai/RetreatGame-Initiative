@@ -49,6 +49,7 @@ const SUITES: Array[Script] = [
 
 func _init() -> void:
 	TestBase.tree = self
+	ArtSkin.forced = 0  # the suite checks the original art, whatever JA2 placeholders are installed locally
 	var total := 0
 	for script in SUITES:
 		print("== ", script.resource_path.get_file())

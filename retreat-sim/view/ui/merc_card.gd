@@ -86,7 +86,8 @@ func setup(info: Dictionary) -> MercCard:
 	if _xp.visible:
 		_xp.max_value = maxf(1.0, float(info["xp_next"]))
 		_xp.value = float(info["xp"])
-	var path := ArtSkin.merc_dir() + String(info["sprite_key"]) + "_idle0.png"
+	var face := ArtSkin.face_path(String(info["sprite_key"])) if not hollow else ""
+	var path := face if face != "" else ArtSkin.merc_dir() + String(info["sprite_key"]) + "_idle0.png"
 	_sprite.texture = load(path) as Texture2D if ResourceLoader.exists(path) else null
 	add_theme_stylebox_override("panel", UiTheme.panel(UiTheme.COL_PANEL_HI if bool(info.get("selected", false)) else UiTheme.COL_PANEL, UiTheme.COL_AMBER if bool(info.get("selected", false)) else Color.TRANSPARENT, 2))
 	UiTheme.ignore_mouse_inside(self)

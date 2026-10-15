@@ -30,3 +30,6 @@ The route map shows where you are. **Brief** opens the prep screen (briefing, wh
 
 ## Save and quit
 The campaign saves after every step of the chain. A battle autosaves after each command; quitting mid-fight shows **Resume battle** on the menu. Saves live in the app's own data folder (Windows: `%APPDATA%\Godot\app_userdata\Retreat Sim`). A save from another version is refused with a reason and never overwritten.
+
+## Art
+The main menu has an **Art: JA2 placeholders / Art: original** button (shown only when the JA2 placeholder files are in the build). JA2 art is for private testing only; see LICENSE_AUDIT.md.
