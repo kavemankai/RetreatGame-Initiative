@@ -11,7 +11,9 @@ const SANDBOX_SCENE := "res://view/sandbox.tscn"
 const MENU_SCENE := "res://view/campaign.tscn"
 const MARGIN := 10
 const BEAT_SECONDS := 0.28
-const PORTRAIT_BOARD_ASPECT := 0.8
+const PORTRAIT_BOARD_ASPECT := 0.8  # the least board height / width on a phone
+const PORTRAIT_BOARD_MAX_ASPECT := 1.4  # the most: a tall phone gives the extra height to the board
+const PORTRAIT_PANEL_RESERVE := 530.0  # px kept for the controls under the board (title, order strip, units, help, End Activation)
 const TARGET_TILE_PX := 84.0
 const FONT_PORTRAIT := 18
 const FONT_LANDSCAPE := 16
@@ -255,8 +257,9 @@ func _apply_layout() -> void:
 		var board_w := size.x - 2.0 * MARGIN
 		_board.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_board.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		_board.custom_minimum_size = Vector2(0, board_w * PORTRAIT_BOARD_ASPECT)
-		_board.set_zoom(1.0 if _overview else _portrait_zoom(board_w, board_w * PORTRAIT_BOARD_ASPECT))
+		var board_h := portrait_board_height(size.y, board_w)
+		_board.custom_minimum_size = Vector2(0, board_h)
+		_board.set_zoom(1.0 if _overview else _portrait_zoom(board_w, board_h))
 		_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_panel.custom_minimum_size = Vector2.ZERO
@@ -266,6 +269,12 @@ func _apply_layout() -> void:
 		_board.custom_minimum_size = Vector2(480, 360)
 		_board.set_zoom(1.0)
 		_panel.custom_minimum_size = Vector2(380, 0)
+
+
+## The board's height on a portrait screen: whatever the controls below do not need, kept between the
+## base aspect and the maximum so a tall phone shows more of the map and the controls just sit lower.
+static func portrait_board_height(screen_h: float, board_w: float) -> float:
+	return clampf(screen_h - PORTRAIT_PANEL_RESERVE, board_w * PORTRAIT_BOARD_ASPECT, board_w * PORTRAIT_BOARD_MAX_ASPECT)
 
 
 func _portrait_zoom(width: float, height: float) -> float:

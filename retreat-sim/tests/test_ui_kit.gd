@@ -218,3 +218,11 @@ func test_the_gallery_screen_builds_with_every_widget() -> void:
 	gallery.back.emit()
 	check(backs[0] == 1, "it can ask its host to go back")
 	gallery.queue_free()
+
+
+func test_a_tall_phone_gives_the_extra_height_to_the_board() -> void:
+	var w := 512.0
+	check(InitiativeView.portrait_board_height(960.0, w) == maxf(960.0 - InitiativeView.PORTRAIT_PANEL_RESERVE, w * InitiativeView.PORTRAIT_BOARD_ASPECT), "a 540x960 screen keeps the board near its old size")
+	check(InitiativeView.portrait_board_height(1200.0, w) > InitiativeView.portrait_board_height(960.0, w), "a taller screen makes the board taller")
+	check(InitiativeView.portrait_board_height(3000.0, w) == w * InitiativeView.PORTRAIT_BOARD_MAX_ASPECT, "but never beyond the maximum")
+	check(InitiativeView.portrait_board_height(500.0, w) == w * InitiativeView.PORTRAIT_BOARD_ASPECT, "and never below the minimum")
