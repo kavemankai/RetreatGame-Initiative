@@ -151,6 +151,7 @@ func _fill(box: Container, buttons: Array, expand: bool) -> void:
 	for b: Dictionary in buttons:
 		var btn := Button.new()
 		btn.text = b["text"]
+		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long label wraps instead of widening the whole page past the screen
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.custom_minimum_size = Vector2(0, BUTTON_HEIGHT_PORTRAIT if _portrait else 44)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
