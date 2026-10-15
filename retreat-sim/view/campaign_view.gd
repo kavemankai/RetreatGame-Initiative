@@ -32,7 +32,6 @@ var _text: RichTextLabel
 var _buttons: GridContainer
 var _footer: VBoxContainer
 var _sound: SoundBoard
-var _brief: Dictionary = {}  # title, body, mission of the briefing on screen
 var _portrait := false
 
 
@@ -180,7 +179,7 @@ func _next() -> void:
 
 
 ## A pending step that is a built screen rather than a text page. Returns true if it was shown. A level-up
-## step with nothing left to spend (already chosen before a quit) is skipped.
+## step with nothing left to spend (already chosen before a quit), or a salvage step with nothing in it, is skipped.
 func _step_screen(c: Campaign, step: Dictionary) -> bool:
 	match step["t"]:
 		"levelup":
@@ -190,6 +189,21 @@ func _step_screen(c: Campaign, step: Dictionary) -> bool:
 			var screen := LevelUpScreen.new().setup(c, slot)
 			screen.chosen.connect(_save)
 			_host(screen, _advance)
+			return true
+		"result":
+			var won: bool = bool(step["o"]["success"]) and not bool(step["withdrawn"])
+			_sound.play("stinger_win" if won else "stinger_loss")
+			_host(ResultScreen.new().setup(c, step), _advance)
+			return true
+		"salvage":
+			if (step["loot"] as Array).is_empty():
+				return false
+			_sound.play("sfx_loot", 1.2)
+			var salvage := SalvageScreen.new().setup(c, step["loot"])
+			salvage.equip_now.connect(func() -> void:
+				_unhost()
+				_loadout(_advance))
+			_host(salvage, _advance)
 			return true
 	return false
 
@@ -209,7 +223,6 @@ func _continue_button(text: String = "Continue") -> Array:
 
 func _page_for(c: Campaign, d: Dictionary) -> Dictionary:
 	match d["t"]:
-		"result": return _result_page(c, d)
 		"roll": return _roll_page(c, d)
 		"roll_after": return _roll_after_page(c, d)
 		"debrief": return _debrief_page(c, d)
@@ -356,6 +369,7 @@ func _map_screen() -> void:
 	var screen := OverworldScreen.new().setup(c)
 	screen.brief.connect(func() -> void:
 		_unhost()
+		_picked.clear()
 		_briefing())
 	screen.open_roster.connect(func() -> void:
 		_unhost()
@@ -369,7 +383,9 @@ func _map_screen() -> void:
 	_host(screen, _map_screen)
 
 
-func _briefing() -> void:
+## The mission prep screen for the mission (or card) to brief. `keep_squad` returns to it from the loadout or
+## roster with the squad chosen so far.
+func _briefing(keep_squad := false) -> void:
 	_music_for_current()
 	var c := Session.campaign
 	if c == null:
@@ -385,11 +401,19 @@ func _briefing() -> void:
 	var m := c.mission_or_card(_mission_id)
 	var is_card := c.card(_mission_id).size() > 0
 	var scene_id: String = ("card_" + _mission_id) if is_card else m["scenes"]["briefing"]
-	var title := ("Contingency: %s" % m["name"]) if is_card else ("Act %d: %s" % [m["act"], m["name"]])
-	var body := "[i]%s[/i]\n\n[b]Objective[/b]: %s\n\n%s" % [m.get("summary", ""), m["objective"]["text"], _scene_bbcode(scene_id)]
-	_default_squad(c, m)
-	_brief = {"title": title, "mission": m}
-	_show(title, body, [{"text": "Choose squad", "call": _squad_choice}, {"text": "Roster", "call": _roster_screen}, {"text": "Map", "call": _map_screen}], _resources(c))
+	var screen := MissionPrepScreen.new().setup(c, _mission_id, "[i]%s[/i]
+
+%s" % [m.get("summary", ""), _scene_bbcode(scene_id)], _picked if keep_squad else [])
+	screen.deploy.connect(func(slots: Array) -> void:
+		_picked.assign(slots)
+		_deploy())
+	screen.loadout.connect(func() -> void:
+		_picked = screen.picked()
+		_loadout(_briefing.bind(true)))
+	screen.roster.connect(func() -> void:
+		_picked = screen.picked()
+		_roster_screen(_briefing.bind(true)))
+	_host(screen, _map_screen)
 
 
 ## A contingency card is offered once per act, after its second story mission;
@@ -406,40 +430,6 @@ func _mission_to_brief(c: Campaign) -> String:
 		if c.offered_card != "":
 			return c.offered_card
 	return c.current
-
-
-## How many the squad takes: the mission's size, or everyone left if fewer.
-func _squad_need(c: Campaign, m: Dictionary) -> int:
-	return mini(int(m["squad_size"]), c.available_slots().size())
-
-
-func _default_squad(c: Campaign, m: Dictionary) -> void:
-	_picked.clear()
-	var named: Array[int] = []
-	var hollow: Array[int] = []
-	for slot in c.available_slots():
-		(named if c.slot_status(slot) == "named" else hollow).append(slot)
-	for slot in named + hollow:
-		if _picked.size() < _squad_need(c, m):
-			_picked.append(slot)
-
-
-func _squad_choice() -> void:
-	var c := Session.campaign
-	var m: Dictionary = _brief["mission"]
-	var need := _squad_need(c, m)
-	var grid: Array = []
-	for slot in c.available_slots():
-		grid.append({"text": ("* " if _picked.has(slot) else "") + _slot_label(c, slot), "toggle": true, "pressed": _picked.has(slot), "call": _toggle_slot.bind(slot)})
-	var short := ""
-	if need < int(m["squad_size"]):
-		short = "\n\n[i]Only %d of you are left to send. The net reports the squad below strength; nobody is left to read the error.[/i]" % need
-	var body := "[b]%s[/b]\n\n%s\n\nChoose [b]%d[/b] for the squad. Hollows fight at 60%% of the soldier they replace and never lose their nerve.%s" % [_brief["title"], m["objective"]["text"], need, short]
-	_show("Squad", body, grid, _resources(c), 2, [
-		{"text": "Deploy (%d/%d)" % [_picked.size(), need], "disabled": _picked.size() != need or need == 0, "call": _deploy},
-		{"text": "Loadout (%d in the stash)" % c.stash.size(), "call": _loadout},
-		{"text": "Back to briefing", "call": _briefing},
-	])
 
 
 # --- roster ----------------------------------------------------------------------------------
@@ -465,25 +455,7 @@ func _loadout(return_to: Callable = Callable()) -> void:
 	screen.changed.connect(func() -> void:
 		_sound.play("sfx_equip")
 		_save())
-	_host(screen, return_to if return_to.is_valid() else Callable(self, "_squad_choice"))
-
-
-func _toggle_slot(slot: int) -> void:
-	var need := _squad_need(Session.campaign, _brief["mission"])
-	if _picked.has(slot):
-		_picked.erase(slot)
-	elif _picked.size() < need:
-		_picked.append(slot)
-	_squad_choice()
-
-
-func _slot_label(c: Campaign, slot: int) -> String:
-	if c.slot_status(slot) == "hollow":
-		return "%s   (hollow)" % Campaign.designation(slot)
-	for m: Dictionary in _story["cast"]["mercs"]:
-		if int(m["slot"]) == slot:
-			return m["callsign"]
-	return "slot %d" % slot
+	_host(screen, return_to if return_to.is_valid() else Callable(self, "_briefing"))
 
 
 func _deploy() -> void:
@@ -516,37 +488,6 @@ func _apply_outcome() -> void:
 	c.pending = c.debrief_chain(id, o, report, before, withdrawn)
 	_save()
 	_next()
-
-
-func _result_page(c: Campaign, d: Dictionary) -> Dictionary:
-	var o: Dictionary = d["o"]
-	var report: Dictionary = d["report"]
-	var before: Dictionary = d["before"]
-	var m := c.mission_or_card(d["id"])
-	var verdict := "Withdrawn" if d["withdrawn"] else ("Complete" if o["success"] else "Failed")
-	if o["squad_wiped"]:
-		verdict = "The squad is lost"
-	var lines: Array[String] = []
-	lines.append("[b]%s[/b]" % verdict)
-	lines.append("Procession %d (%+d)   Reserves %d (%+d)" % [c.procession, c.procession - int(before["procession"]), c.reserves, c.reserves - int(before["reserves"])])
-	for slot in report["hollowed"]:
-		lines.append("%s is dead. [color=%s]%s[/color] stands in the slot. One reserve spent." % [_callsign(int(slot)), COL_HOLLOW, Campaign.designation(int(slot))])
-	for slot in report["refilled"]:
-		lines.append("[color=%s]%s[/color] is replaced. One reserve spent." % [COL_HOLLOW, Campaign.designation(int(slot))])
-	for slot in report["vacant"]:
-		lines.append("%s is dead. Slot %02d stays empty; there is nothing left to send." % [_callsign(int(slot)), int(slot)])
-	_sound.play("stinger_win" if o["success"] and not d["withdrawn"] else "stinger_loss")
-	if not (report.get("loot", []) as Array).is_empty():
-		_sound.play("sfx_loot", 1.2)
-		var names: Array[String] = []
-		for id in report["loot"]:
-			names.append(String(c.item(id).get("name", id)))
-		lines.append("[b]Salvage[/b]: %s. Equip it from the squad screen." % ", ".join(names))
-	for wid in o["writ_dead"]:
-		lines.append("[color=%s]The Writ[/color]: %s falls. The Bureau fills the slot with a hollow." % [COL_ORRICK, _speaker_name(wid)])
-	if o["squad_wiped"]:
-		lines.append("\n[i]No one is left to read the names.[/i]")
-	return {"title": m.get("name", "Mission"), "bbcode": "\n\n".join(lines), "status": _resources(c), "buttons": _continue_button()}
 
 
 func _roll_page(c: Campaign, d: Dictionary) -> Dictionary:
@@ -707,7 +648,7 @@ func _run_demo(name: String) -> void:
 			_map_screen()
 		"squad":
 			_start_new()
-			_squad_choice()
+			_briefing()
 		"kit":
 			_start_new()
 			Session.campaign.stash.append_array(["carbine", "marksman_rifle", "marksman_rifle", "plate_carrier", "scope"])
@@ -724,6 +665,12 @@ func _run_demo(name: String) -> void:
 			Session.campaign.stash.append_array(["assault_rifle", "scope", "mourning_cloak", "padded_jacket"])
 			_loadout()
 			(_hosted as LoadoutScreen).open_merc(1)
+		"result":
+			_start_new()
+			_fake_outcome("karsa_breakout", {"success": true, "dead_slots": [5], "writ_dead": [], "squad_wiped": false, "units": [
+				{"slot": 1, "alive": true, "shots": 9, "hits": 6, "kills": 2, "hits_taken": 1, "steps": 12},
+				{"slot": 3, "alive": true, "shots": 4, "hits": 3, "kills": 1, "hits_taken": 0, "steps": 6},
+				{"slot": 5, "alive": false, "shots": 2, "hits": 1, "kills": 0, "hits_taken": 3, "steps": 2}]})
 		"debrief":
 			_start_new()
 			_fake_outcome("karsa_breakout", {"success": true, "dead_slots": [5], "writ_dead": [], "squad_wiped": false})

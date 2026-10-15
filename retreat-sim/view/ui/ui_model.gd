@@ -120,3 +120,129 @@ static func map_sheet(c: Campaign, hit: Dictionary) -> Dictionary:
 	if state == "done":
 		lines.append("Done.")
 	return {"title": m["name"], "lines": lines, "action": "brief" if state == "current" else ""}
+
+
+## A merc's callsign by slot even if they have since fallen (merc_name shows the hollow's designation).
+static func callsign(c: Campaign, slot: int) -> String:
+	for m: Dictionary in c.story["cast"]["mercs"]:
+		if int(m["slot"]) == slot:
+			return String(m["callsign"])
+	return "Slot %02d" % slot
+
+
+## The default squad: named mercs first, then hollows, up to `need`.
+static func default_squad(c: Campaign, need: int) -> Array[int]:
+	var picked: Array[int] = []
+	var hollow: Array[int] = []
+	for slot in c.available_slots():
+		if c.slot_status(slot) == "named":
+			if picked.size() < need:
+				picked.append(slot)
+		else:
+			hollow.append(slot)
+	for slot in hollow:
+		if picked.size() < need:
+			picked.append(slot)
+	return picked
+
+
+## How many the squad takes: the mission's size, or everyone left if fewer.
+static func squad_need(c: Campaign, m: Dictionary) -> int:
+	return mini(int(m["squad_size"]), c.available_slots().size())
+
+
+## Plain warnings about a squad before it deploys. Hollows carry no kit, so they are never warned about.
+## A missing weapon is a real problem; a missing armour or mod is only worth a mention.
+static func readiness(c: Campaign, picked: Array, need: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if picked.size() != need:
+		out.append({"level": "block", "text": "Choose %d for the squad (%d chosen)." % [need, picked.size()]})
+	for slot in picked:
+		if c.slot_status(int(slot)) != "named":
+			continue
+		var gear := c.gear_of(int(slot))
+		var who := callsign(c, int(slot))
+		if String(gear["weapon"]) == "":
+			out.append({"level": "warn", "text": "%s has no weapon." % who})
+		if String(gear["armour"]) == "":
+			out.append({"level": "note", "text": "%s has no armour." % who})
+		if String(gear["mod"]) == "":
+			out.append({"level": "note", "text": "%s has no mod." % who})
+	return out
+
+
+## "Procession +0, Reserves -2" for a mission's on_success or on_failure.
+static func stakes_text(delta: Dictionary) -> String:
+	return "Procession %s, Reserves %s" % [UiTheme.delta_text(int(delta["procession"])), UiTheme.delta_text(int(delta["reserves"]))]
+
+
+## What the mission prep screen shows for a mission or card, from the data alone: place, objective, the
+## stakes of winning and losing, reward names, the enemy tiers the briefing names, and whether Orrick is there.
+static func prep_info(c: Campaign, mission_id: String) -> Dictionary:
+	var m := c.mission_or_card(mission_id)
+	var is_card := not c.card(mission_id).is_empty()
+	var rewards: Array[String] = []
+	for id in m.get("rewards", []):
+		rewards.append(String(c.item(String(id)).get("name", id)))
+	var enemies: Array[String] = []
+	var enemy_def: Dictionary = m.get("enemies", {})
+	var roster: Dictionary = enemy_def.get("roster", {})
+	for tier in roster:
+		enemies.append("%d %s" % [int(roster[tier]), tier])
+	var writ_count := (enemy_def.get("writ", []) as Array).size()
+	if writ_count > 0:
+		enemies.append("%d Writ officer%s" % [writ_count, "" if writ_count == 1 else "s"])
+	return {"id": mission_id, "is_card": is_card, "name": String(m["name"]), "act": int(m.get("act", 0)), "place": String(m.get("place", "")),
+		"objective": String(m["objective"]["text"]), "squad_size": int(m["squad_size"]),
+		"on_success": stakes_text(m["on_success"]), "on_failure": stakes_text(m["on_failure"]),
+		"rewards": rewards, "enemies": enemies, "orrick": bool(m.get("orrick_present", false))}
+
+
+## The result screen's data for a "result" debrief step: verdict, resource changes, notes about the dead
+## and the Writ, one row per fielded merc (outcome, shots, hits, kills, XP earned) and the salvage ids.
+static func result_info(c: Campaign, step: Dictionary) -> Dictionary:
+	var o: Dictionary = step["o"]
+	var report: Dictionary = step["report"]
+	var before: Dictionary = step["before"]
+	var m := c.mission_or_card(String(step["id"]))
+	var verdict := "Withdrawn" if step["withdrawn"] else ("Complete" if o["success"] else "Failed")
+	if o["squad_wiped"]:
+		verdict = "The squad is lost"
+	var notes: Array[String] = []
+	for slot in report["hollowed"]:
+		notes.append("%s is dead. %s stands in the slot. One reserve spent." % [callsign(c, int(slot)), Campaign.designation(int(slot))])
+	for slot in report["refilled"]:
+		notes.append("%s is replaced. One reserve spent." % Campaign.designation(int(slot)))
+	for slot in report["vacant"]:
+		notes.append("%s is dead. Slot %02d stays empty; there is nothing left to send." % [callsign(c, int(slot)), int(slot)])
+	for wid in o["writ_dead"]:
+		notes.append("The Writ: %s falls. The Bureau fills the slot with a hollow." % writ_name(c, String(wid)))
+	var paid := {}
+	for x: Dictionary in report.get("xp", []):
+		paid[int(x["slot"])] = x
+	var squad: Array[Dictionary] = []
+	for row: Dictionary in o.get("units", []):
+		var slot := int(row["slot"])
+		var outcome := "Fell" if not bool(row["alive"]) else ("Unhurt" if int(row["hits_taken"]) == 0 else "Hit %d time%s" % [int(row["hits_taken"]), "" if int(row["hits_taken"]) == 1 else "s"])
+		var entry := {"slot": slot, "name": callsign(c, slot) if c.slot_status(slot) == "named" or not bool(row["alive"]) else Campaign.designation(slot), "outcome": outcome, "alive": bool(row["alive"]),
+			"shots": int(row["shots"]), "hits": int(row["hits"]), "kills": int(row["kills"]), "xp_gained": 0}
+		if paid.has(slot):
+			entry["xp_gained"] = int(paid[slot]["gained"])
+			entry["level"] = int(paid[slot]["level_after"])
+			entry["leveled"] = int(paid[slot]["level_after"]) > int(paid[slot]["level_before"])
+			entry["xp"] = int(paid[slot]["xp"])
+			entry["xp_floor"] = c.xp_for_level(int(paid[slot]["level_after"]))
+			entry["xp_next"] = c.xp_for_level(mini(int(paid[slot]["level_after"]) + 1, c.max_level()))
+		squad.append(entry)
+	return {"title": String(m.get("name", "Mission")), "verdict": verdict, "won": bool(o["success"]) and not bool(step["withdrawn"]) and not bool(o["squad_wiped"]),
+		"deltas": [
+			{"label": "Procession", "before": int(before["procession"]), "after": c.procession},
+			{"label": "Reserves", "before": int(before["reserves"]), "after": c.reserves}],
+		"notes": notes, "squad": squad, "loot": (report.get("loot", []) as Array).duplicate()}
+
+
+static func writ_name(c: Campaign, id: String) -> String:
+	for o: Dictionary in c.story["writ"]["officers"]:
+		if o["id"] == id:
+			return String(o["callsign"])
+	return id

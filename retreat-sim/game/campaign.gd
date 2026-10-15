@@ -606,13 +606,15 @@ func complete_mission(mission_id: String, success: bool, dead_slots: Array, writ
 	return report
 
 
-## The debrief queue for a finished mission, in order: the result, a level-up screen for each merc with
+## The debrief queue for a finished mission, in order: the result, the salvage (if any), a level-up screen for each merc with
 ## picks waiting, a roll call for each fallen named merc, then (for a story mission) the debrief and
 ## Orrick. A campaign that has ended gets only the result. These steps are saved in `pending`.
 func debrief_chain(mission_id: String, outcome: Dictionary, report: Dictionary, before: Dictionary, withdrawn: bool) -> Array:
 	var steps: Array = [{"t": "result", "id": mission_id, "o": outcome, "report": report, "before": before, "withdrawn": withdrawn}]
 	if over:
 		return steps
+	if not (report.get("loot", []) as Array).is_empty():
+		steps.append({"t": "salvage", "loot": (report["loot"] as Array).duplicate()})
 	var leveling: Array[int] = []
 	for paid: Dictionary in report.get("xp", []):
 		if levelup_pending(int(paid["slot"])) > 0 and not leveling.has(int(paid["slot"])):

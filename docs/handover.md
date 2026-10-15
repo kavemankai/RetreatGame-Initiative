@@ -1,5 +1,12 @@
 # Handover log
 
+## 2026-10-15: R4 Phase F done (pre and post combat); R1 to R4 complete
+- Pre-combat: `MissionPrepScreen` replaces the briefing text page and the squad page. One scroll: place, briefing scene, objective, win and loss stakes, reward names, known opposition, Orrick flag, a `MercCard` per merc to tap in or out of the squad, readiness notes, Deploy (disabled until the count is right), Loadout, Roster, Back. Pure helpers in `UiModel`: `prep_info`, `readiness` (block / warn for no weapon / note for no armour or mod; hollows exempt), `default_squad`, `squad_need`. The chosen squad is kept across Loadout and Roster.
+- Post-combat: `debrief_chain` is now result, salvage (only if something came back), level-ups, roll calls, debrief, Orrick. `ResultScreen` (verdict, before/after resources, the dead and the Writ, a report row per merc with outcome, shots, hits, kills, XP and bar; `UiModel.result_info`) and `SalvageScreen` (an `ItemCard` per find, Equip now opens the loadout, To stash continues). `campaign_view._step_screen` hosts them and plays the stingers and loot sound. Resource changes are shown as before / after / change, not animated.
+- Removed: the text squad page, `_toggle_slot`, `_default_squad`, `_result_page` in `campaign_view`.
+- **Tests:** 548 tests, 2871 checks, 0 failed (`tests/test_prep_and_report.gd`). 8 mutations all caught. Soak: 60 battles, 0 frozen, 0 invariant problems, 0 illegal actions. Prep and result screens checked on screen at 540x960 (`--demo=briefing`, `--demo=result`).
+- **Left for the owner:** no APK was built (instructed); CC0 muzzle-flash packs and the SpriteCook/PixelLab trials were not downloaded or used (need approval). Not done from the original plan: a separate Stash nav button on the map (the Loadout hub has Stash), landscape/360 px screenshots, and the `docs/MECHANICS_SPEC.md` tick-era growth and stress lines.
+
 ## 2026-10-15: R4 Phase E done (overworld map)
 - Data: `data/story/map.json` (normalised node position per mission, act bands, a card anchor per act), linted in `StoryLint._lint_map` (every mission has a node, nodes in 0..1 and not stacked, every act has a card anchor).
 - `Campaign.route_state()` is pure: each story stop is done / current / next / far, and drawn cards are offered / done. `UiModel.map_sheet` gives the bottom-sheet text; a stop beyond the next is "Unknown ground" and names nothing.
