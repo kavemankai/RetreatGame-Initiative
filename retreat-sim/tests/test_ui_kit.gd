@@ -226,3 +226,9 @@ func test_a_tall_phone_gives_the_extra_height_to_the_board() -> void:
 	check(InitiativeView.portrait_board_height(1200.0, w) > InitiativeView.portrait_board_height(960.0, w), "a taller screen makes the board taller")
 	check(InitiativeView.portrait_board_height(3000.0, w) == w * InitiativeView.PORTRAIT_BOARD_MAX_ASPECT, "but never beyond the maximum")
 	check(InitiativeView.portrait_board_height(500.0, w) == w * InitiativeView.PORTRAIT_BOARD_ASPECT, "and never below the minimum")
+
+
+func test_the_shot_mark_shows_cover_and_the_lowered_chance() -> void:
+	check(UiModel.shot_mark({"result": "hit", "chance": 66, "damage": 1, "cost": 4}) == "66% | 1 dmg | 4 AP", "an open shot")
+	check(UiModel.shot_mark({"result": "hit", "chance": 36, "damage": 1, "cost": 4, "cover": true}) == "36% COVER | 1 dmg | 4 AP", "a covered shot shows its lower chance and COVER")
+	check(UiModel.shot_mark({"result": "hit", "chance": 30, "damage": 2, "cost": 5, "burst": 3, "cover": true}).begins_with("x3 30% COVER"), "burst and cover together")

@@ -166,3 +166,25 @@ func test_a_miss_tracer_flies_past_the_target_and_stays() -> void:
 	board.show_frame(s, miss, none)
 	check(not board._pose.has(2), "a missed target does not flinch")
 	board.free()
+
+
+func test_cover_really_lowers_the_hit_rate_over_many_rolls() -> void:
+	var open := duel_at(3)
+	var covered := duel_at(3)
+	covered.grid.set_edge(Vector2i(4, 5), Vector2i(5, 5), SimConst.EDGE_HALF)
+	var open_hits := 0
+	var covered_hits := 0
+	for sd in 300:
+		for pair in [[open, 0], [covered, 1]]:
+			var s: SimState = pair[0]
+			s.seed = sd
+			s.units[2].hp = 50
+			s.units[2].alive = true
+			var ev := ShotResolver.fire(s, s.units[1], 2, 1, 1, false)
+			if ev[0]["result"] == "hit":
+				if pair[1] == 0:
+					open_hits += 1
+				else:
+					covered_hits += 1
+	check(open_hits > covered_hits + 300 * 20 / 100, "open %d/300 hits vs covered %d/300: cover costs about 30 points" % [open_hits, covered_hits])
+	check(covered_hits > 0, "but a shot into cover still lands sometimes")

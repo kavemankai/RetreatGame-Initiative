@@ -660,10 +660,7 @@ func _shot_mark(state: SimState) -> String:
 	if target == null:
 		return ""
 	var pv := _im.shot_preview(_sel, target.id)
-	if pv["result"] == "hit":
-		var tag := ("x%d " % int(pv["burst"])) if pv.has("burst") else ("blast " if pv.get("area", false) else "")
-		return "%s%d%% | %d dmg | %d AP" % [tag, pv["chance"], pv["damage"], pv["cost"]]
-	return "COVER | %d AP" % int(pv.get("cost", 0))
+	return UiModel.shot_mark(pv)
 
 
 ## The route to the pending tile: blue where safe, red on steps where a visible enemy would

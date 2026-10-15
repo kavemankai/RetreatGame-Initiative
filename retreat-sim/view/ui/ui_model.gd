@@ -248,3 +248,12 @@ static func writ_name(c: Campaign, id: String) -> String:
 		if o["id"] == id:
 			return String(o["callsign"])
 	return id
+
+
+## The text on a targeted tile: "49% COVER | 1 dmg | 4 AP", with "x3" for a burst and "blast" for an area shot.
+static func shot_mark(pv: Dictionary) -> String:
+	if pv["result"] != "hit":
+		return "%s | %d AP" % [String(pv.get("reason", "no shot")).replace("_", " "), int(pv.get("cost", 0))]
+	var tag := ("x%d " % int(pv["burst"])) if pv.has("burst") else ("blast " if pv.get("area", false) else "")
+	var cover := " COVER" if pv.get("cover", false) else ""
+	return "%s%d%%%s | %d dmg | %d AP" % [tag, pv["chance"], cover, pv["damage"], pv["cost"]]
