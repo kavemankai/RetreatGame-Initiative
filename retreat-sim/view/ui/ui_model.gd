@@ -47,7 +47,7 @@ static func item_info(c: Campaign, item_id: String, count := 1, slot := -1, kind
 		deltas = c.equip_deltas(slot, kind, item_id)
 	return {"id": item_id, "name": String(def.get("name", item_id)), "slot": String(def.get("slot", "")), "class": String(def.get("class", "")), "tier": int(def.get("tier", 1)),
 		"summary": c.item_summary(item_id), "note": String(def.get("note", "")), "count": count, "deltas": deltas,
-		"icon_path": ICON_DIR + item_id + ".png", "selected": selected}
+		"icon_path": ArtSkin.icon_path(item_id), "selected": selected}
 
 
 static func resources_info(c: Campaign) -> Dictionary:

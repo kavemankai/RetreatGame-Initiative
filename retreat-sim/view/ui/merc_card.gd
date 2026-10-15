@@ -79,14 +79,14 @@ func setup(info: Dictionary) -> MercCard:
 		child.queue_free()
 	for kind in Campaign.GEAR_SLOTS:
 		var id := String(info["gear"].get(kind, ""))
-		var glyph := SlotGlyph.new().setup(kind, id != "", UiModel.ICON_DIR + id + ".png" if id != "" else "", String(info.get("class", "")) if kind == "weapon" else "")
+		var glyph := SlotGlyph.new().setup(kind, id != "", ArtSkin.icon_path(id) if id != "" else "", String(info.get("class", "")) if kind == "weapon" else "")
 		glyph.tooltip_text = String(info["gear_names"].get(kind, "empty"))
 		_glyphs.add_child(glyph)
 	_xp.visible = info.has("xp") and info.has("xp_next")
 	if _xp.visible:
 		_xp.max_value = maxf(1.0, float(info["xp_next"]))
 		_xp.value = float(info["xp"])
-	var path := SPRITE_DIR + String(info["sprite_key"]) + "_idle0.png"
+	var path := ArtSkin.merc_dir() + String(info["sprite_key"]) + "_idle0.png"
 	_sprite.texture = load(path) as Texture2D if ResourceLoader.exists(path) else null
 	add_theme_stylebox_override("panel", UiTheme.panel(UiTheme.COL_PANEL_HI if bool(info.get("selected", false)) else UiTheme.COL_PANEL, UiTheme.COL_AMBER if bool(info.get("selected", false)) else Color.TRANSPARENT, 2))
 	UiTheme.ignore_mouse_inside(self)

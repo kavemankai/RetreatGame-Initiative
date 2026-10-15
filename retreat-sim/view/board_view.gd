@@ -316,7 +316,7 @@ func _facing_of(u: SimUnit) -> String:
 static func _merc_texture(key: String, frame: String) -> Texture2D:
 	var cache_key := "%s_%s" % [key, frame]
 	if not _merc_cache.has(cache_key):
-		var path := "%s%s.png" % [MERC_DIR, cache_key]
+		var path := "%s%s.png" % [ArtSkin.merc_dir(), cache_key]
 		_merc_cache[cache_key] = load(path) if ResourceLoader.exists(path) else null
 	return _merc_cache[cache_key]
 

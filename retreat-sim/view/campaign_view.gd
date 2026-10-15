@@ -253,6 +253,8 @@ func _menu(status: String = "") -> void:
 		buttons.append({"text": "Act 1 level test", "call": _level_test_menu})
 		buttons.append({"text": "Sandbox (set stats, gear, enemies)", "call": _open_sandbox})
 	buttons.append({"text": "Sound: %s" % ("off" if _sound.settings.muted else "on"), "call": _toggle_sound})
+	if ArtSkin.ja2_available():
+		buttons.append({"text": ArtSkin.label() + " (tap to switch)", "call": _toggle_skin})
 	_show(_story["world"]["title"], "[i]%s[/i]\n\nYou command the 9th Rearguard, the last real people in a ghost army, escorting 6,200 civilians along the Reliquary Lanes toward a refuge that may not let you in.\n\nBehind you comes a courteous man who only wants you to be counted." % tagline, buttons, status)
 
 
@@ -302,6 +304,11 @@ func _start_level_test(id: String) -> void:
 	Session.level_test = true
 	Session.current_match = MissionBuilder.build(c, id, slots)
 	get_tree().change_scene_to_file(PLAY_SCENE if Session.scene_ruleset_is_planned(ruleset) else INITIATIVE_SCENE)
+
+
+func _toggle_skin() -> void:
+	ArtSkin.set_ja2(not ArtSkin.ja2_active())
+	_menu()
 
 
 func _toggle_sound() -> void:

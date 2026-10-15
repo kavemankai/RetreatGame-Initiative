@@ -31,7 +31,9 @@ func _draw() -> void:
 	var w := size.x if size.x > 0.0 else custom_minimum_size.x
 	var h := size.y if size.y > 0.0 else custom_minimum_size.y
 	if _texture != null:
-		draw_texture_rect(_texture, Rect2(Vector2.ZERO, Vector2(w, h)), false)
+		var tex := _texture.get_size()
+		var drawn := tex * minf(w / tex.x, h / tex.y)  # keep the icon's proportions: a rifle is wider than tall
+		draw_texture_rect(_texture, Rect2((Vector2(w, h) - drawn) * 0.5, drawn), false)
 		return
 	var pad := w * 0.14
 	match kind:
