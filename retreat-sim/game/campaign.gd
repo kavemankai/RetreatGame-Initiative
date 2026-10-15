@@ -16,8 +16,15 @@ const PROVOST_ID := 100
 const WRIT_ID_BASE := 100     # + officer slot
 const HOLLOW_PREFIX := "hollow_"
 const FIRST_TIER_ID := 200    # conscript 200, regular 210, veteran 220; hollows +100
+## Difficulty: Standard is the designed fight. Story gives the squad one more hit point and takes
+## accuracy points off every enemy, so a casual player can reach the ending.
+const DIFFICULTIES := {
+	"standard": {"label": "Standard", "squad_hp": 0, "enemy_hit": 0},
+	"story": {"label": "Story", "squad_hp": 1, "enemy_hit": -15},
+}
 
 var story: Dictionary
+var difficulty := "standard"   # a key of DIFFICULTIES; saved with the campaign
 var procession := 0
 var reserves := 0
 var remembrance := 0
@@ -57,6 +64,20 @@ static func new_game(p_story: Dictionary) -> Campaign:
 	for o: Dictionary in p_story["writ"]["officers"]:
 		c._writ[o["id"]] = "named"
 	return c
+
+
+## Sets the difficulty; false (and no change) for an unknown level.
+func set_difficulty(level: String) -> bool:
+	if not DIFFICULTIES.has(level):
+		return false
+	difficulty = level
+	return true
+
+
+## The level after `level` in DIFFICULTIES order, wrapping round.
+static func next_difficulty(level: String) -> String:
+	var keys: Array = DIFFICULTIES.keys()
+	return keys[(keys.find(level) + 1) % keys.size()]
 
 
 ## A roster slot. Levelling fields: xp, level, picks (level-ups chosen), pending (level-ups earned and not
@@ -772,7 +793,7 @@ func to_dict() -> Dictionary:
 			"flags": flags.duplicate(), "completed": completed.duplicate(), "current": current,
 			"over": over, "over_reason": over_reason, "finished": finished, "ending": ending,
 			"roster": roster, "writ": writ, "drawn": _drawn.duplicate(), "pending": pending.duplicate(true),
-			"offered_card": offered_card, "stash": stash.duplicate(), "seed": campaign_seed}
+			"offered_card": offered_card, "stash": stash.duplicate(), "seed": campaign_seed, "difficulty": difficulty}
 
 
 ## Why a save cannot be loaded ("" = fine).
@@ -794,6 +815,8 @@ static func save_problem(d: Dictionary) -> String:
 			return "roster slot %s is malformed" % key
 		if slot.has("gear") and typeof(slot["gear"]) != TYPE_DICTIONARY:
 			return "roster slot %s has malformed gear" % key
+	if d.has("difficulty") and (typeof(d["difficulty"]) != TYPE_STRING or not DIFFICULTIES.has(d["difficulty"])):
+		return "unknown difficulty '%s'" % str(d["difficulty"])
 	if d.has("stash"):
 		if typeof(d["stash"]) != TYPE_ARRAY:
 			return "'stash' has the wrong type"
@@ -840,6 +863,7 @@ static func from_dict(d: Dictionary, p_story: Dictionary) -> Campaign:
 	c.pending = (d.get("pending", []) as Array).duplicate(true)
 	c.offered_card = d.get("offered_card", "")
 	c.campaign_seed = int(d.get("seed", c.campaign_seed))
+	c.difficulty = String(d.get("difficulty", "standard"))
 	for id in d.get("stash", []):
 		if not c.item(String(id)).is_empty():
 			c.stash.append(String(id))
@@ -956,6 +980,11 @@ func _unit(id: int, team: int, pos: Vector2i, stats: Dictionary, drone: bool) ->
 	u.morale = int(stats["morale"])
 	u.sight_range = int(stats["sight"])
 	u.is_drone = drone
+	var level: Dictionary = DIFFICULTIES[difficulty]
+	if team == 0:
+		u.hp += int(level["squad_hp"])
+	else:
+		u.hit_bonus += int(level["enemy_hit"])
 	return u
 
 

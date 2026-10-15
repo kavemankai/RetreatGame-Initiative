@@ -32,6 +32,8 @@ func _init() -> void:
 			opts["ap"] = int(a.substr(5))
 		elif a.begins_with("--mission="):
 			mission = a.substr(10)
+		elif a.begins_with("--difficulty="):
+			opts["difficulty"] = a.substr(13)
 		elif a.begins_with("--weapons="):
 			opts["weapons"] = a.substr(10).split(",")
 		elif a == "--verbose":

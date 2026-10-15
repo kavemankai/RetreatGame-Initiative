@@ -52,6 +52,7 @@ static func run_battle(story: Dictionary, seed_: int, keep_log := false, opts :=
 ## Plays an Act 1 mission (its map, goal, roles and reinforcements) the same way.
 static func run_mission(story: Dictionary, mission_id: String, seed_: int, keep_log := false, opts := {}) -> Dictionary:
 	var campaign := Campaign.new_game(story)
+	campaign.set_difficulty(String(opts.get("difficulty", "standard")))
 	var card: Dictionary = campaign.mission_or_card(mission_id)
 	var slots: Array = campaign.available_slots().slice(0, int(card["squad_size"]))
 	var built := MissionBuilder.build(campaign, mission_id, slots)
@@ -64,6 +65,7 @@ static func run_mission(story: Dictionary, mission_id: String, seed_: int, keep_
 ## Contingency cards are skipped. Returns {"campaign", "missions_played", "problems"}.
 static func run_campaign(story: Dictionary, seed_ := 0, max_missions := 12, opts := {}) -> Dictionary:
 	var c := Campaign.new_game(story)
+	c.set_difficulty(String(opts.get("difficulty", "standard")))
 	var problems: Array[String] = []
 	var played := 0
 	while played < max_missions and not c.over and not c.finished:

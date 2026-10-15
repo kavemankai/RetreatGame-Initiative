@@ -33,6 +33,7 @@ var _buttons: GridContainer
 var _footer: VBoxContainer
 var _sound: SoundBoard
 var _portrait := false
+var _new_difficulty := "standard"  # applied by "New campaign"; a loaded campaign keeps the level it was saved with
 
 
 func _ready() -> void:
@@ -242,7 +243,8 @@ func _menu(status: String = "") -> void:
 	var resumable := ResumeStore.peek()
 	if not resumable.is_empty():
 		buttons.append({"text": "Resume battle: %s" % resumable["label"], "call": _resume_battle})
-	buttons.append({"text": "New campaign", "call": _new_pressed})
+	buttons.append({"text": "New campaign (%s difficulty)" % Campaign.DIFFICULTIES[_new_difficulty]["label"], "call": _new_pressed})
+	buttons.append({"text": "Change difficulty for a new campaign", "call": _cycle_difficulty})
 	if FileAccess.file_exists(SAVE_PATH):
 		buttons.append({"text": "Continue campaign", "call": _load_campaign})
 	if not OS.has_feature("campaign_only"):  # the campaign build ships without the older test modes
@@ -316,9 +318,21 @@ func _new_pressed() -> void:
 	])
 
 
+const DIFFICULTY_NOTE := {
+	"standard": "Standard: the fight as designed.",
+	"story": "Story: your mercs have one more hit point and the enemy shoots less accurately. Same missions, same ending.",
+}
+
+
+func _cycle_difficulty() -> void:
+	_new_difficulty = Campaign.next_difficulty(_new_difficulty)
+	_menu(DIFFICULTY_NOTE[_new_difficulty])
+
+
 func _start_new() -> void:
 	Session.reset()
 	Session.campaign = Campaign.new_game(_story)
+	Session.campaign.set_difficulty(_new_difficulty)
 	_save()
 	_map_screen()
 
