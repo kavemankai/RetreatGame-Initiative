@@ -94,3 +94,29 @@ static func delta_line(d: Dictionary) -> String:
 	if d["stat"] == "trait":
 		return "trait: %s" % (d["to"] if d["to"] != "" else "none")
 	return "%s %s" % [DELTA_LABEL.get(d["stat"], d["stat"]), UiTheme.delta_text(int(d["delta"]))]
+
+
+## What the overworld's bottom sheet says about a tapped stop or card: {title, lines, action}.
+## `action` is "brief" only for the stop the convoy is at (or a card that is on offer). Stops beyond the next
+## are unknown ground: the sheet never names their objective or summary.
+static func map_sheet(c: Campaign, hit: Dictionary) -> Dictionary:
+	var id: String = hit["id"]
+	var route := c.route_state()
+	if hit["kind"] == "card":
+		var card := c.card(id)
+		var offered := false
+		for r: Dictionary in route["cards"]:
+			if r["id"] == id:
+				offered = r["state"] == "offered"
+		return {"title": "Contingency: %s" % card["name"], "lines": [String(card["objective"]["text"]), "Squad of %d. Optional; it is offered once and costs nothing to ignore for now." % int(card["squad_size"])], "action": "brief" if offered else ""}
+	var m := c.mission_or_card(id)
+	var state := ""
+	for n: Dictionary in route["nodes"]:
+		if n["id"] == id:
+			state = n["state"]
+	if state == "far":
+		return {"title": "Unknown ground", "lines": ["Act %d. The net has nothing on this stop yet." % int(m["act"])], "action": ""}
+	var lines: Array[String] = ["Act %d. %s" % [int(m["act"]), m["place"]], String(m.get("summary", "")), "Objective: %s" % m["objective"]["text"], "Squad of %d." % int(m["squad_size"])]
+	if state == "done":
+		lines.append("Done.")
+	return {"title": m["name"], "lines": lines, "action": "brief" if state == "current" else ""}

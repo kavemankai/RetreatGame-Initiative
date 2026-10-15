@@ -643,6 +643,31 @@ func next_missions() -> Array:
 	return (m["next"] as Array).duplicate() if not m.is_empty() else []
 
 
+## The route as the map shows it, in order: every story mission with its state ("done", "current",
+## "next" for the stop after the current one, "far" beyond that) and the contingency cards drawn so
+## far ("offered" while waiting to be played, "done" once played). Pure: reads the campaign only.
+func route_state() -> Dictionary:
+	var nodes: Array[Dictionary] = []
+	var after := ""
+	var upcoming := next_missions()
+	if not upcoming.is_empty():
+		after = String(upcoming[0])
+	for m: Dictionary in story["route"]["missions"]:
+		var id: String = m["id"]
+		var state := "far"
+		if completed.has(id):
+			state = "done"
+		elif id == current and not finished:
+			state = "current"
+		elif id == after:
+			state = "next"
+		nodes.append({"id": id, "act": int(m["act"]), "name": m["name"], "place": m["place"], "state": state})
+	var cards: Array[Dictionary] = []
+	for id in _drawn:
+		cards.append({"id": id, "act": int(card(id).get("act", 0)), "state": "done" if completed.has(id) else "offered"})
+	return {"nodes": nodes, "cards": cards}
+
+
 ## Cards drawn so far for an act.
 func drawn_for_act(act: int) -> Array:
 	return _drawn.filter(func(id: String) -> bool: return int(card(id).get("act", 0)) == act)

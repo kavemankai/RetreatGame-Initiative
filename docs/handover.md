@@ -1,5 +1,12 @@
 # Handover log
 
+## 2026-10-15: R4 Phase E done (overworld map)
+- Data: `data/story/map.json` (normalised node position per mission, act bands, a card anchor per act), linted in `StoryLint._lint_map` (every mission has a node, nodes in 0..1 and not stacked, every act has a card anchor).
+- `Campaign.route_state()` is pure: each story stop is done / current / next / far, and drawn cards are offered / done. `UiModel.map_sheet` gives the bottom-sheet text; a stop beyond the next is "Unknown ground" and names nothing.
+- `MapLayout` (pure positions and hit-testing), `MapCanvas` (code-drawn route: solid amber walked, dashed ahead, fog beyond, pulsing current stop, card diamonds; clean taps only), `OverworldScreen` (header ResourceBar, scrolling map, sheet with Brief at the current stop only, Roster / Loadout / Menu).
+- `campaign_view._map_screen()` is now the hub after a debrief, a new campaign and Continue; the old briefing page is reached with Brief and has a Map button. `--demo=map` shows it.
+- **Tests:** 538 tests, 2828 checks, 0 failed (`tests/test_overworld.gd`). Mutation-checked: next-stop state, Brief only at the current stop, fog on far stops, hit radius, tap slop. Verified on screen (540x960).
+
 ## 2026-10-15: R4 Phase D done (levelling)
 - Data: `data/story/progression.json` (XP table, levels 6/14/24/36, caps hp 6 / speed, aim, cqb, morale 10 / sight 9, three offers, class weights, use divisors), linted in `StoryLint._lint_progression`. Stress and injury are dropped.
 - `Campaign`: roster entries carry xp, level, picks, pending, hits, steps, hits_taken, kills, missions; `award_xp`/`apply_xp`, `levelup_offer` (class weight plus use bonus, seeded by campaign seed, picks and slot so a reload cannot reroll; capped stats and CQB past its threshold never offered), `choose_levelup`, `debrief_chain` (result, level-ups, roll calls, debrief, Orrick). Only living named mercs earn XP; hollows never level. Saves carry the seed and levelling fields.

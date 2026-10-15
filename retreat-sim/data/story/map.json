@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "height_screens": 3,
+  "nodes": {
+    "karsa_breakout": [0.30, 0.95],
+    "the_weir": [0.68, 0.88],
+    "pellam_dock": [0.35, 0.80],
+    "orchard_ring": [0.70, 0.72],
+    "quiet_wards": [0.30, 0.62],
+    "anselm": [0.66, 0.54],
+    "cinder_market": [0.32, 0.46],
+    "mirror_gate": [0.70, 0.38],
+    "reliquary_lane": [0.34, 0.30],
+    "long_corridor": [0.68, 0.22],
+    "tamsins_rest": [0.36, 0.14],
+    "vesper_threshold": [0.58, 0.05]
+  },
+  "act_bands": [
+    {"act": 1, "y0": 0.68, "y1": 1.0},
+    {"act": 2, "y0": 0.34, "y1": 0.68},
+    {"act": 3, "y0": 0.0, "y1": 0.34}
+  ],
+  "card_anchors": {
+    "1": [0.12, 0.84],
+    "2": [0.88, 0.50],
+    "3": [0.12, 0.18]
+  }
+}

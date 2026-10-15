@@ -2,7 +2,7 @@ class_name StoryData
 extends RefCounted
 ## Loads the story files (cast, writ, route, world, scenes, enemy_tiers, items, classes) from a directory.
 
-const FILES: Array[String] = ["cast", "writ", "route", "world", "scenes", "enemy_tiers", "items", "classes", "progression"]
+const FILES: Array[String] = ["cast", "writ", "route", "world", "scenes", "enemy_tiers", "items", "classes", "progression", "map"]
 
 
 ## Returns {"data": {cast, writ, route, world, scenes, enemy_tiers, items, classes}, "errors": Array[String]}.

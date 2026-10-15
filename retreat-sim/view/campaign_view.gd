@@ -176,7 +176,7 @@ func _next() -> void:
 			_show(p["title"], p["bbcode"], p["buttons"], p.get("status", ""))
 			return
 		c.pending.pop_front()  # a step with nothing to show
-	_briefing()
+	_map_screen()
 
 
 ## A pending step that is a built screen rather than a text page. Returns true if it was shown. A level-up
@@ -306,7 +306,7 @@ func _start_new() -> void:
 	Session.reset()
 	Session.campaign = Campaign.new_game(_story)
 	_save()
-	_briefing()
+	_map_screen()
 
 
 func _load_campaign() -> void:
@@ -344,6 +344,31 @@ func _music_for_current() -> void:
 		_sound.set_music(int(c.mission_or_card(c.current).get("act", 1)))
 
 
+# --- overworld -------------------------------------------------------------------------------
+
+## The hub between missions: the route map. A finished or lost campaign goes to its closing page instead.
+func _map_screen() -> void:
+	var c := Session.campaign
+	if c == null or c.over or c.finished:
+		_briefing()
+		return
+	_music_for_current()
+	var screen := OverworldScreen.new().setup(c)
+	screen.brief.connect(func() -> void:
+		_unhost()
+		_briefing())
+	screen.open_roster.connect(func() -> void:
+		_unhost()
+		_roster_screen(_map_screen))
+	screen.open_loadout.connect(func() -> void:
+		_unhost()
+		_loadout(_map_screen))
+	screen.open_menu.connect(func() -> void:
+		_unhost()
+		_menu())
+	_host(screen, _map_screen)
+
+
 func _briefing() -> void:
 	_music_for_current()
 	var c := Session.campaign
@@ -364,7 +389,7 @@ func _briefing() -> void:
 	var body := "[i]%s[/i]\n\n[b]Objective[/b]: %s\n\n%s" % [m.get("summary", ""), m["objective"]["text"], _scene_bbcode(scene_id)]
 	_default_squad(c, m)
 	_brief = {"title": title, "mission": m}
-	_show(title, body, [{"text": "Choose squad", "call": _squad_choice}, {"text": "Roster", "call": _roster_screen}], _resources(c))
+	_show(title, body, [{"text": "Choose squad", "call": _squad_choice}, {"text": "Roster", "call": _roster_screen}, {"text": "Map", "call": _map_screen}], _resources(c))
 
 
 ## A contingency card is offered once per act, after its second story mission;
@@ -674,6 +699,12 @@ func _run_demo(name: String) -> void:
 	match name:
 		"briefing":
 			_start_new()
+			_briefing()
+		"map":
+			_start_new()
+			for id in ["karsa_breakout", "the_weir"]:
+				Session.campaign.complete_mission(id, true, [], [], [])
+			_map_screen()
 		"squad":
 			_start_new()
 			_squad_choice()

@@ -40,6 +40,8 @@ static func lint(d: Dictionary) -> Array[String]:
 	_lint_items(errs, d)
 	if d.has("progression"):
 		_lint_progression(errs, d)
+	if d.has("map"):
+		_lint_map(errs, d, mission_ids)
 	return errs
 
 
@@ -248,6 +250,35 @@ static func _lint_progression(errs: Array[String], d: Dictionary) -> void:
 		for stat in stats:
 			if int(m["stats"][stat]) > int((p.get("caps", {}) as Dictionary).get(stat, 0)):
 				errs.append("progression: %s starts above the %s cap" % [m["id"], stat])
+
+
+static func _lint_map(errs: Array[String], d: Dictionary, mission_ids: Array) -> void:
+	var m: Dictionary = d["map"]
+	var nodes: Dictionary = m.get("nodes", {})
+	var seen := {}
+	for id in mission_ids:
+		if not nodes.has(id):
+			errs.append("map: mission %s has no node" % id)
+	for id in nodes:
+		var pos: Array = nodes[id]
+		if not mission_ids.has(id):
+			errs.append("map: node %s is not a mission" % id)
+		if pos.size() != 2 or float(pos[0]) < 0.0 or float(pos[0]) > 1.0 or float(pos[1]) < 0.0 or float(pos[1]) > 1.0:
+			errs.append("map: node %s must be [x, y] within 0..1" % id)
+			continue
+		var key := str(pos)
+		if seen.has(key):
+			errs.append("map: nodes %s and %s share a place" % [seen[key], id])
+		seen[key] = id
+	var acts := {}
+	for a: Dictionary in d["route"].get("acts", []):
+		acts[str(int(a["act"]))] = true
+	for key in acts:
+		if not (m.get("card_anchors", {}) as Dictionary).has(key):
+			errs.append("map: act %s has no card anchor" % key)
+	for band: Dictionary in m.get("act_bands", []):
+		if float(band["y0"]) >= float(band["y1"]):
+			errs.append("map: act band %s has no height" % band.get("act", "?"))
 
 
 static func _lint_tiers(errs: Array[String], tiers: Dictionary) -> void:
