@@ -1,5 +1,10 @@
 # The Long Retreat (RetreatGame-Initiative)
 
+> ## TAKING OVER THIS PROJECT? START HERE
+> **[`docs/TAKEOVER.md`](docs/TAKEOVER.md)** is the takeover package: where everything is, settled decisions, commands, gotchas, and the first-day checklist.
+> Then read **[`docs/JA2_COMBAT_PLAN.md`](docs/JA2_COMBAT_PLAN.md)** (what to build next: stances, aimed shots, grid inventory, ammo, wounds, pursuit sector map) and the top of **[`docs/handover.md`](docs/handover.md)** (current state).
+> Active branch: **`agent/complete-game`**. JA2 art and sound are local private placeholders and are not in this repo (`docs/LICENSE_AUDIT.md`).
+
 A portrait, phone-first squad tactics game: eight mercs, a 12-mission three-act campaign, initiative and action-point combat with cover and overwatch, permadeath with the Hollowing, four endings. Godot 4.6, GDScript. Private project, built to be shared with one person.
 
 - **Play:** `docs/PLAYING.md` (install, controls, saves)
