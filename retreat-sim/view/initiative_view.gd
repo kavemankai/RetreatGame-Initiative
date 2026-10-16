@@ -11,7 +11,9 @@ const SANDBOX_SCENE := "res://view/sandbox.tscn"
 const MENU_SCENE := "res://view/campaign.tscn"
 const MARGIN := 10
 const BEAT_SECONDS := 0.28
-const PORTRAIT_BOARD_ASPECT := 0.8
+const PORTRAIT_BOARD_ASPECT := 0.8  # the least board height / width on a phone
+const PORTRAIT_BOARD_MAX_ASPECT := 1.4  # the most: a tall phone gives the extra height to the board
+const PORTRAIT_PANEL_RESERVE := 530.0  # px kept for the controls under the board (title, order strip, units, help, End Activation)
 const TARGET_TILE_PX := 84.0
 const FONT_PORTRAIT := 18
 const FONT_LANDSCAPE := 16
@@ -19,6 +21,7 @@ const NO_TILE := Vector2i(-1, -1)
 const COL_NEUTRAL := Color("d8dee9")
 const COL_OK := Color("9be39b")
 const COL_BAD := Color("ff9a8a")
+const COL_COACH := Color("8fd0ff")
 const PATH_COLOR := Color("8fd0ff")
 const EXPOSED_COLOR := Color("ff7a6a")
 
@@ -30,6 +33,9 @@ var _route_note := ""
 var _queue: Array[Dictionary] = []  # beats still to play back
 var _busy := false
 var _overview := false
+var _activation := false      # the activation engine (ActivationMatch) rather than live-AP turns
+var _last_round := 0
+var _resumed := false          # this battle was restored from the autosave
 var _portrait := false
 
 var _board: BoardView
@@ -39,6 +45,7 @@ var _title: Label
 var _goal_label: Label
 var _banner: Label
 var _squad: BoxContainer
+var _strip: InitiativeStrip
 var _hint: Label
 var _msg: Label
 var _log: RichTextLabel
@@ -46,8 +53,12 @@ var _end_btn: Button
 var _watch_btn: Button
 var _map_btn: Button
 var _mute_btn: Button
+var _leave_btn: Button
+var _withdraw_armed := false   # a first tap on Withdraw, waiting for the confirming second tap
 var _sound: SoundBoard
 var _timer: Timer
+var _coach: Label                  # the first-mission tip (CoachModel); null when this fight is not coached
+var _coach_facts := {"moved": false, "enemy_in_sight": false, "previewed_shot": false, "shot": false, "ended": false, "watched": false, "over": false}
 
 
 func _ready() -> void:
@@ -56,20 +67,49 @@ func _ready() -> void:
 	if args.has("sandbox") and Session.current_match == null:
 		_demo_sandbox()
 	elif args.has("campaign") and Session.current_match == null:
-		_demo_campaign(String(args["campaign"]))
+		_demo_campaign(String(args["campaign"]), args.has("live"))
+	if args.has("ruleset"):
+		Session.ruleset = String(args["ruleset"])
+	if args.has("resume") and Session.current_match == null:
+		ResumeStore.enter_session(StoryData.load_dir("res://data/story")["data"])
 	if Session.current_match == null:
 		get_tree().change_scene_to_file("res://view/campaign.tscn")
 		return
-	_im = InitiativeMatch.from_match(Session.current_match)
-	_im.start()
+	_activation = Session.ruleset == "activation"
+	var opening: Array[Dictionary] = []
+	if _activation and Session.resume_cs != null:
+		var restored := ActivationMatch.new(Session.resume_cs)
+		Session.resume_cs = null
+		restored.resume()
+		_im = restored
+		_resumed = true
+		opening = restored.opening_beats
+	elif _activation:
+		var am := ActivationMatch.make(Session.current_match)
+		if Session.sandbox:
+			am.cs.config.max_ap = Sandbox.ap_of(Session.sandbox_cfg)
+		_im = am
+		_im.start()
+		opening = am.opening_beats
+	else:
+		_im = InitiativeMatch.from_match(Session.current_match)
+		_im.start()
 	_build_ui()
 	resized.connect(_apply_layout)
 	_apply_layout()
 	_board.set_level_theme(_im.theme)
 	_sound.set_ambient(_im.theme)
 	_sound.set_music(_act())
-	_log_line("[color=#ffd479]Turn 1: your move.[/color]")
+	if _resumed:
+		_log_line("[color=#ffd479]Battle resumed at round %d.[/color]" % _im.turn)
+	else:
+		_log_line("[color=#ffd479]%s[/color]" % ("Round 1." if _activation else "Turn 1: your move."))
+	_last_round = _im.turn
+	_select_active()
 	_refresh()
+	_autosave()
+	if not opening.is_empty():
+		_play(opening, true)
 	if args.has("do"):
 		_run_script(String(args["do"]))
 	if args.has("shot"):
@@ -85,14 +125,14 @@ func _parse_args() -> Dictionary:
 	return out
 
 
-func _demo_campaign(mission_id: String) -> void:
+func _demo_campaign(mission_id: String, live := false) -> void:
 	var story: Dictionary = StoryData.load_dir("res://data/story")["data"]
 	Session.reset()
 	Session.campaign = Campaign.new_game(story)
 	var m: Dictionary = Session.campaign.mission_or_card(mission_id)
 	var slots: Array = Session.campaign.available_slots().slice(0, int(m["squad_size"]))
 	Session.mission_id = mission_id
-	Session.level_test = true
+	Session.level_test = not live  # --live plays it as a real campaign mission (outcome goes to the campaign)
 	Session.current_match = MissionBuilder.build(Session.campaign, mission_id, slots)
 
 
@@ -146,7 +186,9 @@ func _build_ui() -> void:
 	top.add_child(_map_btn)
 	_mute_btn = _small_button("", _toggle_mute)
 	top.add_child(_mute_btn)
-	top.add_child(_small_button("Leave", _leave))
+	_leave_btn = _small_button("Withdraw" if _is_campaign_mission() else "Leave", _leave)
+	_leave_btn.custom_minimum_size = Vector2(88, 40)
+	top.add_child(_leave_btn)
 	_update_mute_label()
 
 	_goal_label = Label.new()
@@ -158,17 +200,25 @@ func _build_ui() -> void:
 	_banner.visible = false
 	_panel.add_child(_banner)
 
+	_strip = InitiativeStrip.new()
+	_strip.visible = false
+	_panel.add_child(_strip)
 	_squad = BoxContainer.new()
 	_panel.add_child(_squad)
 	var tools := HBoxContainer.new()
 	_panel.add_child(tools)
 	_watch_btn = Button.new()
-	_watch_btn.text = "Overwatch (all AP)"
+	_watch_btn.text = "Overwatch (%d AP)" % CombatConfig.load_file().overwatch_cost if _activation else "Overwatch (all AP)"
 	_watch_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_watch_btn.focus_mode = Control.FOCUS_NONE
 	_watch_btn.pressed.connect(_on_watch)
 	tools.add_child(_watch_btn)
 
+	if _activation and not _resumed and CoachModel.applies(Session.campaign, Session.mission_id, Session.level_test):
+		_coach = Label.new()
+		_coach.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_coach.add_theme_color_override("font_color", COL_COACH)
+		_panel.add_child(_coach)
 	_hint = Label.new()
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint.add_theme_color_override("font_color", COL_NEUTRAL)
@@ -183,7 +233,7 @@ func _build_ui() -> void:
 	_log.custom_minimum_size = Vector2(0, 60)
 	_panel.add_child(_log)
 	_end_btn = Button.new()
-	_end_btn.text = "End Turn"
+	_end_btn.text = "End Activation" if _activation else "End Turn"
 	_end_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_end_btn.focus_mode = Control.FOCUS_NONE
 	_end_btn.pressed.connect(_on_end_turn)
@@ -215,8 +265,9 @@ func _apply_layout() -> void:
 		var board_w := size.x - 2.0 * MARGIN
 		_board.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_board.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		_board.custom_minimum_size = Vector2(0, board_w * PORTRAIT_BOARD_ASPECT)
-		_board.set_zoom(1.0 if _overview else _portrait_zoom(board_w, board_w * PORTRAIT_BOARD_ASPECT))
+		var board_h := portrait_board_height(size.y, board_w)
+		_board.custom_minimum_size = Vector2(0, board_h)
+		_board.set_zoom(1.0 if _overview else _portrait_zoom(board_w, board_h))
 		_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_panel.custom_minimum_size = Vector2.ZERO
@@ -226,6 +277,12 @@ func _apply_layout() -> void:
 		_board.custom_minimum_size = Vector2(480, 360)
 		_board.set_zoom(1.0)
 		_panel.custom_minimum_size = Vector2(380, 0)
+
+
+## The board's height on a portrait screen: whatever the controls below do not need, kept between the
+## base aspect and the maximum so a tall phone shows more of the map and the controls just sit lower.
+static func portrait_board_height(screen_h: float, board_w: float) -> float:
+	return clampf(screen_h - PORTRAIT_PANEL_RESERVE, board_w * PORTRAIT_BOARD_ASPECT, board_w * PORTRAIT_BOARD_MAX_ASPECT)
 
 
 func _portrait_zoom(width: float, height: float) -> float:
@@ -251,11 +308,36 @@ func _update_mute_label() -> void:
 	_mute_btn.text = "Muted" if _sound.settings.muted else "Sound"
 
 
+## A real campaign mission (not the level test or the sandbox): it ends by handing an outcome to the campaign.
+func _is_campaign_mission() -> bool:
+	return Session.campaign != null and Session.current_match != null and not Session.level_test
+
+
 func _leave() -> void:
+	if _is_campaign_mission() and not _im.is_over():
+		if not _withdraw_armed:
+			_withdraw_armed = true
+			_leave_btn.text = "Sure?"
+			_say("Tap Withdraw again to leave the field: the mission counts as failed and the survivors keep their lives.", false)
+			return
+		_finish_campaign_mission(true)
+		return
 	_timer.stop()
 	var back := SANDBOX_SCENE if Session.sandbox else MENU_SCENE
 	Session.reset()
 	get_tree().change_scene_to_file(back)
+
+
+## Hands the finished (or abandoned) mission to the campaign screen, which applies it exactly once.
+func _finish_campaign_mission(withdrawn: bool) -> void:
+	_timer.stop()
+	if _activation:
+		Session.pending_outcome = MissionBuilder.outcome_for(Session.campaign, (_im as ActivationMatch).cs, withdrawn)
+	else:
+		Session.pending_outcome = MissionBuilder.outcome_of(Session.campaign, _im.state, _im.player_team, _im.goal, _im.is_over() and _im.winner == _im.player_team, withdrawn)
+	Session.withdrawn = withdrawn
+	ResumeStore.clear()
+	get_tree().change_scene_to_file("res://view/campaign.tscn")
 
 
 # --- naming and logging ----------------------------------------------------------------
@@ -284,6 +366,24 @@ func _say(text: String, ok: bool = true, neutral: bool = false) -> void:
 	_msg.add_theme_color_override("font_color", COL_NEUTRAL if neutral else (COL_OK if ok else COL_BAD))
 
 
+## The one autosave slot (see ResumeStore): after every command and when the app is paused.
+## Activation-engine battles are saved (campaign missions, the level test and the sandbox); a finished fight clears it.
+func _autosave() -> void:
+	if _activation and Session.campaign != null and _im != null:
+		var kind := ResumeStore.KIND_SANDBOX if Session.sandbox else (ResumeStore.KIND_CAMPAIGN if _is_campaign_mission() else ResumeStore.KIND_LEVEL_TEST)
+		ResumeStore.save((_im as ActivationMatch).cs, {"kind": kind, "mission_id": Session.mission_id})
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT or what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_autosave()
+
+
+## A short label for the initiative strip.
+func _short_name(id: int) -> String:
+	return _name_of(id).left(5)
+
+
 func _describe(ev: Dictionary, fog: Dictionary) -> String:
 	return ReplayModel.describe(ev, fog, _name_of).replace("[", "[lb]")
 
@@ -305,7 +405,7 @@ func _on_tile_clicked(tile: Vector2i, button: int) -> void:
 		_refresh()
 		return
 	if _sel < 0 or not _im.can_act(_sel):
-		_say("Select one of your mercs first.", false)
+		_say(_not_acting_text(), false)
 		return
 	if u != null and u.team != _im.player_team and visible.has(u.id):
 		_tap_target(u)
@@ -316,17 +416,24 @@ func _on_tile_clicked(tile: Vector2i, button: int) -> void:
 func _tap_target(enemy: SimUnit) -> void:
 	var pv := _im.shot_preview(_sel, enemy.id)
 	if pv["result"] == "invalid":
-		_say("No shot: %s." % String(pv["reason"]).replace("_", " "), false)
+		_say("No shot: " + CombatReasons.text(String(pv["reason"])), false)
 		return
 	if _pending == enemy.pos and _pending_is_shot:
 		_clear_pending()
+		_coach_facts["shot"] = true
 		_play(_im.shoot(_sel, enemy.id))
 		return
 	_pending = enemy.pos
 	_pending_is_shot = true
+	_coach_facts["previewed_shot"] = true
 	var cost := int(pv["cost"])
+	var left := _im.ap_of(_sel) - cost
+	var range_ := SimLos.chebyshev(_im.state.units[_sel].pos, enemy.pos)
+	var notes := UiModel.shot_notes(pv)
+	if notes != "":
+		notes = " (" + notes + ")"
 	if pv["result"] == "blocked":
-		_say("Blocked by cover (%d AP). Tap again to fire anyway." % cost, true, true)
+		_say("%s: blocked by cover, range %d, %d AP (%d left). Tap again to fire anyway." % [_name_of(enemy.id), range_, cost, left], true, true)
 	elif _im.ap_of(_sel) < cost:
 		_say("Not enough AP: %d needed, %d left." % [cost, _im.ap_of(_sel)], false)
 		_clear_pending()
@@ -334,19 +441,20 @@ func _tap_target(enemy: SimUnit) -> void:
 		_say("Shaken: it cannot shoot this turn.", false)
 		_clear_pending()
 	else:
-		_say("Shot: %d%% to hit, %d damage, %d AP. Tap again to fire." % [pv["chance"], pv["damage"], cost], true, true)
+		_say("%s: %d%% to hit, %d damage%s, range %d, %d AP (%d left). Tap again to fire." % [_name_of(enemy.id), pv["chance"], pv["damage"], notes, range_, cost, left], true, true)
 	_refresh(false)
 
 
 func _tap_tile(tile: Vector2i) -> void:
 	var reach := _im.reach(_sel)
 	if not reach.has(tile) or tile == _im.state.units[_sel].pos:
-		_say("Tile is unreachable.", false)
+		_say(CombatReasons.text("unreachable"), false)
 		_clear_pending()
 		_refresh(false)
 		return
 	if _pending == tile and not _pending_is_shot:
 		_clear_pending()
+		_coach_facts["moved"] = true
 		_play(_im.move(_sel, tile))
 		return
 	_pending = tile
@@ -354,6 +462,26 @@ func _tap_tile(tile: Vector2i) -> void:
 	_route_note = ""
 	_refresh(false)
 	_say("Move: %d AP (of %d).%s Tap again to go." % [reach[tile], _im.ap_of(_sel), _route_note], false, _route_note == "")
+
+
+## Why the selected merc cannot be commanded right now.
+func _not_acting_text() -> String:
+	if _activation and _sel >= 0 and _im.state.units.has(_sel) and _im.state.units[_sel].alive:
+		var acting: int = (_im as ActivationMatch).active_unit()
+		var who := " %s acts now." % _name_of(acting) if acting >= 0 else ""
+		return CombatReasons.text("not_your_activation") + who
+	return "Select one of your mercs first."
+
+
+## In the activation engine the merc whose activation it is is selected for you.
+func _select_active() -> void:
+	if not _activation or _im.is_over():
+		return
+	var acting: int = (_im as ActivationMatch).active_unit()
+	var u: SimUnit = _im.state.units.get(acting)
+	if u != null and u.team == _im.player_team:
+		_sel = acting
+		_clear_pending()
 
 
 func _clear_pending() -> void:
@@ -377,8 +505,9 @@ func _on_watch() -> void:
 	_clear_pending()
 	var beats := _im.hold_watch(_sel, dir)
 	if beats.is_empty():
-		_say("It cannot hold a watch now.", false)
+		_say(CombatReasons.text((_im as ActivationMatch).last_reason) if _activation else "It cannot hold a watch now.", false)
 		return
+	_coach_facts["watched"] = true
 	_say("%s holds overwatch." % _name_of(_sel), true, true)
 	_play(beats)
 
@@ -387,17 +516,29 @@ func _on_end_turn() -> void:
 	if _busy or _im.is_over():
 		return
 	_clear_pending()
-	_log_line("[color=#8a93a0]-- enemy turn --[/color]")
-	_say("Enemy turn...", true, true)
+	_coach_facts["ended"] = true
+	if _activation:
+		_log_line("[color=#8a93a0]-- %s ends its activation --[/color]" % _name_of((_im as ActivationMatch).active_unit()))
+		_say("", true, true)
+	else:
+		_log_line("[color=#8a93a0]-- enemy turn --[/color]")
+		_say("Enemy turn...", true, true)
 	_play(_im.end_turn(), true)
 
 
 # --- playback ------------------------------------------------------------------------------
 
 var _ends_turn := false
+var _enemy_events := 0  # enemy moves/shots in the beats being played
+var _enemy_seen := 0    # how many of those the squad could actually see
 
 
 func _play(beats: Array[Dictionary], ends_turn: bool = false) -> void:
+	_autosave()  # the command has already been applied to the state
+	_enemy_events = 0
+	_enemy_seen = 0
+	for b in beats:
+		_enemy_events += _enemy_event_count(b["events"], b["state"])
 	_queue = beats.duplicate()
 	_ends_turn = ends_turn
 	_busy = true
@@ -425,6 +566,7 @@ func _play_next_beat() -> void:
 	var state: SimState = beat["state"]
 	var fog := _fog_for(state)
 	var shown: Array[Dictionary] = []
+	_enemy_seen += _enemy_event_count(_visible_events(beat["events"], fog), state)
 	for ev: Dictionary in beat["events"]:
 		if ev["type"] in ["watch"] or ReplayModel.event_visible(ev, fog):
 			shown.append(ev)
@@ -436,15 +578,38 @@ func _play_next_beat() -> void:
 	_sound.play_events(shown)
 
 
+## Events caused by enemy units (their moves and shots), counted without revealing where.
+func _enemy_event_count(events: Array, state: SimState) -> int:
+	var n := 0
+	for ev: Dictionary in events:
+		var u: SimUnit = state.units.get(int(ev.get("unit", -1)))
+		if u != null and u.team != _im.player_team and ev["type"] in ["move", "shot", "watch"]:
+			n += 1
+	return n
+
+
+func _visible_events(events: Array, fog: Dictionary) -> Array:
+	return events.filter(func(ev: Dictionary) -> bool: return ev["type"] == "watch" or ReplayModel.event_visible(ev, fog))
+
+
 func _finish_playback() -> void:
+	if _activation and _enemy_events > 0 and _enemy_seen == 0:
+		_log_line("[color=#8a93a0]The enemy acts out of sight.[/color]")
 	_busy = false
 	_set_controls(true)
 	if _ends_turn and not _im.is_over():
 		var extra := " ".join(_im.notices)
-		_log_line("[color=#ffd479]Turn %d: your move.[/color] %s" % [_im.turn, extra])
-		_say(("Your move. " + extra).strip_edges(), true, true)
+		if _activation:
+			if _im.turn != _last_round:
+				_log_line("[color=#ffd479]Round %d.[/color] %s" % [_im.turn, extra])
+			_say(("%s acts. %s" % [_name_of((_im as ActivationMatch).active_unit()), extra]).strip_edges(), true, true)
+		else:
+			_log_line("[color=#ffd479]Turn %d: your move.[/color] %s" % [_im.turn, extra])
+			_say(("Your move. " + extra).strip_edges(), true, true)
 		_board.clear_tracers()
 	_ends_turn = false
+	_last_round = _im.turn
+	_select_active()
 	if _sel >= 0 and (not _im.state.units.has(_sel) or not _im.state.units[_sel].alive):
 		_sel = -1
 	_refresh()
@@ -469,6 +634,7 @@ func _refresh(redraw_board: bool = true) -> void:
 			_add_route(overlay, _im.route_preview(_sel, _pending))
 		if _pending != NO_TILE and _pending_is_shot:
 			overlay["shots"].append({"from": state.units[_sel].pos, "to": _pending, "color": PlayOverlay.COL_FIRE})
+			overlay["marks"].append({"tile": _pending, "text": _shot_mark(state), "lane": 0, "color": PlayOverlay.COL_FIRE})
 		overlay["pending"] = _pending
 	_board.set_overlay(overlay)
 	_board.show_frame(state, [], _watch_cones(), fog)
@@ -478,17 +644,55 @@ func _refresh(redraw_board: bool = true) -> void:
 	else:
 		_goal_label.text = ""
 	_goal_label.visible = _goal_label.text != ""
-	_title.text = "Turn %d  %s" % [_im.turn, "your move" if _im.active_team == _im.player_team else "enemy"]
+	if _activation:
+		var am := _im as ActivationMatch
+		var acting := am.active_unit()
+		_title.text = "Round %d" % _im.turn if acting < 0 else "Round %d  %s" % [_im.turn, _name_of(acting)]
+		_strip.visible = not _im.is_over()
+		if _strip.visible:
+			_strip.show_order(_im.turn, am.strip(), _im.player_team, _short_name)
+	else:
+		_title.text = "Turn %d  %s" % [_im.turn, "your move" if _im.active_team == _im.player_team else "enemy"]
 	_banner.visible = _im.is_over()
 	if _im.is_over():
+		ResumeStore.clear()
 		_banner.text = "VICTORY" if _im.winner == _im.player_team else ("DRAW" if _im.winner == SimMatch.DRAW else "DEFEAT")
 		_end_btn.text = "Continue"
 		_end_btn.disabled = false
-		_end_btn.pressed.disconnect(_on_end_turn)
-		_end_btn.pressed.connect(_leave)
+		if _end_btn.pressed.is_connected(_on_end_turn):
+			_end_btn.pressed.disconnect(_on_end_turn)
+			_end_btn.pressed.connect(_finish_campaign_mission.bind(false) if _is_campaign_mission() else _leave)
 		_sound.play("stinger_win" if _im.winner == _im.player_team else "stinger_loss")
 	_rebuild_squad()
 	_hint.text = _hint_text()
+	_refresh_coach(state)
+
+
+## Shows the first-mission tip (see CoachModel) for what the player has done so far.
+func _refresh_coach(state: SimState) -> void:
+	if _coach == null:
+		return
+	_coach_facts["over"] = _im.is_over()
+	var sees_enemy := false
+	for id in SimVision.visible_unit_ids(state, _im.player_team):
+		var u: SimUnit = state.units[id]
+		if u.alive and u.team != _im.player_team:
+			sees_enemy = true
+			break
+	_coach_facts["enemy_in_sight"] = sees_enemy
+	_coach_facts["ap"] = CombatConfig.load_file().max_ap
+	_coach.text = CoachModel.tip(_coach_facts)
+	_coach.visible = _coach.text != ""
+	_hint.visible = not _coach.visible  # the tip replaces the rules line so the End button stays on screen
+
+
+## The shot summary drawn on the targeted tile: chance, damage and AP (or cover).
+func _shot_mark(state: SimState) -> String:
+	var target: SimUnit = state.unit_at(_pending)
+	if target == null:
+		return ""
+	var pv := _im.shot_preview(_sel, target.id)
+	return UiModel.shot_mark(pv)
 
 
 ## The route to the pending tile: blue where safe, red on steps where a visible enemy would
@@ -536,6 +740,8 @@ func _rebuild_squad() -> void:
 			tag = " (down)"
 		elif _im.is_suppressed(id):
 			tag = " (no fire)"
+		if _activation and tag == "" and id != (_im as ActivationMatch).active_unit():
+			tag = " (waits)"
 		b.text = "%s\n%d AP%s" % [_name_of(id), _im.ap_of(id), tag]
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.focus_mode = Control.FOCUS_NONE
@@ -557,6 +763,10 @@ func _select(id: int) -> void:
 func _hint_text() -> String:
 	if _im.is_over():
 		return ""
+	if _activation:
+		if _sel < 0 or not _im.can_act(_sel):
+			return "Units act one at a time in the order shown above. Tap a tile to move or an enemy to shoot, then End Activation."
+		return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4, overwatch 4 (one free shot at the first enemy to move in its cone). End Activation to pass.%s" % [_name_of(_sel), _im.ap_of(_sel), UiModel.dug_in_text(_im.state.units[_sel])]
 	if _sel < 0:
 		return "Tap a merc, then a tile to move or an enemy to shoot. Waiting units get one interrupt shot at anyone who steps into their sights first."
 	return "%s: %d AP. Move 2 per step (3 diagonal), shoot 4." % [_name_of(_sel), _im.ap_of(_sel)]
@@ -594,6 +804,8 @@ func _run_script(script: String) -> void:
 			"end":
 				_on_end_turn()
 				_drain()
+			"withdraw":
+				_leave()
 
 
 ## Plays every queued beat at once (scripts and screenshots do not wait on timers).

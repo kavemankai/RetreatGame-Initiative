@@ -23,6 +23,14 @@ const RUN_FRAMES := 6
 const RUN_GRACE := 0.2  # seconds a unit keeps running after a move, so back-to-back steps never blink to idle
 const TRACER_GROW := 0.12  # seconds a new tracer takes to reach its target
 const TRACER_STUB := 1.2  # tiles of tracer shown toward/from a unit hidden by fog
+## Weapon looks: muzzle flash size (in tiles) and colour per class, the gap before each bullet of a
+## burst, how wide a shotgun's pellets fan, and the beam colour.
+const FLASH := {"rifle": [0.12, Color("ffd479")], "carbine": [0.10, Color("ffe2a8")], "sniper": [0.16, Color("ffffff")],
+	"shotgun": [0.24, Color("ff9f43")], "heavy": [0.20, Color("ffc857")], "grenade": [0.18, Color("c9ccd1")], "beam": [0.11, Color("7fe8ff")]}
+const BURST_STAGGER := 0.07
+const SHOTGUN_FAN := 0.16
+const BEAM_COLOR := Color("7fe8ff")
+const BLAST_RADIUS := 0.85  # tiles
 const MISS_OVERSHOOT := 0.6  # a miss flies this many tiles past its target
 const COL_MISS := Color("9aa3ad")
 const COVER_SHORT := 0.5  # a blocked tracer stops this many tiles short, at the cover
@@ -122,11 +130,12 @@ func record_tracers(events: Array[Dictionary], state: SimState, fog: Dictionary 
 			b = a + (b - a).normalized() * minf((b - a).length(), TRACER_STUB)
 		elif not fog.is_empty() and not seen.has(ev["unit"]):
 			a = b + (a - b).normalized() * minf((a - b).length(), TRACER_STUB)
-		elif ev["result"] == "blocked":
-			b -= (b - a).normalized() * COVER_SHORT
+		elif ev["result"] == "blocked" or (ev["result"] == "miss" and ev.get("cover", false)):
+			b -= (b - a).normalized() * COVER_SHORT  # stopped by the cover
 		elif ev["result"] == "miss":
 			b += (b - a).normalized() * MISS_OVERSHOOT  # sails past the target
-		_tracers.append({"a": a, "b": b, "result": ev["result"], "team": shooter.team, "overwatch": ev.get("overwatch", false), "age": TRACER_GROW if settled else 0.0})
+		var started := TRACER_GROW if settled else -BURST_STAGGER * float(int(ev.get("bullet", 0)))
+		_tracers.append({"a": a, "b": b, "result": ev["result"], "team": shooter.team, "overwatch": ev.get("overwatch", false), "age": started, "klass": shooter.weapon_class, "cover": ev.get("cover", false)})
 	queue_redraw()
 
 
@@ -307,7 +316,7 @@ func _facing_of(u: SimUnit) -> String:
 static func _merc_texture(key: String, frame: String) -> Texture2D:
 	var cache_key := "%s_%s" % [key, frame]
 	if not _merc_cache.has(cache_key):
-		var path := "%s%s.png" % [MERC_DIR, cache_key]
+		var path := "%s%s.png" % [ArtSkin.merc_dir(), cache_key]
 		_merc_cache[cache_key] = load(path) if ResourceLoader.exists(path) else null
 	return _merc_cache[cache_key]
 
@@ -558,11 +567,20 @@ func _draw_tracers() -> void:
 		var full := iso.grid_to_screen(t["b"])
 		var b := a.lerp(full, clampf(float(t["age"]) / TRACER_GROW, 0.0, 1.0))
 		var col: Color = TEAM_COLORS[int(t["team"]) % TEAM_COLORS.size()]
+		var klass := String(t.get("klass", "rifle"))
+		_draw_flash(a, klass, float(t["age"]))
 		if t["result"] == "hit":
-			draw_line(a, b, Color(col, 0.9), 2.5)
+			_draw_hit_line(a, b, full, col, klass)
 			if b == full:
 				draw_circle(b, _scale() * 0.09, COL_HIT)
 				draw_arc(b, _scale() * 0.16, 0.0, TAU, 16, Color(COL_HIT, 0.7), 1.5)
+				if klass == "grenade":
+					draw_circle(b, _scale() * BLAST_RADIUS, Color(COL_HIT, 0.16))
+					draw_arc(b, _scale() * BLAST_RADIUS, 0.0, TAU, 24, Color(COL_HIT, 0.8), 2.0)
+		elif t["result"] == "miss" and t.get("cover", false):
+			draw_dashed_line(a, b, Color(col, 0.55), 1.5, 5.0)  # the cover took it
+			if b == full:
+				draw_circle(b, _scale() * 0.05, COL_BLOCK)
 		elif t["result"] == "miss":
 			draw_line(a, b, Color(COL_MISS, 0.5), 1.2)
 			if b == full:
@@ -573,6 +591,43 @@ func _draw_tracers() -> void:
 				draw_circle(b, _scale() * 0.05, COL_BLOCK)
 		if t["overwatch"]:
 			draw_string(ThemeDB.fallback_font, (a + full) * 0.5 + Vector2(6, -6), "OW", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, col)
+
+
+## A short bright flash at the muzzle, sized and coloured by class; it fades as the tracer grows.
+func _draw_flash(a: Vector2, klass: String, age: float) -> void:
+	if age < 0.0 or age > TRACER_GROW * 2.0:
+		return
+	var look: Array = FLASH.get(klass, FLASH["rifle"])
+	var fade := 1.0 - age / (TRACER_GROW * 2.0)
+	draw_circle(a, _scale() * float(look[0]), Color(look[1], 0.75 * fade))
+
+
+## The line of a landed shot in the weapon's own style: a beam glows, a sniper's is thin and long, a
+## shotgun fans out short pellets, a heavy gun's is thick, a grenade flies in an arc.
+func _draw_hit_line(a: Vector2, b: Vector2, full: Vector2, col: Color, klass: String) -> void:
+	match klass:
+		"beam":
+			draw_line(a, b, Color(BEAM_COLOR, 0.25), 8.0)
+			draw_line(a, b, Color(BEAM_COLOR, 0.95), 3.0)
+		"sniper":
+			draw_line(a, b, Color(col, 0.2), 5.0)
+			draw_line(a, b, Color(col, 0.95), 1.6)
+		"shotgun":
+			for angle in [-SHOTGUN_FAN, 0.0, SHOTGUN_FAN]:
+				draw_line(a, a + (b - a).rotated(angle) * 0.85, Color(col, 0.85), 1.8)
+		"heavy":
+			draw_line(a, b, Color(col, 0.95), 4.0)
+		"carbine":
+			draw_line(a, b, Color(col, 0.8), 1.8)
+		"grenade":
+			var points := PackedVector2Array()
+			var rise := (full - a).length() * 0.35
+			for i in 15:
+				var k := float(i) / 14.0
+				points.append(a.lerp(b, k) + Vector2(0.0, -sin(k * PI) * rise))
+			draw_polyline(points, Color(col, 0.9), 2.2)
+		_:
+			draw_line(a, b, Color(col, 0.9), 2.5)
 
 
 func _draw_floats() -> void:

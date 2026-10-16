@@ -16,6 +16,13 @@ const HIT_MAX := 95
 ## Hit rolls use dice index HIT_DIE_OFFSET + shots fired, so they never share a roll with morale.
 const HIT_DIE_OFFSET := 1000
 ## Gear traits.
+## A target behind half cover is harder to hit, not untouchable: its shooters lose this many percent.
+const COVER_HIT_PENALTY := 30
+## Dug in / exposed (activation engine): a unit that did not shoot since its last activation gains this much
+## cover at the start of its next one, one that shot loses it, and stepping to a new tile resets it. The shift
+## is kept within +/- COVER_SHIFT_MAX, so cover is worth 10 to 50 points of hit chance.
+const COVER_SHIFT_STEP := 10
+const COVER_SHIFT_MAX := 20
 const BRACING_HIT_BONUS := 5
 const BRACING_MORALE_BONUS := 1  # on top of MORALE_COVER_BONUS
 const OPENER_HIT_BONUS := 15
@@ -50,6 +57,12 @@ const MOVE_FIRE_SHOT_FACTOR := 2
 ## Aim at or above this shaves one tick off a shot.
 const AIM_FAST_SHOT := 8
 const MIN_SHOT_TICKS := 2
+## Weapon traits (see items.json): a burst fires this many shots in one action, each this many
+## percentage points less likely to hit; an area weapon cannot be fired at a target closer than
+## AREA_MIN_RANGE tiles (its blast covers the target tile and the eight around it).
+const BURST_COUNT := 3
+const BURST_ACCURACY_PENALTY := 15
+const AREA_MIN_RANGE := 2
 ## Aim adds (aim / AIM_RANGE_DIVISOR) tiles of range.
 const AIM_RANGE_DIVISOR := 3
 ## CQB at or above this adds close-range damage.

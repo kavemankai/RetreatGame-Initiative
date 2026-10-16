@@ -16,6 +16,8 @@ const NO_OBJECTIVE := Vector2i(-9999, -9999)
 const FAR := 1 << 20          ## "no enemy" distance sentinel
 const NEG_INF := -(1 << 40)   ## below any reachable score
 const MAX_OVERWATCH_TILES := 5
+const OBJECTIVE_FIELD_BUDGET := 1000       ## ticks: far more than any map needs
+const UNREACHABLE_OBJECTIVE_PENALTY := 20  ## tiles added when the objective cannot be walked to
 
 
 ## `profiles`: name -> SimAIProfile (must contain "default").
@@ -23,7 +25,9 @@ const MAX_OVERWATCH_TILES := 5
 ## `objective`: tile the squad drifts toward while no enemy is visible.
 ## `live`: for mid-turn replans, unit id -> {"free_at": ticks already spoken
 ## for, "pos": where the unit will stand when its committed action ends}.
-static func plan_for(state: SimState, team: int, profiles: Dictionary, assignments: Dictionary = {}, objective: Vector2i = NO_OBJECTIVE, live: Dictionary = {}) -> SimPlan:
+## `diag`: optional out-parameter; filled with unit id -> {"kind", "score", "tile", "options"}
+## so a caller can log why each unit chose what it did (it never changes the plan).
+static func plan_for(state: SimState, team: int, profiles: Dictionary, assignments: Dictionary = {}, objective: Vector2i = NO_OBJECTIVE, live: Dictionary = {}, diag: Dictionary = {}) -> SimPlan:
 	var view := SimVision.view_for(state, team)
 	var ctx := {
 		"view": view,
@@ -34,6 +38,7 @@ static func plan_for(state: SimState, team: int, profiles: Dictionary, assignmen
 		"reserved": {},        # tiles chosen as destinations by teammates
 		"objective": objective,
 		"live": live,
+		"diag": diag,
 	}
 	var plan := SimPlan.new()
 	var own: Array[int] = []
@@ -72,6 +77,8 @@ static func _plan_unit(ctx: Dictionary, u: SimUnit, prof: SimAIProfile) -> Array
 	var view: SimState = ctx["view"]
 	var info: Dictionary = (ctx["live"] as Dictionary).get(u.id, {})
 	var origin: Vector2i = info.get("pos", u.pos)
+	ctx["range"] = u.max_range()
+	ctx["beam"] = u.ignores_half_cover()
 	var budget := u.available_ticks() - int(info.get("free_at", 0))
 	var reach := SimPathing.reach(view, origin, u.id, budget)
 	var dist: Dictionary = reach["dist"]
@@ -80,6 +87,8 @@ static func _plan_unit(ctx: Dictionary, u: SimUnit, prof: SimAIProfile) -> Array
 
 	# Pass 1: positional score and best shot for every reachable tile.
 	var best := {"score": NEG_INF}
+	var stay_best := NEG_INF
+	var shoot_best := NEG_INF
 	var positional: Array[Dictionary] = []
 	for t: Vector2i in tiles:
 		if t != origin and (ctx["reserved"] as Dictionary).has(t):
@@ -91,15 +100,20 @@ static func _plan_unit(ctx: Dictionary, u: SimUnit, prof: SimAIProfile) -> Array
 		var pos := _positional_score(ctx, t, prof) - cost / 2
 		var entry := {"tile": t, "cost": cost, "pos": pos}
 		positional.append(entry)
+		stay_best = maxi(stay_best, pos)
 		if pos > best["score"]:
 			best = {"score": pos, "tile": t, "kind": "stay"}
 		var remaining := budget - cost
 		if remaining >= u.shot_ticks():
 			var shot := _best_shot(ctx, u, t, prof)
+			if not shot.is_empty():
+				shoot_best = maxi(shoot_best, pos + int(shot["value"]))
 			if not shot.is_empty() and pos + shot["value"] > best["score"]:
 				best = {"score": pos + shot["value"], "tile": t, "kind": "shoot", "shot": shot}
 
 	best = _consider_overwatch(ctx, u, prof, positional, best, budget)
+	(ctx["diag"] as Dictionary)[u.id] = {"kind": best["kind"], "score": best["score"], "tile": best["tile"],
+		"options": {"stay": stay_best, "shoot": shoot_best, "chosen": best["kind"]}}
 	return _commit(ctx, u, reach, best)
 
 
@@ -138,11 +152,40 @@ static func _positional_score(ctx: Dictionary, tile: Vector2i, prof: SimAIProfil
 			nearest = mini(nearest, SimLos.chebyshev(tile, e.pos))
 		score -= prof.w_range * absi(nearest - prof.preferred_range)
 	elif ctx["objective"] != NO_OBJECTIVE:
-		score -= prof.w_objective * SimLos.chebyshev(tile, ctx["objective"])
+		score -= prof.w_objective * _objective_distance(ctx, tile)
 	var threat := _threat_at(ctx, tile)
 	score -= prof.w_exposed * int(threat["open"])
 	score += prof.w_cover * int(threat["covered"])
+	if prof.w_lane != 0:
+		score += prof.w_lane * _lanes_at(ctx, tile)
 	return score
+
+
+## Walking distance, in tiles, from `tile` to the objective around walls and crates (units are
+## ignored). The field is computed once per plan. A tile cut off from the objective falls back to
+## straight-line distance plus a penalty.
+static func _objective_distance(ctx: Dictionary, tile: Vector2i) -> int:
+	if not ctx.has("objective_field"):
+		var view: SimState = ctx["view"]
+		var terrain_only := SimState.new(view.grid)
+		ctx["objective_field"] = SimPathing.reach(terrain_only, ctx["objective"], -1, OBJECTIVE_FIELD_BUDGET)["dist"]
+	var field: Dictionary = ctx["objective_field"]
+	if field.has(tile):
+		@warning_ignore("integer_division")
+		return int(field[tile]) / SimConst.COST_ORTHO
+	return SimLos.chebyshev(tile, ctx["objective"]) + UNREACHABLE_OBJECTIVE_PENALTY
+
+
+## How many visible enemies (at most 2) this unit could hit from `tile` with a clear, uncovered
+## line: a flanking position rewards moving to where a shot exists, not only shooting from it.
+static func _lanes_at(ctx: Dictionary, tile: Vector2i) -> int:
+	var view: SimState = ctx["view"]
+	var reach_range: int = ctx["range"]
+	var lanes := 0
+	for e: SimUnit in ctx["enemies"]:
+		if SimLos.chebyshev(tile, e.pos) <= reach_range and SimLos.can_shoot(view.grid, tile, e.pos) and (bool(ctx.get("beam", false)) or not SimLos.is_covered(view.grid, tile, e.pos)):
+			lanes += 1
+	return mini(lanes, 2)
 
 
 ## How many visible enemies could fire at `tile`, split by whether cover
@@ -157,7 +200,7 @@ static func _threat_at(ctx: Dictionary, tile: Vector2i) -> Dictionary:
 	for e: SimUnit in ctx["enemies"]:
 		if SimLos.chebyshev(e.pos, tile) > e.max_range() or not SimLos.can_shoot(view.grid, e.pos, tile):
 			continue
-		if SimLos.is_covered(view.grid, e.pos, tile):
+		if not e.ignores_half_cover() and SimLos.is_covered(view.grid, e.pos, tile):
 			covered += 1
 		else:
 			open += 1
@@ -174,19 +217,45 @@ static func _best_shot(ctx: Dictionary, u: SimUnit, tile: Vector2i, prof: SimAIP
 	var best := {}
 	for e: SimUnit in ctx["enemies"]:
 		var d := SimLos.chebyshev(tile, e.pos)
-		if d > u.max_range() or not SimLos.can_shoot(view.grid, tile, e.pos) or SimLos.is_covered(view.grid, tile, e.pos):
+		if d > u.max_range() or not SimLos.can_shoot(view.grid, tile, e.pos):
+			continue
+		if u.is_area() and d < SimConst.AREA_MIN_RANGE:
 			continue
 		var hp_left: int = e.hp - int(planned.get(e.id, 0))
 		if hp_left <= 0:
 			continue
 		var dmg := u.damage_at(d)
-		var eff := mini(dmg, hp_left)
-		var kills := dmg >= hp_left
+		var shots := u.burst_count()
+		var chance := u.hit_chance_at(d)
+		if not u.ignores_half_cover() and SimLos.is_covered(view.grid, tile, e.pos):
+			chance = maxi(SimConst.HIT_MIN, chance - maxi(0, SimConst.COVER_HIT_PENALTY + e.cover_shift()))
+		if shots > 1:
+			chance = maxi(SimConst.HIT_MIN, chance - SimConst.BURST_ACCURACY_PENALTY)
+		var eff := mini(dmg * shots, hp_left)
+		var kills := dmg * shots >= hp_left
 		# Expected value: a likelier shot is worth more (integer percent).
-		var value := (prof.w_damage * eff + (prof.w_kill if kills else 0)) * u.hit_chance_at(d) / 100
+		var value := (prof.w_damage * eff + (prof.w_kill if kills else 0)) * chance / 100
+		if u.is_area():
+			value += _splash_value(view, u, e, dmg, chance, prof)
 		if best.is_empty() or value > best["value"]:
 			best = {"target": e.id, "eff": eff, "value": value}
 	return best
+
+
+## What a blast on `target` adds beyond the target itself: other enemies caught in it count for, and
+## friends (the shooter's own side) count against twice as much. A merc who would shell their own
+## squad scores worse than one who waits for a cleaner shot.
+static func _splash_value(view: SimState, u: SimUnit, target: SimUnit, dmg: int, chance: int, prof: SimAIProfile) -> int:
+	var total := 0
+	for t in SimResolver.blast_tiles(view.grid, target.pos):
+		if t == target.pos:
+			continue
+		var v := view.unit_at(t)
+		if v == null:
+			continue
+		var worth := (prof.w_damage * mini(dmg, v.hp) + (prof.w_kill if dmg >= v.hp else 0)) * chance / 100
+		total += worth if v.team != u.team else -2 * worth
+	return total
 
 
 ## 8-way facing toward the nearest visible enemy, else the objective, else east.

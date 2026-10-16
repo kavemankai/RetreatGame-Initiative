@@ -33,8 +33,8 @@ var _rng := RandomNumberGenerator.new()
 
 
 static func load_stream(name: String) -> AudioStreamWAV:
-	var path := "%s%s.wav" % [AUDIO_DIR, name]
-	if not ResourceLoader.exists(path):
+	var path := ArtSkin.voice_path(name) if name.begins_with("voice_") else "%s%s.wav" % [AUDIO_DIR, name]
+	if path == "" or not ResourceLoader.exists(path):
 		return null
 	var base := load(path) as AudioStreamWAV
 	if base == null:

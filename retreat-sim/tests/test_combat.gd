@@ -35,14 +35,15 @@ func test_faster_hit_cancels_the_slower_return_shot() -> void:
 	check(r.state.units[1].hp == 3, "the faster unit takes no damage")
 
 
-func test_blocked_shot_lets_the_slower_unit_return_fire() -> void:
+func test_a_shot_into_cover_that_misses_lets_the_slower_unit_return_fire() -> void:
 	var s := duel(7, 5)
+	s.fixed_roll = 100  # every roll misses
 	s.grid.set_edge(Vector2i(4, 5), Vector2i(5, 5), SimConst.EDGE_HALF)  # cover beside unit 2
 	var r := SimResolver.resolve(s, both_shoot(s))
 	var shots := shots_of(r)
 	check(shots.size() == 2, "both fire")
-	check(shots[0]["unit"] == 1 and shots[0]["result"] == "blocked", "the faster shot goes first and hits cover")
-	check(shots[1]["unit"] == 2 and shots[1]["result"] == "hit", "the slower unit gets its shot back")
+	check(shots[0]["unit"] == 1 and shots[0]["result"] == "miss", "the faster shot goes first and misses the covered target")
+	check(shots[1]["unit"] == 2 and shots[1]["result"] == "miss", "the slower unit gets its shot back (fixed dice: it misses too)")
 
 
 func test_equal_speed_breaks_ties_on_aim_then_id() -> void:

@@ -1,4 +1,6 @@
-# Engine and game roadmap (initiative ruleset is the direction)
+# Engine and game roadmap (activation engine is the direction; statuses updated 2026-10-15)
+
+> Section B was written for the live-AP `InitiativeMatch`. The activation engine replaced it as the default; rows B1, B6 and B7 below are updated, the rest still apply to either engine.
 
 Status key: **Missing** = not built, **Partial** = built but incomplete, **Tune** = built, numbers unproven. Effort: S (under a day), M (a few days), L (a week or more).
 
@@ -15,14 +17,14 @@ Status key: **Missing** = not built, **Partial** = built but incomplete, **Tune*
 ## B. Initiative ruleset
 | # | Item | Status | Notes | Effort |
 |---|---|---|---|---|
-| B1 | **AP budget** | Done (14) | Now 14 AP per turn (`SimConst.AP_PER_TURN`); reaction needs a shot of AP left. Retune further from play. | S |
+| B1 | **AP budget** | Done (14) | 14 AP per activation, now in `data/combat/ap_costs.json` (the sandbox can override it; AP sweep in `docs/combat/balance-table.md`). Retune from play; try 10 to 12 on tighter maps. | S |
 | B2 | **Route preview with exposure** | Done | Cost per step, red steps where a visible enemy would shoot first. | - |
 | B3 | **Stances** (stand, crouch, prone) | Missing | Cost AP; change hit chance, sight and interrupt exposure. The classic JA2 layer. | M |
 | B4 | **Aimed shots** | Missing | Extra AP for extra hit chance. | S |
 | B5 | **Overwatch cone choice** | Partial | The Watch button picks a direction automatically (toward the nearest visible enemy). Let the player choose the facing. | S |
-| B6 | **Interrupt rules review** | Tune | Reaction AP, one interrupt per pair, initiative formula. Mutation-check each rule and tune from play. | S |
-| B7 | **Enemy AI in AP mode** | Partial | Uses the old planner with live free AP and up to two replans. Needs patrol (A3), cover seeking tuned for AP, retreat when broken. | M |
-| B8 | **Weapon variety** | Partial | Gear changes range, damage, ticks per shot and accuracy. Add burst/auto fire, thrown items, and reload or ammo if wanted. | M |
+| B6 | **Interrupt rules review** | Superseded | The activation engine has no automatic interrupts, only armed one-shot overwatch (4 AP). Interrupts remain in the legacy `InitiativeMatch` only. | - |
+| B7 | **Enemy AI in AP mode** | Done (core) | `ActivationAI`: one legal action at a time, legality check, caps, decision log, lane weight, walking-distance objective; 1,000-battle soak clean. Still open: patrol routes (A3), retreat when hurt, memory of unseen shooters. | M |
+| B8 | **Weapon variety** | Partial | Gear changes range, damage, AP per shot and accuracy. Add burst/auto fire, thrown items, and reload or ammo if wanted. | M |
 | B9 | **Wounds and bleeding** | Missing | HP is the only damage state. JA2 has wounds that bleed and healing items. | M |
 | B10 | **Items in play** | Missing | Medkit, grenade, smoke. Needs inventory per merc and an item-use AP cost. | M |
 
@@ -67,16 +69,16 @@ Read for ideas only. The 1.13 source and data fall under the Strategy First non-
 
 | Rule | JA2 1.13 | Ours now | Note |
 |---|---|---|---|
-| AP per turn | 100 (min 40) | 20 | Same shape once scaled: our 20 is JA2's 100. |
-| Flat step | 12 (grass 14, bush 18, rubble 24) | 2 (diagonal 3) | JA2 gets about 8 steps per turn; we get 10. Terrain never changes our cost. |
+| AP per turn | 100 (min 40) | 14 (was 20 before the first retune) | Same shape once scaled: our 14 is about JA2's 70. |
+| Flat step | 12 (grass 14, bush 18, rubble 24) | 2 (diagonal 3) | JA2 gets about 8 steps per turn; we get 7. Terrain never changes our cost. |
 | Gait and stance | walk -4, run -8, crawl +4; crouch 6, prone 8 | none | No stances yet (roadmap B3). |
 | Turn facing | 4 | free | Facing only matters for sentries. |
 | Change target | 2 | free | Shots always cost the full 4. |
-| Interrupt gate | needs at least 16 AP left | reaction pool of one shot, refilled each turn | Different mechanism, same intent: a spent unit cannot react. |
+| Interrupt gate | needs at least 16 AP left | (legacy mode) reaction pool of one shot, refilled each turn; the activation engine has no interrupts | Different mechanism, same intent: a spent unit cannot react. |
 | Interrupt order (from memory) | interrupt points built from initiative, with a bonus for being alert | `speed*10 + aim - 3*hits_taken` | Ours is simpler and deterministic. |
 | Shot cost (from memory) | roughly 2 to 3 steps, rising with aiming | 4 (2 steps) | Our shots are cheap relative to movement. |
 
-### Proposed retune (items 1 and 3 applied 2026-10-14; 2, 4 and 5 still open)
+### Proposed retune (items 1 and 3 applied 2026-10-14; 2, 4 and 5 still open; item 3, the reaction gate, applies to the legacy mode only)
 Goal: fewer steps per turn so positioning matters, and shots stay a real choice.
 1. **AP per turn 14** (7 straight steps, or 3 shots, or 1 shot plus 5 steps). Keep step 2, diagonal 3, shot 4. Use a separate `AP_PER_TURN` in `InitiativeMatch` so the planned mode's 20-tick round and its tests are untouched.
 2. **Optional speed scaling:** `AP = 10 + speed / 2` (speed 4 gives 12, speed 8 gives 14, speed 10 gives 15). Makes fast mercs genuinely longer-legged without a new stat.

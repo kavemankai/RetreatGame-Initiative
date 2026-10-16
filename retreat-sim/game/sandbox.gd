@@ -4,11 +4,13 @@ extends RefCounted
 ## list you place yourself. A config is a plain Dictionary (never mutated; the edit helpers
 ## return a changed copy):
 ##   {"mercs": [{"slot", "stats": {hp,speed,aim,cqb,morale,sight}, "gear": {armour,weapon,mod}, "pos": Vector2i} x4],
-##    "enemies": [{"kind", "hollow", "role", "pos": Vector2i}], "ruleset": "initiative" | "planned"}
+##    "enemies": [{"kind", "hollow", "role", "pos": Vector2i}], "ruleset": "activation" | "initiative" | "planned"}
 
 const MAP := "proving_ground"
 const SQUAD := 4
 const MAX_ENEMIES := 12
+## AP per activation the sandbox can test (activation ruleset only).
+const AP_CHOICES: Array[int] = [8, 10, 12, 14, 16, 20]
 const PLAYER_ZONE_X := 5  # mercs may start on columns 0..this
 const STAT_KEYS: Array[String] = ["hp", "speed", "aim", "cqb", "morale", "sight"]
 const STAT_RANGE := {"hp": [1, 8], "speed": [1, 10], "aim": [1, 10], "cqb": [0, 10], "morale": [0, 10], "sight": [3, 12]}
@@ -30,7 +32,7 @@ static func default_config(story: Dictionary) -> Dictionary:
 		{"kind": "regular", "hollow": false, "role": "sentry", "pos": Vector2i(18, 7)},
 		{"kind": "regular", "hollow": false, "role": "guard", "pos": Vector2i(14, 7)},
 	]
-	return {"mercs": mercs, "enemies": enemies, "ruleset": "initiative"}
+	return {"mercs": mercs, "enemies": enemies, "ruleset": Session.RULESETS[0], "ap": CombatConfig.load_file().max_ap}
 
 
 ## Every enemy you can place: [{key, label, stats, id_base, single}] (tiers, then the Writ, then the Provost).
@@ -95,6 +97,18 @@ static func without_enemy_at(cfg: Dictionary, tile: Vector2i) -> Dictionary:
 static func without_enemies(cfg: Dictionary) -> Dictionary:
 	var out := cfg.duplicate(true)
 	out["enemies"] = [] as Array[Dictionary]
+	return out
+
+
+static func ap_of(cfg: Dictionary) -> int:
+	return int(cfg.get("ap", SimConst.AP_PER_TURN))
+
+
+## The next AP choice, wrapping round (a changed copy).
+static func with_next_ap(cfg: Dictionary) -> Dictionary:
+	var out := cfg.duplicate(true)
+	var i := AP_CHOICES.find(ap_of(cfg))
+	out["ap"] = AP_CHOICES[(i + 1) % AP_CHOICES.size()]
 	return out
 
 

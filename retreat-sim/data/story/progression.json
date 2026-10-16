@@ -1,0 +1,18 @@
+{
+ "version": 1,
+ "note": "Levelling. After a mission each surviving named merc earns XP: xp.deploy for going, xp.objective on a win, per_hit for each hit landed (up to hit_cap), per_kill for each kill, survived_hit for each hit taken and survived (up to survived_hit_cap). levels[i] is the total XP needed for level i + 2 (five levels). Each level offers `offers` different +1 stat steps, drawn with class_weights plus a use bonus (use counters divided by use_divisors), never above caps. The draw is seeded by the campaign seed, the merc and how many picks they have made, so reloading cannot reroll it. Hollows never level.",
+ "xp": {"deploy": 2, "objective": 2, "per_hit": 1, "hit_cap": 6, "per_kill": 3, "survived_hit": 1, "survived_hit_cap": 2},
+ "levels": [6, 14, 24, 36],
+ "caps": {"hp": 6, "speed": 10, "aim": 10, "cqb": 10, "morale": 10, "sight": 9},
+ "offers": 3,
+ "class_weights": {
+  "rifle": {"hp": 2, "speed": 2, "aim": 3, "cqb": 1, "morale": 2, "sight": 1},
+  "carbine": {"hp": 1, "speed": 4, "aim": 2, "cqb": 2, "morale": 1, "sight": 2},
+  "sniper": {"hp": 1, "speed": 1, "aim": 4, "cqb": 0, "morale": 1, "sight": 3},
+  "shotgun": {"hp": 2, "speed": 2, "aim": 1, "cqb": 4, "morale": 2, "sight": 1},
+  "heavy": {"hp": 4, "speed": 1, "aim": 2, "cqb": 2, "morale": 3, "sight": 1},
+  "grenade": {"hp": 1, "speed": 2, "aim": 3, "cqb": 0, "morale": 1, "sight": 2},
+  "beam": {"hp": 1, "speed": 2, "aim": 3, "cqb": 1, "morale": 2, "sight": 2}
+ },
+ "use_divisors": {"aim": 6, "speed": 40, "morale": 3, "cqb": 3, "hp": 5}
+}

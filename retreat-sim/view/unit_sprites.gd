@@ -3,10 +3,10 @@ extends RefCounted
 ## Which sprite set a unit draws with. Sets live in res://assets/mercs/ as
 ## <key>_<frame>.png (see art/slice_character.py). Pure mapping, no drawing.
 
-## Player slot -> sprite key (slot 1..12).
+## Player slot -> sprite key (slot 1..8: the roster of eight, see data/story/cast.json). The art for
+## Quill, Static, Pilgrim and Tinker stays in assets/mercs but no slot uses it.
 const MERC_KEYS := {
-	1: "warden", 2: "quill", 3: "moth", 4: "sable", 5: "bulwark", 6: "static",
-	7: "pilgrim", 8: "needle", 9: "gran", 10: "tinker", 11: "ghost", 12: "wren",
+	1: "warden", 2: "gran", 3: "sable", 4: "needle", 5: "bulwark", 6: "moth", 7: "wren", 8: "ghost",
 }
 ## Writ officer slot (unit id 100 + slot) -> sprite key.
 const WRIT_KEYS := {1: "clerk", 2: "gavel", 3: "seal", 4: "notary", 5: "surveyor", 6: "usher"}

@@ -9,12 +9,12 @@ func new_campaign() -> Campaign:
 
 func test_build_match_fields_the_chosen_squad_against_the_mission_enemies() -> void:
 	var c := new_campaign()
-	var m := MissionBuilder.build(c, "karsa_breakout", [1, 5, 8])
+	var m := MissionBuilder.build(c, "karsa_breakout", [1, 5, 4])
 	var blue := m.state.units.values().filter(func(u): return u.team == 0)
 	var red := m.state.units.values().filter(func(u): return u.team == 1)
 	check(blue.size() == 3 and red.size() == 3, "3 mercs against 3 conscripts (a sentry, a patrol and a guard)")
-	check(m.state.units.has(1) and m.state.units.has(5) and m.state.units.has(8), "unit ids are the slot numbers")
-	check(m.state.units[8].cqb == 9 and m.state.units[1].sight_range == 6, "stats come from the cast (Needle's CQB 9, Warden's sight 6)")
+	check(m.state.units.has(1) and m.state.units.has(5) and m.state.units.has(4), "unit ids are the slot numbers")
+	check(m.state.units[4].cqb == 9 and m.state.units[1].sight_range == 6, "stats come from the cast (Needle's CQB 9, Warden's sight 6)")
 
 
 func test_units_start_on_distinct_open_tiles() -> void:
@@ -30,9 +30,9 @@ func test_units_start_on_distinct_open_tiles() -> void:
 
 func test_hollow_slots_field_as_drones_with_frozen_stats() -> void:
 	var c := new_campaign()
-	c.complete_mission("karsa_breakout", true, [3], [], [])
-	var m := MissionBuilder.build(c, "the_weir", [1, 3, 5])
-	var moth: SimUnit = m.state.units[3]
+	c.complete_mission("karsa_breakout", true, [6], [], [])
+	var m := MissionBuilder.build(c, "the_weir", [1, 6, 5])
+	var moth: SimUnit = m.state.units[6]
 	check(moth.is_drone and moth.morale == 0 and moth.aim == 3, "Moth's slot is now a drone at 60% of Moth's aim (5 -> 3)")
 	check(not m.state.units[1].is_drone, "the others are unchanged")
 
@@ -72,19 +72,19 @@ func test_outcome_reads_dead_slots_and_writ_kills() -> void:
 
 func test_outcome_for_a_win_a_wipe_and_a_withdrawal() -> void:
 	var c := new_campaign()
-	var won := MissionBuilder.build(c, "karsa_breakout", [1, 5, 8])
+	var won := MissionBuilder.build(c, "karsa_breakout", [1, 5, 4])
 	for id in won.state.units.keys():
 		if (won.state.units[id] as SimUnit).team == 1:
 			won.run.state.units[id].alive = false
 	won.step()
 	check(MissionBuilder.outcome(c, won, false)["success"], "all enemies dead = success")
-	var lost := MissionBuilder.build(c, "karsa_breakout", [1, 5, 8])
-	for id in [1, 5, 8]:
+	var lost := MissionBuilder.build(c, "karsa_breakout", [1, 5, 4])
+	for id in [1, 5, 4]:
 		lost.run.state.units[id].alive = false
 	lost.step()
 	var o := MissionBuilder.outcome(c, lost, false)
 	check(o["squad_wiped"] and not o["success"], "all mercs dead = squad wiped")
-	var out := MissionBuilder.build(c, "karsa_breakout", [1, 5, 8])
+	var out := MissionBuilder.build(c, "karsa_breakout", [1, 5, 4])
 	var w := MissionBuilder.outcome(c, out, true)
 	check(not w["success"] and not w["squad_wiped"], "withdrawing is a failure with survivors")
 

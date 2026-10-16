@@ -72,8 +72,9 @@ func test_shooting_costs_ap_and_follows_the_hit_rules() -> void:
 	check(m.state.units[200].hp == 2 and events(beats).any(func(e): return e["type"] == "shot" and e["result"] == "hit"), "a hit hurts (test dice always hit)")
 	m.state.grid.set_edge(Vector2i(4, 2), Vector2i(5, 2), SimConst.EDGE_HALF)
 	var covered := m.shoot(1, 200)
-	check(events(covered).any(func(e): return e["type"] == "shot" and e["result"] == "blocked"), "cover blocks the shot")
-	check(m.ap_of(1) == SimConst.AP_PER_TURN - 8 and m.state.units[200].hp == 2, "but it still cost the AP, and nobody was hurt")
+	check(events(covered).any(func(e): return e["type"] == "shot" and e["result"] == "hit"), "a shot into cover can still land (test dice always hit)")
+	check(m.ap_of(1) == SimConst.AP_PER_TURN - 8 and m.state.units[200].hp == 1, "it cost its AP and hurt")
+	check(m.shot_preview(1, 200)["chance"] == 66 - SimConst.COVER_HIT_PENALTY, "but the preview shows the lower chance")
 
 
 func test_a_merc_cannot_shoot_without_ap_range_or_sight() -> void:

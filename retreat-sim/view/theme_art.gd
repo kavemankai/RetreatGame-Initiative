@@ -13,6 +13,12 @@ static var _cache: Dictionary = {}  # "<theme>/<file>" -> Texture2D (or null if 
 
 
 static func _tex(theme: String, file: String) -> Texture2D:
+	var ja2 := ArtSkin.ja2_theme_file(file)
+	if ja2 != "":
+		var jkey := "ja2/" + file
+		if not _cache.has(jkey):
+			_cache[jkey] = load(ja2)
+		return _cache[jkey]
 	var key := "%s/%s" % [theme, file]
 	if not _cache.has(key):
 		var path := "%s%s/%s" % [DIR, theme, file]

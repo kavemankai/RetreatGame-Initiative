@@ -1,6 +1,6 @@
 # Act 1 level design: theory and block-outs (DRAFT for review)
 
-Block-outs: `art/style_test/blockouts_act1.png` (one file per map: `art/style_test/blockout_<mission>.png`). Draft data: `retreat-sim/data/maps_draft/<mission>.json`, written by `retreat-sim/tools/design_maps.py`. None of this is live yet; the current 12x10 maps stay in the game until these are approved.
+Block-outs: `art/style_test/blockouts_act1.png` (one file per map: `art/style_test/blockout_<mission>.png`). Draft data: `retreat-sim/data/maps_draft/<mission>.json`, written by `retreat-sim/tools/design_maps.py`. **Update 2026-10-15:** the four Act 1 maps from this design are live in `retreat-sim/data/maps/` (karsa_breakout 16x12, the_weir 18x14, pellam_dock 16x14, orchard_ring 14x14); the draft files named above are the original block-outs. Acts 2 and 3 are still 12x10.
 
 ## What was wrong with the first pass
 All twelve maps shared the same 12x10 size, the same squad start (a 2x2 blob, west, centre), the same enemy blob (east, centre) and the same west-to-east fight. Terrain was the only difference, so no map had a reason to exist.

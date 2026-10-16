@@ -5,7 +5,7 @@ extends RefCounted
 
 const KEYS: Array[String] = [
 	"w_damage", "w_kill", "w_exposed", "w_cover",
-	"preferred_range", "w_range", "w_objective", "w_watch",
+	"preferred_range", "w_range", "w_objective", "w_watch", "w_lane",
 ]
 
 ## Weights beyond this magnitude are rejected (guards int overflow in scoring).
@@ -19,6 +19,7 @@ var preferred_range: int = 4  ## tiles; ideal distance to the nearest visible en
 var w_range: int = 2          ## penalty per tile away from preferred_range
 var w_objective: int = 2      ## penalty per tile from the objective (no enemy visible)
 var w_watch: int = 0          ## overwatch bonus: w_watch x clear cone tiles x hold ticks / 48
+var w_lane: int = 0           ## bonus per visible enemy (at most 2) with a clear, uncovered shot to this tile
 
 
 ## Returns {"profile": SimAIProfile or null, "errors": Array[String]}.

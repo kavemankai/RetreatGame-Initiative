@@ -22,6 +22,8 @@ const COL_HOLLOW := "#6f7885"
 const SPEAKER_COLORS: Array[String] = ["#ffd479", "#8fd0ff", "#9be39b", "#ffa8a8", "#d0b0ff", "#ffbd80", "#a8e0ff", "#e8e8a0"]
 
 var _story: Dictionary
+var _col: VBoxContainer           # the text page column (hidden while a built screen is hosted)
+var _hosted: Control
 var _picked: Array[int] = []
 var _mission_id := ""   # the mission (or card) being briefed
 var _title: Label
@@ -30,8 +32,8 @@ var _text: RichTextLabel
 var _buttons: GridContainer
 var _footer: VBoxContainer
 var _sound: SoundBoard
-var _brief: Dictionary = {}  # title, body, mission of the briefing on screen
 var _portrait := false
+var _new_difficulty := "story"  # applied by "New campaign" (this private build defaults to Story, see DECISION_LOG D-5); a loaded campaign keeps the level it was saved with
 
 
 func _ready() -> void:
@@ -80,6 +82,7 @@ func _build_ui() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
 	margin.add_child(col)
+	_col = col
 	_title = Label.new()
 	_title.add_theme_font_size_override("font_size", 26)
 	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -107,7 +110,30 @@ func _apply_layout() -> void:
 	theme.default_font_size = FONT_PORTRAIT if _portrait else FONT_LANDSCAPE
 
 
+## Shows a built screen (a Control from view/screens) in place of the text page. When it emits `done`
+## or `back`, it goes away and `on_close` runs (usually the next page). Any `_show` also clears it.
+func _host(screen: Control, on_close: Callable) -> void:
+	_unhost()
+	_col.visible = false
+	_hosted = screen
+	_col.get_parent().add_child(screen)
+	for signal_name in ["done", "back"]:
+		if screen.has_signal(signal_name):
+			screen.connect(signal_name, func() -> void:
+				_unhost()
+				on_close.call())
+
+
+func _unhost() -> void:
+	if _hosted != null:
+		_hosted.queue_free()
+		_hosted = null
+	if _col != null:
+		_col.visible = true
+
+
 func _show(title: String, bbcode: String, buttons: Array, status: String = "", columns: int = 1, footer: Array = []) -> void:
+	_unhost()
 	_title.text = title
 	_status.text = status
 	_status.visible = status != ""
@@ -125,6 +151,7 @@ func _fill(box: Container, buttons: Array, expand: bool) -> void:
 	for b: Dictionary in buttons:
 		var btn := Button.new()
 		btn.text = b["text"]
+		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long label wraps instead of widening the whole page past the screen
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.custom_minimum_size = Vector2(0, BUTTON_HEIGHT_PORTRAIT if _portrait else 44)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -143,12 +170,44 @@ func _next() -> void:
 		_menu()
 		return
 	while not c.pending.is_empty():
+		if _step_screen(c, c.pending[0]):
+			return
 		var p := _page_for(c, c.pending[0])
 		if not p.is_empty():
 			_show(p["title"], p["bbcode"], p["buttons"], p.get("status", ""))
 			return
 		c.pending.pop_front()  # a step with nothing to show
-	_briefing()
+	_map_screen()
+
+
+## A pending step that is a built screen rather than a text page. Returns true if it was shown. A level-up
+## step with nothing left to spend (already chosen before a quit), or a salvage step with nothing in it, is skipped.
+func _step_screen(c: Campaign, step: Dictionary) -> bool:
+	match step["t"]:
+		"levelup":
+			var slot := int(step["slot"])
+			if c.levelup_pending(slot) <= 0:
+				return false
+			var screen := LevelUpScreen.new().setup(c, slot)
+			screen.chosen.connect(_save)
+			_host(screen, _advance)
+			return true
+		"result":
+			var won: bool = bool(step["o"]["success"]) and not bool(step["withdrawn"])
+			_sound.play("stinger_win" if won else "stinger_loss")
+			_host(ResultScreen.new().setup(c, step), _advance)
+			return true
+		"salvage":
+			if (step["loot"] as Array).is_empty():
+				return false
+			_sound.play("sfx_loot", 1.2)
+			var salvage := SalvageScreen.new().setup(c, step["loot"])
+			salvage.equip_now.connect(func() -> void:
+				_unhost()
+				_loadout(_advance))
+			_host(salvage, _advance)
+			return true
+	return false
 
 
 ## Finish the current step, save, and move on.
@@ -166,7 +225,6 @@ func _continue_button(text: String = "Continue") -> Array:
 
 func _page_for(c: Campaign, d: Dictionary) -> Dictionary:
 	match d["t"]:
-		"result": return _result_page(c, d)
 		"roll": return _roll_page(c, d)
 		"roll_after": return _roll_after_page(c, d)
 		"debrief": return _debrief_page(c, d)
@@ -180,16 +238,24 @@ func _resources(c: Campaign) -> String:
 
 # --- menu -------------------------------------------------------------------------------
 
-func _menu() -> void:
+func _menu(status: String = "") -> void:
 	var tagline := "The war is over and nobody has told the army."
-	var buttons: Array = [{"text": "New campaign", "call": _new_pressed}]
+	var buttons: Array = []
+	var resumable := ResumeStore.peek()
+	if not resumable.is_empty():
+		buttons.append({"text": "Resume battle: %s" % resumable["label"], "call": _resume_battle})
+	buttons.append({"text": "New campaign (%s difficulty)" % Campaign.DIFFICULTIES[_new_difficulty]["label"], "call": _new_pressed})
+	buttons.append({"text": "Change difficulty for a new campaign", "call": _cycle_difficulty})
 	if FileAccess.file_exists(SAVE_PATH):
 		buttons.append({"text": "Continue campaign", "call": _load_campaign})
-	buttons.append({"text": "Quick skirmish", "call": _quick_skirmish})
-	buttons.append({"text": "Act 1 level test", "call": _level_test_menu})
-	buttons.append({"text": "Sandbox (set stats, gear, enemies)", "call": _open_sandbox})
+	if not OS.has_feature("campaign_only"):  # the campaign build ships without the older test modes
+		buttons.append({"text": "Quick skirmish", "call": _quick_skirmish})
+		buttons.append({"text": "Act 1 level test", "call": _level_test_menu})
+		buttons.append({"text": "Sandbox (set stats, gear, enemies)", "call": _open_sandbox})
 	buttons.append({"text": "Sound: %s" % ("off" if _sound.settings.muted else "on"), "call": _toggle_sound})
-	_show(_story["world"]["title"], "[i]%s[/i]\n\nYou command the 9th Rearguard, the last real people in a ghost army, escorting 6,200 civilians along the Reliquary Lanes toward a refuge that may not let you in.\n\nBehind you comes a courteous man who only wants you to be counted." % tagline, buttons)
+	if ArtSkin.ja2_available():
+		buttons.append({"text": ArtSkin.label() + " (tap to switch)", "call": _toggle_skin})
+	_show(_story["world"]["title"], "[i]%s[/i]\n\nYou command the 9th Rearguard, the last real people in a ghost army, escorting 6,200 civilians along the Reliquary Lanes toward a refuge that may not let you in.\n\nBehind you comes a courteous man who only wants you to be counted." % tagline, buttons, status)
 
 
 const LEVEL_TEST_PITCH := {
@@ -205,14 +271,21 @@ func _level_test_menu() -> void:
 	var buttons: Array = []
 	for id: String in LEVEL_TEST_PITCH:
 		buttons.append({"text": LEVEL_TEST_PITCH[id], "call": _start_level_test.bind(id)})
-	var initiative := Session.ruleset == "initiative"
-	buttons.append({"text": "Ruleset: %s (tap to switch)" % ("Initiative, live AP" if initiative else "Planned, simultaneous"), "call": _toggle_ruleset})
-	_show("Act 1 level test", "Pick a map. Each uses the new layout, enemy roles and goal. Nothing here is saved.", buttons, "", 1, [{"text": "Back", "call": _menu}])
+	buttons.append({"text": "Ruleset: %s (tap to switch)" % Session.RULESET_LABEL[Session.ruleset], "call": _toggle_ruleset})
+	_show("Act 1 level test", "Pick a map. Each uses the new layout, enemy roles and goal. Starting one replaces any battle you could resume.", buttons, "", 1, [{"text": "Back", "call": _menu}])
 
 
 func _toggle_ruleset() -> void:
-	Session.ruleset = "planned" if Session.ruleset == "initiative" else "initiative"
+	Session.ruleset = Session.next_ruleset(Session.ruleset)
 	_level_test_menu()
+
+
+## Picks the battle up exactly where the autosave left it (no undo: it is the last committed action).
+func _resume_battle() -> void:
+	if not ResumeStore.enter_session(_story):
+		_menu("That battle could not be resumed and was discarded.")
+		return
+	get_tree().change_scene_to_file(INITIATIVE_SCENE)
 
 
 func _open_sandbox() -> void:
@@ -230,7 +303,12 @@ func _start_level_test(id: String) -> void:
 	Session.mission_id = id
 	Session.level_test = true
 	Session.current_match = MissionBuilder.build(c, id, slots)
-	get_tree().change_scene_to_file(INITIATIVE_SCENE if ruleset == "initiative" else PLAY_SCENE)
+	get_tree().change_scene_to_file(PLAY_SCENE if Session.scene_ruleset_is_planned(ruleset) else INITIATIVE_SCENE)
+
+
+func _toggle_skin() -> void:
+	ArtSkin.set_ja2(not ArtSkin.ja2_active())
+	_menu()
 
 
 func _toggle_sound() -> void:
@@ -248,11 +326,23 @@ func _new_pressed() -> void:
 	])
 
 
+const DIFFICULTY_NOTE := {
+	"standard": "Standard: the fight as designed.",
+	"story": "Story: your mercs have one more hit point and the enemy shoots less accurately. Same missions, same ending.",
+}
+
+
+func _cycle_difficulty() -> void:
+	_new_difficulty = Campaign.next_difficulty(_new_difficulty)
+	_menu(DIFFICULTY_NOTE[_new_difficulty])
+
+
 func _start_new() -> void:
 	Session.reset()
 	Session.campaign = Campaign.new_game(_story)
+	Session.campaign.set_difficulty(_new_difficulty)
 	_save()
-	_briefing()
+	_map_screen()
 
 
 func _load_campaign() -> void:
@@ -290,7 +380,39 @@ func _music_for_current() -> void:
 		_sound.set_music(int(c.mission_or_card(c.current).get("act", 1)))
 
 
-func _briefing() -> void:
+# --- overworld -------------------------------------------------------------------------------
+
+## The hub between missions: the route map. A finished or lost campaign goes to its closing page instead.
+func _map_screen() -> void:
+	var c := Session.campaign
+	if c == null or c.over or c.finished:
+		_briefing()
+		return
+	_music_for_current()
+	var screen := OverworldScreen.new().setup(c)
+	screen.brief.connect(func() -> void:
+		_unhost()
+		_picked.clear()
+		_briefing())
+	screen.open_roster.connect(func() -> void:
+		_unhost()
+		_roster_screen(_map_screen))
+	screen.open_loadout.connect(func() -> void:
+		_unhost()
+		_loadout(_map_screen))
+	screen.open_stash.connect(func() -> void:
+		_unhost()
+		_loadout(_map_screen)
+		(_hosted as LoadoutScreen).open_stash())
+	screen.open_menu.connect(func() -> void:
+		_unhost()
+		_menu())
+	_host(screen, _map_screen)
+
+
+## The mission prep screen for the mission (or card) to brief. `keep_squad` returns to it from the loadout or
+## roster with the squad chosen so far.
+func _briefing(keep_squad := false) -> void:
 	_music_for_current()
 	var c := Session.campaign
 	if c == null:
@@ -304,13 +426,26 @@ func _briefing() -> void:
 		return
 	_mission_id = _mission_to_brief(c)
 	var m := c.mission_or_card(_mission_id)
+	if OS.has_feature("act1_only") and int(m.get("act", 1)) > 1:  # this build ships without the later acts' maps and sounds
+		_show("End of the Act 1 build", "The convoy reaches %s. The maps for the later acts are not in this build.
+
+Your campaign is saved." % m["place"], [{"text": "Back to the map", "call": _map_screen}, {"text": "Menu", "call": _menu}], _resources(c))
+		return
 	var is_card := c.card(_mission_id).size() > 0
 	var scene_id: String = ("card_" + _mission_id) if is_card else m["scenes"]["briefing"]
-	var title := ("Contingency: %s" % m["name"]) if is_card else ("Act %d: %s" % [m["act"], m["name"]])
-	var body := "[i]%s[/i]\n\n[b]Objective[/b]: %s\n\n%s" % [m.get("summary", ""), m["objective"]["text"], _scene_bbcode(scene_id)]
-	_default_squad(c, m)
-	_brief = {"title": title, "mission": m}
-	_show(title, body, [{"text": "Choose squad", "call": _squad_choice}], _resources(c))
+	var screen := MissionPrepScreen.new().setup(c, _mission_id, "[i]%s[/i]
+
+%s" % [m.get("summary", ""), _scene_bbcode(scene_id)], _picked if keep_squad else [])
+	screen.deploy.connect(func(slots: Array) -> void:
+		_picked.assign(slots)
+		_deploy())
+	screen.loadout.connect(func() -> void:
+		_picked = screen.picked()
+		_loadout(_briefing.bind(true)))
+	screen.roster.connect(func() -> void:
+		_picked = screen.picked()
+		_roster_screen(_briefing.bind(true)))
+	_host(screen, _map_screen)
 
 
 ## A contingency card is offered once per act, after its second story mission;
@@ -329,123 +464,40 @@ func _mission_to_brief(c: Campaign) -> String:
 	return c.current
 
 
-## How many the squad takes: the mission's size, or everyone left if fewer.
-func _squad_need(c: Campaign, m: Dictionary) -> int:
-	return mini(int(m["squad_size"]), c.available_slots().size())
+# --- roster ----------------------------------------------------------------------------------
 
-
-func _default_squad(c: Campaign, m: Dictionary) -> void:
-	_picked.clear()
-	var named: Array[int] = []
-	var hollow: Array[int] = []
-	for slot in c.available_slots():
-		(named if c.slot_status(slot) == "named" else hollow).append(slot)
-	for slot in named + hollow:
-		if _picked.size() < _squad_need(c, m):
-			_picked.append(slot)
-
-
-func _squad_choice() -> void:
+## Everyone, with levels. Spending a waiting level-up opens the level-up screen and returns here.
+func _roster_screen(return_to: Callable = Callable()) -> void:
 	var c := Session.campaign
-	var m: Dictionary = _brief["mission"]
-	var need := _squad_need(c, m)
-	var grid: Array = []
-	for slot in c.available_slots():
-		grid.append({"text": ("* " if _picked.has(slot) else "") + _slot_label(c, slot), "toggle": true, "pressed": _picked.has(slot), "call": _toggle_slot.bind(slot)})
-	var short := ""
-	if need < int(m["squad_size"]):
-		short = "\n\n[i]Only %d of you are left to send. The net reports the squad below strength; nobody is left to read the error.[/i]" % need
-	var body := "[b]%s[/b]\n\n%s\n\nChoose [b]%d[/b] for the squad. Hollows fight at 60%% of the soldier they replace and never lose their nerve.%s" % [_brief["title"], m["objective"]["text"], need, short]
-	_show("Squad", body, grid, _resources(c), 2, [
-		{"text": "Deploy (%d/%d)" % [_picked.size(), need], "disabled": _picked.size() != need or need == 0, "call": _deploy},
-		{"text": "Loadout (%d in the stash)" % c.stash.size(), "call": _loadout},
-		{"text": "Back to briefing", "call": _briefing},
-	])
+	var leave := return_to if return_to.is_valid() else Callable(self, "_briefing")
+	var screen := RosterScreen.new().setup(c)
+	screen.open_levelup.connect(func(slot: int) -> void:
+		var up := LevelUpScreen.new().setup(c, slot)
+		up.chosen.connect(_save)
+		_host(up, _roster_screen.bind(return_to)))
+	_host(screen, leave)
 
 
 # --- loadout ---------------------------------------------------------------------------------
 
-func _gear_name(c: Campaign, id: String) -> String:
-	return c.item(id).get("name", "-") if id != "" else "-"
-
-
-## Everyone who can carry kit, with what they wear. Tap one to change it.
-func _loadout() -> void:
-	var c := Session.campaign
-	var grid: Array = []
-	for slot in c.available_slots():
-		if c.slot_status(slot) != "named":
-			continue
-		var g := c.gear_of(slot)
-		grid.append({"text": "%s\n%s | %s | %s" % [_slot_label(c, slot), _gear_name(c, g["armour"]), _gear_name(c, g["weapon"]), _gear_name(c, g["mod"])], "call": _loadout_merc.bind(slot)})
-	var body := "[b]Loadout[/b]\n\nThree slots each: armour, weapon, mod. Anything you find goes in the stash. When a soldier dies, their kit comes back to it; a hollow takes nothing."
-	_show("Loadout", body, grid, _resources(c), 1, [{"text": "Back to the squad", "call": _squad_choice}])
-
-
-func _loadout_merc(slot: int) -> void:
-	var c := Session.campaign
-	var g := c.gear_of(slot)
-	var lines: Array[String] = ["[b]%s[/b]" % _slot_label(c, slot), ""]
-	var buttons: Array = []
-	for kind in Campaign.GEAR_SLOTS:
-		var id: String = g[kind]
-		lines.append("%s: %s%s" % [kind.capitalize(), _gear_name(c, id), ("  (%s)" % c.item_summary(id)) if id != "" else ""])
-		buttons.append({"text": "%s: %s" % [kind.capitalize(), _gear_name(c, id)], "call": _loadout_kind.bind(slot, kind)})
-	_show("Loadout", "\n".join(lines), buttons, _resources(c), 1, [{"text": "Back", "call": _loadout}])
-
-
-func _loadout_kind(slot: int, kind: String) -> void:
-	var c := Session.campaign
-	var worn: String = c.gear_of(slot)[kind]
-	var buttons: Array = []
-	for id in c.stash_for(kind):
-		buttons.append({"text": "%s   %s" % [_gear_name(c, id), c.item_summary(id)], "call": _loadout_equip.bind(slot, id)})
-	if worn != "":
-		buttons.append({"text": "Take off %s" % _gear_name(c, worn), "call": _loadout_unequip.bind(slot, kind)})
-	var body := "[b]%s: %s[/b]\n\n" % [kind.capitalize(), _slot_label(c, slot)]
-	body += "Worn: %s\n" % (("%s  (%s)\n[i]%s[/i]" % [_gear_name(c, worn), c.item_summary(worn), c.item(worn).get("note", "")]) if worn != "" else "nothing")
-	if buttons.is_empty():
-		body += "\nNothing in the stash for this slot."
-	_show("Loadout", body, buttons, _resources(c), 1, [{"text": "Back", "call": _loadout_merc.bind(slot)}])
-
-
-func _loadout_equip(slot: int, id: String) -> void:
-	Session.campaign.equip(slot, id)
-	_sound.play("sfx_equip")
-	_save()
-	_loadout_merc(slot)
-
-
-func _loadout_unequip(slot: int, kind: String) -> void:
-	Session.campaign.unequip(slot, kind)
-	_save()
-	_loadout_merc(slot)
-
-
-func _toggle_slot(slot: int) -> void:
-	var need := _squad_need(Session.campaign, _brief["mission"])
-	if _picked.has(slot):
-		_picked.erase(slot)
-	elif _picked.size() < need:
-		_picked.append(slot)
-	_squad_choice()
-
-
-func _slot_label(c: Campaign, slot: int) -> String:
-	if c.slot_status(slot) == "hollow":
-		return "%s   (hollow)" % Campaign.designation(slot)
-	for m: Dictionary in _story["cast"]["mercs"]:
-		if int(m["slot"]) == slot:
-			return m["callsign"]
-	return "slot %d" % slot
+## The loadout screens (view/screens/loadout_screen.gd), shown in place of the text page. Gear changes
+## are saved at once and sound the equip click; Back returns to `return_to` (the squad page by default).
+func _loadout(return_to: Callable = Callable()) -> void:
+	var screen := LoadoutScreen.new().setup(Session.campaign)
+	screen.changed.connect(func() -> void:
+		_sound.play("sfx_equip")
+		_save())
+	_host(screen, return_to if return_to.is_valid() else Callable(self, "_briefing"))
 
 
 func _deploy() -> void:
 	var c := Session.campaign
 	Session.mission_id = _mission_id
 	Session.withdrawn = false
+	Session.level_test = false
 	Session.current_match = MissionBuilder.build(c, _mission_id, _picked.duplicate())
-	get_tree().change_scene_to_file(PLAY_SCENE)
+	_save()  # the campaign as it stands, so an interrupted mission can be resumed against it
+	get_tree().change_scene_to_file(PLAY_SCENE if Session.scene_ruleset_is_planned(Session.ruleset) else INITIATIVE_SCENE)
 
 
 # --- after a mission ------------------------------------------------------------------------
@@ -464,47 +516,10 @@ func _apply_outcome() -> void:
 		_next()  # already applied, or out of order: never apply twice
 		return
 	var before := {"procession": c.procession, "reserves": c.reserves}
-	var report := c.complete_mission(id, o["success"], o["dead_slots"], o["writ_dead"], [], o["squad_wiped"], int(o.get("procession_loss", 0)))
-	c.pending = [{"t": "result", "id": id, "o": o, "report": report, "before": before, "withdrawn": withdrawn}]
-	if not c.over:
-		for slot in report["fallen"]:
-			c.pending.append({"t": "roll", "slot": slot, "vacant": (report["vacant"] as Array).has(slot)})
-		if c.card(id).is_empty():
-			c.pending.append({"t": "debrief", "mission": id, "deaths": (report["fallen"] as Array).size()})
-			c.pending.append({"t": "orrick", "mission": id})
+	var report := c.complete_mission(id, o["success"], o["dead_slots"], o["writ_dead"], [], o["squad_wiped"], int(o.get("procession_loss", 0)), o.get("units", []))
+	c.pending = c.debrief_chain(id, o, report, before, withdrawn)
 	_save()
 	_next()
-
-
-func _result_page(c: Campaign, d: Dictionary) -> Dictionary:
-	var o: Dictionary = d["o"]
-	var report: Dictionary = d["report"]
-	var before: Dictionary = d["before"]
-	var m := c.mission_or_card(d["id"])
-	var verdict := "Withdrawn" if d["withdrawn"] else ("Complete" if o["success"] else "Failed")
-	if o["squad_wiped"]:
-		verdict = "The squad is lost"
-	var lines: Array[String] = []
-	lines.append("[b]%s[/b]" % verdict)
-	lines.append("Procession %d (%+d)   Reserves %d (%+d)" % [c.procession, c.procession - int(before["procession"]), c.reserves, c.reserves - int(before["reserves"])])
-	for slot in report["hollowed"]:
-		lines.append("%s is dead. [color=%s]%s[/color] stands in the slot. One reserve spent." % [_callsign(int(slot)), COL_HOLLOW, Campaign.designation(int(slot))])
-	for slot in report["refilled"]:
-		lines.append("[color=%s]%s[/color] is replaced. One reserve spent." % [COL_HOLLOW, Campaign.designation(int(slot))])
-	for slot in report["vacant"]:
-		lines.append("%s is dead. Slot %02d stays empty; there is nothing left to send." % [_callsign(int(slot)), int(slot)])
-	_sound.play("stinger_win" if o["success"] and not d["withdrawn"] else "stinger_loss")
-	if not (report.get("loot", []) as Array).is_empty():
-		_sound.play("sfx_loot", 1.2)
-		var names: Array[String] = []
-		for id in report["loot"]:
-			names.append(String(c.item(id).get("name", id)))
-		lines.append("[b]Salvage[/b]: %s. Equip it from the squad screen." % ", ".join(names))
-	for wid in o["writ_dead"]:
-		lines.append("[color=%s]The Writ[/color]: %s falls. The Bureau fills the slot with a hollow." % [COL_ORRICK, _speaker_name(wid)])
-	if o["squad_wiped"]:
-		lines.append("\n[i]No one is left to read the names.[/i]")
-	return {"title": m.get("name", "Mission"), "bbcode": "\n\n".join(lines), "status": _resources(c), "buttons": _continue_button()}
 
 
 func _roll_page(c: Campaign, d: Dictionary) -> Dictionary:
@@ -657,13 +672,46 @@ func _run_demo(name: String) -> void:
 	match name:
 		"briefing":
 			_start_new()
+			_briefing()
+		"map":
+			_start_new()
+			for id in ["karsa_breakout", "the_weir"]:
+				Session.campaign.complete_mission(id, true, [], [], [])
+			_map_screen()
 		"squad":
 			_start_new()
-			_squad_choice()
+			_briefing()
+		"kit":
+			_start_new()
+			Session.campaign.stash.append_array(["carbine", "marksman_rifle", "marksman_rifle", "plate_carrier", "scope"])
+			Session.campaign.equip(1, "scope")
+			Session.campaign.equip(1, "plate_carrier")
+			_host(KitGallery.new().setup(Session.campaign), _menu)
+		"kit_items":
+			_start_new()
+			Session.campaign.stash.append_array(["carbine", "marksman_rifle", "marksman_rifle", "plate_carrier", "scope", "sprint_boots"])
+			Session.campaign.equip(1, "plate_carrier")
+			_host(KitGallery.new().setup(Session.campaign, false), _menu)
 		"loadout":
 			_start_new()
-			Session.campaign.stash.append_array(["carbine", "scope", "mourning_cloak"])
-			_loadout_merc(1)
+			Session.campaign.stash.append_array(["assault_rifle", "scope", "mourning_cloak", "padded_jacket"])
+			_loadout()
+			(_hosted as LoadoutScreen).open_merc(1)
+		"levelup":
+			_start_new()
+			Session.campaign.apply_xp(3, 14)
+			_step_screen(Session.campaign, {"t": "levelup", "slot": 3})
+		"roster":
+			_start_new()
+			Session.campaign.apply_xp(3, 14)
+			_roster_screen()
+			(_hosted as RosterScreen).open_detail(3)
+		"result":
+			_start_new()
+			_fake_outcome("karsa_breakout", {"success": true, "dead_slots": [5], "writ_dead": [], "squad_wiped": false, "units": [
+				{"slot": 1, "alive": true, "shots": 9, "hits": 6, "kills": 2, "hits_taken": 1, "steps": 12},
+				{"slot": 3, "alive": true, "shots": 4, "hits": 3, "kills": 1, "hits_taken": 0, "steps": 6},
+				{"slot": 5, "alive": false, "shots": 2, "hits": 1, "kills": 0, "hits_taken": 3, "steps": 2}]})
 		"debrief":
 			_start_new()
 			_fake_outcome("karsa_breakout", {"success": true, "dead_slots": [5], "writ_dead": [], "squad_wiped": false})

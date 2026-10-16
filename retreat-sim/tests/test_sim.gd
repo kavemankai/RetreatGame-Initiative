@@ -81,7 +81,7 @@ func test_full_wall_blocks_los() -> void:
 	check(shots.size() == 1 and shots[0]["result"] == "invalid" and shots[0]["reason"] == "no_los", "shot is invalid: no_los")
 
 
-func test_half_wall_cover_blocks_and_flank_hits() -> void:
+func test_half_wall_cover_lowers_the_chance_and_flank_hits() -> void:
 	var s := make_state()
 	s.grid.set_edge(Vector2i(4, 1), Vector2i(5, 1), SimConst.EDGE_HALF)
 	add_unit(s, 1, 0, Vector2i(1, 1))
@@ -89,9 +89,12 @@ func test_half_wall_cover_blocks_and_flank_hits() -> void:
 	add_unit(s, 2, 1, Vector2i(5, 1), 3)
 	var p := SimPlan.new()
 	p.add(1, SimAction.shoot(2))
+	var pv := SimResolver.evaluate_shot(s.grid, s.units[1], s.units[1].pos, s.units[2])
+	check(pv["result"] == "hit" and pv.get("cover", false) and int(pv["chance"]) == SimResolver.evaluate_shot(s.grid, s.units[3], s.units[3].pos, s.units[2])["chance"] - SimConst.COVER_HIT_PENALTY, "a half wall on the target's facing side takes the penalty off the chance")
+	s.fixed_roll = 100
 	var r := SimResolver.resolve(s, p)
-	check(r.state.units[2].hp == 3, "half wall on the target's facing side blocks the shot")
-	check(events_of(r, "shot")[0]["result"] == "blocked", "result is blocked")
+	check(r.state.units[2].hp == 3 and events_of(r, "shot")[0]["result"] == "miss", "a roll that misses the lowered chance does nothing")
+	s.fixed_roll = 1  # an open line is not penalised; the roll is the lowest, so it lands
 	var flank := SimPlan.new()
 	flank.add(3, SimAction.shoot(2))
 	var r2 := SimResolver.resolve(s, flank)
@@ -263,13 +266,12 @@ func test_overwatch_faster_watcher_kills_before_slower() -> void:
 	check(not r.state.units[2].alive, "mover dies")
 
 
-func test_overwatch_cover_blocks_but_spends_watch() -> void:
+func test_overwatch_into_cover_still_fires_and_spends_watch() -> void:
 	var s := overwatch_scene()
 	s.grid.set_edge(Vector2i(1, 5), Vector2i(2, 5), SimConst.EDGE_HALF)
 	var r := SimResolver.resolve(s, mover_plan())
 	var shots := events_of(r, "shot")
-	check(shots.size() == 1 and shots[0]["result"] == "blocked", "covered mover: shot is blocked")
-	check(r.state.units[2].hp == 3, "no damage through cover")
+	check(shots.size() == 1 and shots[0]["result"] in ["hit", "miss"], "the watcher fires once at the covered mover")
 
 
 func test_overwatch_ignores_friendlies() -> void:

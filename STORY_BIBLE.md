@@ -180,7 +180,7 @@ hollow. **Reconciliation** — the Hegemony's word for absorption. **Writ** — 
 - The Roll Read ending needs Remembrance 7+, the vats destroyed at the Anselm, and the Roll opened at Tamsin's Rest.
 
 ### Known gaps
-Every mission uses the same 12x10 terrain (the `map.archetype` fields are briefs for future maps); no art, audio
+The four Act 1 missions have their own redesigned maps (see LEVELS.md); the other eight still use the 12x10 terrain (the `map.archetype` fields are briefs for future maps); no art, audio
 or voice; cast arcs have beats in data but only some surface in dialogue; `next` is single-path (no branching
-routes yet); combat difficulty is untested (an AI-played squad was wiped in mission 2 of both soak runs, so the AI
+routes yet); combat difficulty is untested against people (an early AI-played squad was wiped in mission 2, while in the 2026-10 soak the stand-in squad wins nearly every fight, so the AI
 is a weak stand-in for a player, not a balance reference).

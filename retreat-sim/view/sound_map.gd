@@ -16,6 +16,12 @@ const IMPACT_DELAY := 0.09
 const MORALE_DELAY := 0.35
 const DEATH_DELAY := 0.2
 const HEAVY_DAMAGE := 2
+## One sound per weapon class (rifles keep the three shot variants). A burst's bullets are spaced
+## BULLET_GAP apart; a grenade that lands adds the blast.
+const CLASS_SOUND := {"carbine": "sfx_shot_carbine", "sniper": "sfx_shot_sniper", "shotgun": "sfx_shot_shotgun",
+	"heavy": "sfx_shot_heavy", "grenade": "sfx_shot_grenade", "beam": "sfx_shot_beam"}
+const BULLET_GAP := 0.09
+const BLAST_DELAY := 0.28
 
 
 ## What an event sounds like: [{"name", "delay"}], empty for silent events.
@@ -26,14 +32,23 @@ static func for_event(ev: Dictionary) -> Array[Dictionary]:
 			var result: String = ev["result"]
 			if result == "invalid":
 				return out
+			var klass := String(ev.get("class", "rifle"))
+			var lag := BULLET_GAP * float(int(ev.get("bullet", 0)))
 			var heavy := result == "hit" and int(ev.get("damage", 1)) >= HEAVY_DAMAGE
 			var variant := (int(ev["tick"]) + int(ev["unit"])) % SHOT_VARIANTS
-			out.append({"name": "sfx_shot_heavy" if heavy else "sfx_shot_%d" % variant, "delay": 0.0})
-			var follow: String = {"hit": "sfx_hit", "miss": "sfx_miss", "blocked": "sfx_blocked"}.get(result, "")
+			var shot_name: String = CLASS_SOUND[klass] if CLASS_SOUND.has(klass) else ("sfx_shot_heavy" if heavy else "sfx_shot_%d" % variant)
+			out.append({"name": shot_name, "delay": lag})
+			var follow: String = {"hit": "sfx_hit", "miss": "sfx_blocked" if ev.get("cover", false) else "sfx_miss", "blocked": "sfx_blocked"}.get(result, "")
 			if follow != "":
-				out.append({"name": follow, "delay": IMPACT_DELAY})
+				out.append({"name": follow, "delay": IMPACT_DELAY + lag})
+			if klass == "grenade" and result == "hit":
+				out.append({"name": "sfx_blast", "delay": BLAST_DELAY})
+			if result == "hit" and ArtSkin.ja2_active():
+				out.append({"name": "voice_hit_%d" % ((int(ev["tick"]) + int(ev["target"])) % ArtSkin.VOICE_VARIANTS), "delay": IMPACT_DELAY + lag + 0.05})
 		"death":
 			out.append({"name": "sfx_death", "delay": DEATH_DELAY})
+			if ArtSkin.ja2_active():
+				out.append({"name": "voice_dying_%d" % (int(ev.get("unit", 0)) % ArtSkin.VOICE_VARIANTS), "delay": DEATH_DELAY + 0.05})
 		"morale":
 			out.append({"name": "sfx_steady" if ev["result"] == "steady" else "sfx_broken", "delay": MORALE_DELAY})
 		"move":
@@ -56,7 +71,9 @@ static func all_names() -> Array[String]:
 		names["sfx_shot_%d" % i] = true
 	for i in STEP_VARIANTS:
 		names["sfx_step_%d" % i] = true
-	for n in ["sfx_shot_heavy", "sfx_hit", "sfx_miss", "sfx_blocked", "sfx_death", "sfx_steady", "sfx_broken",
+	for n in CLASS_SOUND.values():
+		names[n] = true
+	for n in ["sfx_blast", "sfx_shot_heavy", "sfx_hit", "sfx_miss", "sfx_blocked", "sfx_death", "sfx_steady", "sfx_broken",
 			"sfx_equip", "sfx_loot", "ui_click", "ui_confirm", "ui_go", "stinger_win", "stinger_loss", "stinger_start"]:
 		names[n] = true
 	for v in AMBIENT.values():

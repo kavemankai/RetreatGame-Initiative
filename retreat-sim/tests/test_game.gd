@@ -111,7 +111,8 @@ func test_builder_shot_preview_reports_cover_and_range() -> void:
 	var s := builder_state()
 	s.grid.set_edge(Vector2i(7, 5), Vector2i(8, 5), SimConst.EDGE_HALF)
 	var b := new_builder(s)
-	check(b.shot_preview(1, 3)["result"] == "blocked", "a half wall on the target's side blocks the shot")
+	var pv := b.shot_preview(1, 3)
+	check(pv["result"] == "hit" and pv.get("cover", false), "a half wall on the target's side is reported as cover, not a block")
 	s.units[1].weapon_range = 1
 	var far := new_builder(s)
 	check(far.shot_preview(1, 3)["reason"] == "out_of_range", "short-ranged weapon: out of range")

@@ -12,10 +12,6 @@
     {
      "who": "warden",
      "text": "Three of us clear the north spine. The Procession loads behind us. Nobody stops to count."
-    },
-    {
-     "who": "quill",
-     "text": "For the record, the Roll says we are two thousand. I count three of us."
     }
    ]
   },
@@ -62,14 +58,6 @@
     {
      "who": "narrator",
      "text": "They find fuel, and a hull with seventeen names still painted on the bulkhead."
-    },
-    {
-     "who": "pilgrim",
-     "text": "Seventeen. I will keep them."
-    },
-    {
-     "who": "tinker",
-     "text": "Fuel for nine days. I counted twice."
     }
    ]
   },
@@ -84,10 +72,6 @@
     {
      "who": "warden",
      "text": "Hold the gantries. Let the tugs finish. Four on each side."
-    },
-    {
-     "who": "tinker",
-     "text": "The muster drop is scheduled for midnight. I would rather it was not."
     }
    ]
   },
@@ -98,10 +82,6 @@
     {
      "who": "narrator",
      "text": "The first drop falls through the dock's cold air at midnight. It is not supplies."
-    },
-    {
-     "who": "pilgrim",
-     "text": "Say his name. Say it before it stands."
     },
     {
      "who": "sable",
@@ -153,14 +133,6 @@
     {
      "who": "narrator",
      "text": "The Quiet Wards is a hospital hulk drifting dark. Someone has left the lights on in the long ward."
-    },
-    {
-     "who": "pilgrim",
-     "text": "There are eighty of them. They cannot be moved without us."
-    },
-    {
-     "who": "quill",
-     "text": "A polite voice is on the net. It says it only wants to talk."
     }
    ]
   },
@@ -189,14 +161,6 @@
     {
      "who": "narrator",
      "text": "The Foundry ship Anselm hangs in the dark, still working. Inside, the vats are warm."
-    },
-    {
-     "who": "static",
-     "text": "I can hear it from here. A hum under the teeth."
-    },
-    {
-     "who": "quill",
-     "text": "Everything we have lied about is in there."
     }
    ]
   },
@@ -277,14 +241,6 @@
     {
      "who": "narrator",
      "text": "The Mirror Gate opens for forty minutes in every day. The Hegemony holds its frame."
-    },
-    {
-     "who": "tinker",
-     "text": "Forty minutes. Eleven ships. Do the arithmetic."
-    },
-    {
-     "who": "static",
-     "text": "I can jam the net. Not for long."
     }
    ]
   },
@@ -299,10 +255,6 @@
     {
      "who": "warden",
      "text": "Eleven. Eleven. Eleven."
-    },
-    {
-     "who": "quill",
-     "text": "I think she says it so she does not have to say the others."
     }
    ]
   },
@@ -313,10 +265,6 @@
     {
      "who": "narrator",
      "text": "The Reliquary Lane is a memorial that drifted: ten thousand hulls, each one named."
-    },
-    {
-     "who": "pilgrim",
-     "text": "Every hull has a roll. Read none of them. We have no time."
     },
     {
      "who": "sable",
@@ -401,10 +349,6 @@
      "text": "Tamsin's Rest is a relay station at the lip of the dark. Its archive still answers."
     },
     {
-     "who": "quill",
-     "text": "The Roll has a second copy here. It is not what we have been carrying."
-    },
-    {
      "who": "warden",
      "text": "Show me."
     }
@@ -417,10 +361,6 @@
     {
      "who": "narrator",
      "text": "Two hundred and twelve thousand names, and fourteen companies that never existed."
-    },
-    {
-     "who": "quill",
-     "text": "I knew. I have known since Karsa. I am sorry."
     },
     {
      "who": "wren",
@@ -536,10 +476,6 @@
      "text": "Someone has lit a beacon. In this dark, that is a confession."
     },
     {
-     "who": "static",
-     "text": "It is a Hegemony frequency. They are already coming."
-    },
-    {
      "who": "gran",
      "text": "Put it out."
     }
@@ -572,10 +508,6 @@
      "text": "A dead cruiser, still warm, with a claim-jumper's flag already on it."
     },
     {
-     "who": "tinker",
-     "text": "Everything in there is a reserve."
-    },
-    {
      "who": "gran",
      "text": "Be quick. Be quiet."
     }
@@ -590,10 +522,6 @@
      "text": "One convoy ship has stopped answering and begun to turn."
     },
     {
-     "who": "pilgrim",
-     "text": "They are frightened. That is all it is."
-    },
-    {
      "who": "warden",
      "text": "Then we talk first."
     }
@@ -606,14 +534,6 @@
     {
      "who": "narrator",
      "text": "A relay has gone silent in the middle of the lane."
-    },
-    {
-     "who": "static",
-     "text": "Colourless. No hum at all. I do not like it."
-    },
-    {
-     "who": "quill",
-     "text": "For the record, silence is also a signal."
     }
    ]
   },
@@ -624,10 +544,6 @@
     {
      "who": "narrator",
      "text": "The last fuel tender limps beside the convoy, trailing frost."
-    },
-    {
-     "who": "tinker",
-     "text": "Lose it and we walk."
     },
     {
      "who": "warden",
@@ -660,10 +576,6 @@
     {
      "who": "narrator",
      "text": "The squad forms up in the cold light. One slot on the roll is empty, and will not be for long."
-    },
-    {
-     "who": "pilgrim",
-     "text": "We read the name. Or we do not."
     }
    ],
    "choices": [
@@ -688,10 +600,6 @@
     {
      "who": "narrator",
      "text": "The name is spoken once, slowly, into the quiet."
-    },
-    {
-     "who": "pilgrim",
-     "text": "It is not much. It is what we have."
     }
    ]
   },
@@ -716,10 +624,6 @@
     {
      "who": "narrator",
      "text": "The muster drop opens. A body steps out wearing the dead soldier's number and nothing else."
-    },
-    {
-     "who": "static",
-     "text": "There is the hum."
     },
     {
      "who": "hollow",
@@ -857,10 +761,6 @@
      "text": "Two-forty. Breathe."
     },
     {
-     "who": "pilgrim",
-     "text": "Who are you talking to?"
-    },
-    {
      "who": "sable",
      "text": "Whoever is listening."
     }
@@ -885,42 +785,6 @@
    ]
   },
   {
-   "id": "camp_static_hum",
-   "kind": "camp",
-   "lines": [
-    {
-     "who": "static",
-     "text": "Listen. Under the recyclers. Do you hear the hum?"
-    },
-    {
-     "who": "ghost",
-     "text": "No."
-    },
-    {
-     "who": "static",
-     "text": "Good. Stay that way."
-    }
-   ]
-  },
-  {
-   "id": "camp_pilgrim_names",
-   "kind": "camp",
-   "lines": [
-    {
-     "who": "pilgrim",
-     "text": "Three hundred and four. Shall I say them?"
-    },
-    {
-     "who": "quill",
-     "text": "All of them?"
-    },
-    {
-     "who": "pilgrim",
-     "text": "Slowly."
-    }
-   ]
-  },
-  {
    "id": "camp_gran_lost",
    "kind": "camp",
    "lines": [
@@ -935,42 +799,6 @@
     {
      "who": "gran",
      "text": "And I am still walking. That is the whole lesson."
-    }
-   ]
-  },
-  {
-   "id": "camp_tinker_ledger",
-   "kind": "camp",
-   "lines": [
-    {
-     "who": "tinker",
-     "text": "I keep two ledgers. One for the rounds. One for the jokes."
-    },
-    {
-     "who": "warden",
-     "text": "Which is longer?"
-    },
-    {
-     "who": "tinker",
-     "text": "Do not make me count."
-    }
-   ]
-  },
-  {
-   "id": "camp_quill_roll",
-   "kind": "camp",
-   "lines": [
-    {
-     "who": "quill",
-     "text": "For the record, I have not slept since Karsa."
-    },
-    {
-     "who": "warden",
-     "text": "Neither have I."
-    },
-    {
-     "who": "quill",
-     "text": "That is not for the record."
     }
    ]
   },

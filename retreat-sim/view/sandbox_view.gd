@@ -15,7 +15,11 @@ const COL_NEUTRAL := Color("d8dee9")
 const INITIATIVE_SCENE := "res://view/initiative.tscn"
 const PLAY_SCENE := "res://view/play.tscn"
 const MENU_SCENE := "res://view/campaign.tscn"
-const RULESET_LABEL := {"initiative": "Ruleset: Initiative (live, AP)", "planned": "Ruleset: Planned (simultaneous)"}
+const RULESET_LABEL := {
+	"activation": "Ruleset: Activation (one unit at a time)",
+	"initiative": "Ruleset: Initiative (live, AP)",
+	"planned": "Ruleset: Planned (simultaneous)",
+}
 const GEAR_LABEL := {"armour": "Armour", "weapon": "Weapon", "mod": "Mod"}
 
 var _story: Dictionary
@@ -36,6 +40,7 @@ var _content: VBoxContainer
 var _msg: Label
 var _tab_btns: Dictionary = {}
 var _ruleset_btn: Button
+var _ap_btn: Button
 var _stat_labels: Dictionary = {}  # "index:key" -> Label
 var _gear_notes: Dictionary = {}   # "index:slot" -> Label
 var _sound: SoundBoard
@@ -120,6 +125,9 @@ func _build_ui() -> void:
 	_content.add_theme_constant_override("separation", 8)
 	scroll.add_child(_content)
 
+	_ap_btn = _button("", _cycle_ap, Vector2(0, 44))
+	_panel.add_child(_ap_btn)
+	_update_ap_label()
 	_ruleset_btn = _button("", _toggle_ruleset, Vector2(0, 44))
 	_panel.add_child(_ruleset_btn)
 	_panel.add_child(_button("Start", _start, Vector2(0, 56)))
@@ -267,7 +275,7 @@ func _item_summary(id: String) -> String:
 		if it["id"] == id:
 			var parts: Array[String] = []
 			var st: Dictionary = it.get("stats", {})
-			var labels := {"hp": "%+d hp", "morale": "%+d morale", "speed": "%+d speed", "range": "%+d range", "damage": "%+d damage", "shot_ticks": "%+d ticks per shot", "accuracy": "%+d%% to hit"}
+			var labels := {"hp": "%+d hp", "morale": "%+d morale", "speed": "%+d speed", "range": "%+d range", "damage": "%+d damage", "shot_ticks": "%+d AP per shot", "accuracy": "%+d%% to hit"}
 			for key in labels:
 				if st.has(key):
 					parts.append(labels[key] % int(st[key]))
@@ -414,8 +422,17 @@ func _click_enemies(tile: Vector2i) -> void:
 
 # --- start / leave ----------------------------------------------------------------------------------
 
+func _cycle_ap() -> void:
+	_cfg = Sandbox.with_next_ap(_cfg)
+	_update_ap_label()
+
+
+func _update_ap_label() -> void:
+	_ap_btn.text = "AP per activation: %d (tap to change; activation ruleset)" % Sandbox.ap_of(_cfg)
+
+
 func _toggle_ruleset() -> void:
-	_cfg = Sandbox.with_ruleset(_cfg, "planned" if _cfg["ruleset"] == "initiative" else "initiative")
+	_cfg = Sandbox.with_ruleset(_cfg, Session.next_ruleset(_cfg["ruleset"]))
 	_ruleset_btn.text = RULESET_LABEL[_cfg["ruleset"]]
 
 
@@ -433,7 +450,7 @@ func _start() -> void:
 	Session.campaign = Campaign.new_game(_story)
 	Session.mission_id = Sandbox.MAP
 	Session.current_match = Sandbox.build(_story, cfg)
-	get_tree().change_scene_to_file(INITIATIVE_SCENE if cfg["ruleset"] == "initiative" else PLAY_SCENE)
+	get_tree().change_scene_to_file(PLAY_SCENE if Session.scene_ruleset_is_planned(cfg["ruleset"]) else INITIATIVE_SCENE)
 
 
 func _back() -> void:

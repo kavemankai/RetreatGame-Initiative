@@ -24,13 +24,32 @@ const SUITES: Array[Script] = [
 	preload("res://tests/test_levels.gd"),
 	preload("res://tests/test_initiative.gd"),
 	preload("res://tests/test_sandbox.gd"),
+	preload("res://tests/test_activation.gd"),
+	preload("res://tests/test_activation_match.gd"),
+	preload("res://tests/test_reactions.gd"),
+	preload("res://tests/test_ai_scenarios.gd"),
+	preload("res://tests/test_combat_save.gd"),
+	preload("res://tests/test_campaign_engine.gd"),
+	preload("res://tests/test_ui_kit.gd"),
+	preload("res://tests/test_classes.gd"),
+	preload("res://tests/test_weapon_rules.gd"),
+	preload("res://tests/test_presentation.gd"),
+	preload("res://tests/test_loadout_screen.gd"),
+	preload("res://tests/test_levelling.gd"),
+	preload("res://tests/test_overworld.gd"),
+	preload("res://tests/test_prep_and_report.gd"),
+	preload("res://tests/test_end_to_end.gd"),
+	preload("res://tests/test_dug_in.gd"),
 	preload("res://tests/test_sound.gd"),
 	preload("res://tests/test_review_fixes.gd"),
+	preload("res://tests/test_coach.gd"),
+	preload("res://tests/test_difficulty.gd"),
 ]
 
 
 func _init() -> void:
 	TestBase.tree = self
+	ArtSkin.forced = 0  # the suite checks the original art, whatever JA2 placeholders are installed locally
 	var total := 0
 	for script in SUITES:
 		print("== ", script.resource_path.get_file())

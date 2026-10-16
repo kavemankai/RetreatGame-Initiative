@@ -1,11 +1,11 @@
 class_name StoryData
 extends RefCounted
-## Loads the story files (cast, writ, route, world, scenes, enemy_tiers, items) from a directory.
+## Loads the story files (cast, writ, route, world, scenes, enemy_tiers, items, classes) from a directory.
 
-const FILES: Array[String] = ["cast", "writ", "route", "world", "scenes", "enemy_tiers", "items"]
+const FILES: Array[String] = ["cast", "writ", "route", "world", "scenes", "enemy_tiers", "items", "classes", "progression", "map"]
 
 
-## Returns {"data": {cast, writ, route, world, scenes, enemy_tiers, items}, "errors": Array[String]}.
+## Returns {"data": {cast, writ, route, world, scenes, enemy_tiers, items, classes}, "errors": Array[String]}.
 ## A file that cannot be read or parsed is reported, never thrown.
 static func load_dir(dir: String) -> Dictionary:
 	var data := {}

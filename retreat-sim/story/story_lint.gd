@@ -11,13 +11,14 @@ const MAX_SAMPLE := 140
 const STAT_RANGES := {"hp": [2, 4], "speed": [1, 9], "aim": [1, 9], "cqb": [1, 9], "morale": [1, 9], "sight": [4, 8]}
 const NON_CAST_SPEAKERS: Array[String] = ["narrator", "hollow", "keeper", "orrick"]
 const MIN_CARDS_PER_ACT := 2
-const MIN_CAMP_SCENES := 6
+const MIN_CAMP_SCENES := 5  # four of the nine were about mercs who left the roster of eight
 ## Enemy spawn points every map provides (tests check each map has at least this many).
 const MAX_ENEMIES := 8
 ## Each enemy tier owns this many consecutive unit ids.
 const ID_SPAN := 10
 const ITEM_STATS: Array[String] = ["hp", "morale", "speed", "range", "damage", "shot_ticks", "accuracy"]
 const MAX_WRIT_SLOT := 6
+const WEAPON_TRAITS: Array[String] = ["beam", "area", "burst"]
 
 static var _banned_re: RegEx
 
@@ -37,6 +38,10 @@ static func lint(d: Dictionary) -> Array[String]:
 	_lint_world(d, errs, officers)
 	_lint_tiers(errs, d["enemy_tiers"])
 	_lint_items(errs, d)
+	if d.has("progression"):
+		_lint_progression(errs, d)
+	if d.has("map"):
+		_lint_map(errs, d, mission_ids)
 	return errs
 
 
@@ -55,6 +60,8 @@ static func _lint_cast(d: Dictionary, errs: Array[String], mercs: Array, mission
 			errs.append("duplicate slot %d (%s)" % [slot, id])
 		slots[slot] = true
 		_stat_ranges(errs, id, m["stats"])
+		if not (d["classes"]["classes"] as Dictionary).has(m.get("class", "")):
+			errs.append("%s: unknown weapon class '%s'" % [id, m.get("class", "")])
 		for key in ["callsign", "name", "role", "bio", "wound", "death_line", "hollow_note"]:
 			if str(m.get(key, "")) == "":
 				errs.append("%s: missing %s" % [id, key])
@@ -170,10 +177,17 @@ static func _lint_items(errs: Array[String], d: Dictionary) -> void:
 		if not slots.has(it["slot"]):
 			errs.append("item %s: unknown slot '%s'" % [id, it["slot"]])
 		if it["slot"] == "mod":
-			if not (items["traits"] as Dictionary).has(it.get("trait", "")):
-				errs.append("item %s: unknown trait '%s'" % [id, it.get("trait", "")])
+			if not (items["traits"] as Dictionary).has(it.get("trait", "")) or WEAPON_TRAITS.has(it.get("trait", "")):
+				errs.append("item %s: unknown mod trait '%s'" % [id, it.get("trait", "")])
+		elif it["slot"] == "weapon":
+			if not (d["classes"]["classes"] as Dictionary).has(it.get("class", "")):
+				errs.append("weapon %s: unknown class '%s'" % [id, it.get("class", "")])
+			if it.has("trait") and not WEAPON_TRAITS.has(it["trait"]):
+				errs.append("weapon %s: '%s' is not a weapon trait (%s)" % [id, it["trait"], WEAPON_TRAITS])
 		elif it.has("trait"):
-			errs.append("item %s: only mod items carry a trait" % id)
+			errs.append("item %s: only mods and weapons carry a trait" % id)
+		if it["slot"] != "weapon" and it.has("class"):
+			errs.append("item %s: only weapons have a class" % id)
 		for stat in (it.get("stats", {}) as Dictionary):
 			if not ITEM_STATS.has(stat):
 				errs.append("item %s: unknown stat '%s'" % [id, stat])
@@ -182,6 +196,10 @@ static func _lint_items(errs: Array[String], d: Dictionary) -> void:
 		var start: String = items["starting"][slot]
 		if not by_id.has(start) or by_id[start]["slot"] != slot:
 			errs.append("starting %s '%s' is not an item of that slot" % [slot, start])
+	for cid in (d["classes"]["classes"] as Dictionary):
+		var base: String = d["classes"]["classes"][cid].get("base_item", "")
+		if not by_id.has(base) or by_id[base]["slot"] != "weapon" or by_id[base].get("class", "") != cid or int(by_id[base]["tier"]) != 1:
+			errs.append("class %s: base_item '%s' must be a tier 1 weapon of that class" % [cid, base])
 	var officer_ids := {}
 	for o: Dictionary in d["writ"]["officers"]:
 		officer_ids[o["id"]] = true
@@ -196,6 +214,71 @@ static func _lint_items(errs: Array[String], d: Dictionary) -> void:
 				errs.append("mission %s rewards unknown item '%s'" % [m["id"], reward])
 			elif int(by_id[reward]["tier"]) > int(m["act"]):
 				errs.append("mission %s (act %d) rewards '%s', which is not found before act %d" % [m["id"], int(m["act"]), reward, int(by_id[reward]["tier"])])
+
+
+static func _lint_progression(errs: Array[String], d: Dictionary) -> void:
+	var p: Dictionary = d["progression"]
+	var stats := ["hp", "speed", "aim", "cqb", "morale", "sight"]
+	var levels: Array = p.get("levels", [])
+	if levels.is_empty():
+		errs.append("progression: levels must list the XP for level 2 onward")
+	for i in levels.size():
+		if int(levels[i]) <= 0 or (i > 0 and int(levels[i]) <= int(levels[i - 1])):
+			errs.append("progression: levels must be positive and rising (%s)" % [levels])
+			break
+	for key in ["deploy", "objective", "per_hit", "hit_cap", "per_kill", "survived_hit", "survived_hit_cap"]:
+		if int((p.get("xp", {}) as Dictionary).get(key, -1)) < 0:
+			errs.append("progression: xp.%s must be zero or more" % key)
+	for stat in stats:
+		var cap := int((p.get("caps", {}) as Dictionary).get(stat, 0))
+		if cap < int(STAT_RANGES[stat][1]) and stat != "sight" and stat != "hp":
+			errs.append("progression: the %s cap %d is below the highest starting %s" % [stat, cap, stat])
+		if cap < 1:
+			errs.append("progression: missing cap for %s" % stat)
+	if int(p.get("offers", 0)) < 1 or int(p.get("offers", 0)) > stats.size():
+		errs.append("progression: offers must be between 1 and %d" % stats.size())
+	for cid in (d["classes"]["classes"] as Dictionary):
+		var weights: Dictionary = (p.get("class_weights", {}) as Dictionary).get(cid, {})
+		var total := 0
+		for stat in stats:
+			if not weights.has(stat) or int(weights[stat]) < 0:
+				errs.append("progression: class %s needs a weight of zero or more for %s" % [cid, stat])
+			total += int(weights.get(stat, 0))
+		if total <= 0:
+			errs.append("progression: class %s has no positive weight" % cid)
+	for m: Dictionary in d["cast"]["mercs"]:
+		for stat in stats:
+			if int(m["stats"][stat]) > int((p.get("caps", {}) as Dictionary).get(stat, 0)):
+				errs.append("progression: %s starts above the %s cap" % [m["id"], stat])
+
+
+static func _lint_map(errs: Array[String], d: Dictionary, mission_ids: Array) -> void:
+	var m: Dictionary = d["map"]
+	var nodes: Dictionary = m.get("nodes", {})
+	var seen := {}
+	for id in mission_ids:
+		if not nodes.has(id):
+			errs.append("map: mission %s has no node" % id)
+	for id in nodes:
+		var pos: Array = nodes[id]
+		if not mission_ids.has(id):
+			errs.append("map: node %s is not a mission" % id)
+		if pos.size() != 2 or float(pos[0]) < 0.0 or float(pos[0]) > 1.0 or float(pos[1]) < 0.0 or float(pos[1]) > 1.0:
+			errs.append("map: node %s must be [x, y] within 0..1" % id)
+			continue
+		var key := str(pos)
+		if seen.has(key):
+			errs.append("map: nodes %s and %s share a place" % [seen[key], id])
+		seen[key] = id
+	var acts := {}
+	for a: Dictionary in d["route"].get("acts", []):
+		acts[str(int(a["act"]))] = true
+	for key in acts:
+		if not (m.get("card_anchors", {}) as Dictionary).has(key):
+			errs.append("map: act %s has no card anchor" % key)
+	for band: Dictionary in m.get("act_bands", []):
+		if float(band["y0"]) >= float(band["y1"]):
+			errs.append("map: act band %s has no height" % band.get("act", "?"))
 
 
 static func _lint_tiers(errs: Array[String], tiers: Dictionary) -> void:
